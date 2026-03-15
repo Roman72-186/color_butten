@@ -1,4 +1,4 @@
-import type { ButtonConfig, InlineKeyboardButton, MessageConfig, SendMessageBody } from '../types';
+import type { ButtonConfig, InlineKeyboardButton, SendMessageBody } from '../types';
 import { groupButtonsByRow } from './helpers';
 
 function buttonToJson(button: ButtonConfig): InlineKeyboardButton {
@@ -23,13 +23,13 @@ function buttonToJson(button: ButtonConfig): InlineKeyboardButton {
   return result;
 }
 
-export function generateJson(buttons: ButtonConfig[], message: MessageConfig): string {
+export function generateJson(buttons: ButtonConfig[]): string {
   const rows = groupButtonsByRow(buttons);
 
   const body: SendMessageBody = {
-    chat_id: message.chatId || '{{telegram_id}}',
-    text: message.text || 'text',
-    parse_mode: message.parseMode,
+    chat_id: '{{telegram_id}}',
+    text: 'text',
+    parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: rows.map(row => row.map(buttonToJson)),
     },
