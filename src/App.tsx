@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { ButtonConfig } from './types';
+import { MAX_BUTTONS } from './constants';
 import { Header } from './components/Header';
 import { Toolbar } from './components/Toolbar';
 import { ButtonCard } from './components/ButtonCard';
@@ -56,6 +57,8 @@ function App() {
     setShowValidation(true);
   }, []);
 
+  const isMaxButtons = buttons.length >= MAX_BUTTONS;
+
   return (
     <div className={styles.app}>
       <Header />
@@ -63,8 +66,6 @@ function App() {
         <Toolbar
           buttonCount={buttons.length}
           rowCount={rowCount}
-          onAdd={addButton}
-          onReset={resetAll}
         />
 
         <div className={styles.section}>
@@ -81,6 +82,19 @@ function App() {
               onRemove={removeButton}
             />
           ))}
+
+          <div className={styles.cardActions}>
+            <button
+              className={styles.addBtn}
+              onClick={addButton}
+              disabled={isMaxButtons}
+            >
+              + Кнопка
+            </button>
+            <button className={styles.resetBtn} onClick={resetAll}>
+              Сбросить
+            </button>
+          </div>
         </div>
 
         <Preview rows={previewRows} />

@@ -16,7 +16,7 @@ export function RowSelector({ buttons, currentButtonId, currentRow, onChange }: 
   return (
     <div>
       <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        Расположение
+        Строка в клавиатуре
       </label>
       <select
         value={currentRow}
@@ -25,13 +25,14 @@ export function RowSelector({ buttons, currentButtonId, currentRow, onChange }: 
         {existingRows.map(row => {
           const count = countButtonsInRow(buttons, row, currentButtonId);
           const isFull = count >= MAX_PER_ROW;
+          const free = MAX_PER_ROW - count;
           return (
             <option key={row} value={row} disabled={isFull}>
-              Строка {row} — {count}/{MAX_PER_ROW}{isFull ? ' (полная)' : ''}
+              Строка {row}{isFull ? ' (заполнена)' : ` (свободно ${free} из ${MAX_PER_ROW})`}
             </option>
           );
         })}
-        <option value={nextNewRow}>+ Новая строка {nextNewRow}</option>
+        <option value={nextNewRow}>+ Добавить строку {nextNewRow}</option>
       </select>
     </div>
   );
