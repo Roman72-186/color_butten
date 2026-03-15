@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { ButtonConfig } from './types';
 import { MAX_BUTTONS } from './constants';
-import { Header } from './components/Header';
 import { Toolbar } from './components/Toolbar';
 import { ButtonCard } from './components/ButtonCard';
 import { Preview } from './components/Preview';
@@ -61,7 +60,6 @@ function App() {
 
   return (
     <div className={styles.app}>
-      <Header />
       <div className={styles.content}>
         <Toolbar
           buttonCount={buttons.length}
