@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
-import type { ButtonConfig } from './types';
+import type { ButtonConfig, MessageConfig } from './types';
 import { MAX_BUTTONS } from './constants';
 import { Toolbar } from './components/Toolbar';
+import { MessageFields } from './components/MessageFields';
 import { ButtonCard } from './components/ButtonCard';
 import { Preview } from './components/Preview';
 import { JsonOutput } from './components/JsonOutput';
@@ -12,11 +13,16 @@ import styles from './styles/App.module.css';
 
 function App() {
   const [buttons, setButtons] = useState<ButtonConfig[]>(() => [createDefaultButton(1)]);
+  const [message, setMessage] = useState<MessageConfig>({
+    chatId: '',
+    text: '',
+    parseMode: 'HTML',
+  });
   const [showValidation, setShowValidation] = useState(false);
 
   const allErrors = useMemo(() => buttons.map(validateButton), [buttons]);
   const hasErrors = useMemo(() => hasAnyErrors(allErrors), [allErrors]);
-  const jsonResult = useMemo(() => generateJson(buttons), [buttons]);
+  const jsonResult = useMemo(() => generateJson(buttons, message), [buttons, message]);
   const previewRows = useMemo(() => groupButtonsByRow(buttons), [buttons]);
   const rowCount = useMemo(() => new Set(buttons.map(b => b.row)).size, [buttons]);
 
@@ -47,8 +53,13 @@ function App() {
     );
   }, []);
 
+  const updateMessage = useCallback((field: keyof MessageConfig, value: string) => {
+    setMessage(prev => ({ ...prev, [field]: value }));
+  }, []);
+
   const resetAll = useCallback(() => {
     setButtons([createDefaultButton(1)]);
+    setMessage({ chatId: '', text: '', parseMode: 'HTML' });
     setShowValidation(false);
   }, []);
 
@@ -65,6 +76,8 @@ function App() {
           buttonCount={buttons.length}
           rowCount={rowCount}
         />
+
+        <MessageFields message={message} onChange={updateMessage} />
 
         <div className={styles.section}>
           {buttons.map((button, index) => (

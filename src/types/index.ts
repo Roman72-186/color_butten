@@ -24,6 +24,19 @@ export interface ButtonErrors {
   actionValue?: string;
 }
 
+export interface MessageConfig {
+  chatId: string;
+  text: string;
+  parseMode: 'HTML' | 'Markdown' | 'MarkdownV2';
+}
+
+export interface SendMessageBody {
+  chat_id: string;
+  text: string;
+  parse_mode: string;
+  reply_markup: InlineKeyboardMarkup;
+}
+
 export interface InlineKeyboardMarkup {
   inline_keyboard: InlineKeyboardButton[][];
 }
