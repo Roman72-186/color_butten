@@ -6,12 +6,13 @@ import { ButtonCard } from './components/ButtonCard';
 import { Preview } from './components/Preview';
 import { JsonOutput } from './components/JsonOutput';
 import { TextFormatter } from './components/TextFormatter';
+import { JsonFormatter } from './components/JsonFormatter';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
 import { createDefaultButton, getNextAvailableRow, groupButtonsByRow } from './utils/helpers';
 import styles from './styles/App.module.css';
 
-type TabType = 'keyboard' | 'formatter';
+type TabType = 'keyboard' | 'formatter' | 'json';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('keyboard');
@@ -78,6 +79,12 @@ function App() {
           >
             Форматирование текста
           </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'json' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('json')}
+          >
+            JSON-форматор
+          </button>
         </div>
 
         <div style={{ display: activeTab === 'keyboard' ? undefined : 'none' }}>
@@ -126,6 +133,10 @@ function App() {
 
         <div style={{ display: activeTab === 'formatter' ? undefined : 'none' }}>
           <TextFormatter />
+        </div>
+
+        <div style={{ display: activeTab === 'json' ? undefined : 'none' }}>
+          <JsonFormatter />
         </div>
       </div>
     </div>

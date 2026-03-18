@@ -151,6 +151,21 @@
   color: inherit;
 }
 
+.errors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.errorItem {
+  color: var(--danger);
+  font-size: 13px;
+  padding: 6px 10px;
+  background: rgba(224, 85, 85, 0.1);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--danger);
+}
+
 .copyBtn {
   padding: 12px 24px;
   background: var(--accent);

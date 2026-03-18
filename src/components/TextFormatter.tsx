@@ -142,11 +142,118 @@ function textToPreviewHtml(text: string, mode: FormatMode): string {
   return safe;
 }
 
+function validateText(text: string, mode: FormatMode): string[] {
+  const errors: string[] = [];
+  if (!text.trim()) return errors;
+
+  if (mode === 'html') {
+    const simpleTags = ['b', 'i', 'u', 's', 'code', 'pre'];
+    for (const tag of simpleTags) {
+      const openCount = (text.match(new RegExp(`<${tag}>`, 'g')) || []).length;
+      const closeCount = (text.match(new RegExp(`</${tag}>`, 'g')) || []).length;
+      if (openCount > closeCount) {
+        errors.push(`Незакрытый тег <${tag}>`);
+      } else if (closeCount > openCount) {
+        errors.push(`Лишний закрывающий тег </${tag}>`);
+      }
+    }
+
+    const spoilerOpen = (text.match(/<tg-spoiler>/g) || []).length;
+    const spoilerClose = (text.match(/<\/tg-spoiler>/g) || []).length;
+    if (spoilerOpen > spoilerClose) {
+      errors.push('Незакрытый тег <tg-spoiler>');
+    } else if (spoilerClose > spoilerOpen) {
+      errors.push('Лишний закрывающий тег </tg-spoiler>');
+    }
+
+    const aOpen = (text.match(/<a\s[^>]*>/g) || []).length;
+    const aClose = (text.match(/<\/a>/g) || []).length;
+    if (aOpen > aClose) {
+      errors.push('Незакрытый тег <a>');
+    } else if (aClose > aOpen) {
+      errors.push('Лишний закрывающий тег </a>');
+    }
+  } else {
+    const codeBlockCount = (text.match(/```/g) || []).length;
+    if (codeBlockCount % 2 !== 0) {
+      errors.push('Незакрытый блок кода ```');
+    }
+
+    const spoilerCount = (text.match(/\|\|/g) || []).length;
+    if (spoilerCount % 2 !== 0) {
+      errors.push('Незакрытый спойлер ||');
+    }
+
+    let cleaned = text;
+    if (codeBlockCount >= 2) {
+      cleaned = cleaned.replace(/```[\s\S]*?```/g, '');
+    }
+
+    const backtickCount = (cleaned.match(/`/g) || []).length;
+    if (backtickCount % 2 !== 0) {
+      errors.push('Незакрытый инлайн-код `');
+    }
+    cleaned = cleaned.replace(/`[^`]*`/g, '');
+
+    const underlineCount = (cleaned.match(/__/g) || []).length;
+    if (underlineCount % 2 !== 0) {
+      errors.push('Незакрытое подчёркивание __');
+    }
+    cleaned = cleaned.replace(/__/g, '');
+
+    const boldCount = (cleaned.match(/\*/g) || []).length;
+    if (boldCount % 2 !== 0) {
+      errors.push('Незакрытый жирный текст *');
+    }
+
+    const italicCount = (cleaned.match(/_/g) || []).length;
+    if (italicCount % 2 !== 0) {
+      errors.push('Незакрытый курсив _');
+    }
+
+    const strikeCount = (cleaned.match(/~/g) || []).length;
+    if (strikeCount % 2 !== 0) {
+      errors.push('Незакрытый зачёркнутый текст ~');
+    }
+  }
+
+  if (/%0(?![aA])/.test(text) || /%0$/.test(text)) {
+    errors.push('Некорректный перенос строки (используйте двойной пробел)');
+  }
+
+  return errors;
+}
+
 export function TextFormatter() {
   const [text, setText] = useState('');
   const [mode, setMode] = useState<FormatMode>('html');
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const textErrors = useMemo(() => validateText(text, mode), [text, mode]);
+
+  const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const rawText = e.target.value;
+    const cursorPos = e.target.selectionStart;
+
+    if (!rawText.includes('  ')) {
+      setText(rawText);
+      return;
+    }
+
+    const beforeCursor = rawText.substring(0, cursorPos);
+    const replacementsBeforeCursor = (beforeCursor.match(/ {2}/g) || []).length;
+    const newText = rawText.replace(/ {2}/g, '\n');
+    setText(newText);
+
+    const adjustedPos = cursorPos - replacementsBeforeCursor;
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.selectionStart = adjustedPos;
+        textareaRef.current.selectionEnd = adjustedPos;
+      }
+    });
+  }, []);
 
   const applyFormat = useCallback((type: FormatType) => {
     const textarea = textareaRef.current;
@@ -230,7 +337,7 @@ export function TextFormatter() {
   }, [applyFormat]);
 
   const handleCopy = useCallback(() => {
-    if (!text.trim()) return;
+    if (!text.trim() || textErrors.length > 0) return;
 
     const output = text.replace(/\n/g, '%0a');
 
@@ -242,7 +349,7 @@ export function TextFormatter() {
     } catch {
       // clipboard not available
     }
-  }, [text]);
+  }, [text, textErrors]);
 
   const previewHtml = useMemo(() => textToPreviewHtml(text, mode), [text, mode]);
 
@@ -281,7 +388,7 @@ export function TextFormatter() {
         ref={textareaRef}
         className={styles.textarea}
         value={text}
-        onChange={e => setText(e.target.value)}
+        onChange={handleTextChange}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         placeholder="Вставьте текст с форматированием или введите вручную..."
@@ -298,10 +405,18 @@ export function TextFormatter() {
         </div>
       )}
 
+      {textErrors.length > 0 && (
+        <div className={styles.errors}>
+          {textErrors.map((err, i) => (
+            <div key={i} className={styles.errorItem}>{err}</div>
+          ))}
+        </div>
+      )}
+
       <button
         className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
         onClick={handleCopy}
-        disabled={!text.trim()}
+        disabled={!text.trim() || textErrors.length > 0}
       >
         {copied ? '\u2713 Скопировано' : 'Скопировать текст'}
       </button>
