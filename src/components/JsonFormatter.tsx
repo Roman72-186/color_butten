@@ -142,7 +142,9 @@ export function JsonFormatter() {
                 onClick={() => handleCopyPath(entry.path)}
               >
                 <span className={styles.pathKey}>{entry.path}</span>
-                <span className={styles.pathValue}>{entry.value}</span>
+                <span className={styles.pathValue}>
+                  {copiedPath === entry.path ? '\u2713 Скопировано' : entry.value}
+                </span>
               </div>
             ))}
           </div>

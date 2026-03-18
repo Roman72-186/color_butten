@@ -136,7 +136,12 @@
 }
 
 .pathCopied {
-  background: rgba(80, 200, 120, 0.12);
+  background: var(--success);
+}
+
+.pathCopied .pathKey,
+.pathCopied .pathValue {
+  color: #fff;
 }
 
 .pathKey {

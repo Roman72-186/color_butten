@@ -95,3 +95,20 @@
   color: #fff;
   border-color: var(--danger);
 }
+
+@media (max-width: 480px) {
+  .content {
+    padding: 12px 8px 32px;
+  }
+
+  .tabs {
+    gap: 2px;
+    padding: 3px;
+  }
+
+  .tab {
+    padding: 8px 4px;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+}
