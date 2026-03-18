@@ -70,34 +70,27 @@
   cursor: not-allowed;
 }
 
-.copyBtn {
+.cleanBtn {
   flex: 1;
   padding: 12px 16px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 
-.copyBtn:hover:not(:disabled) {
-  background: #4da5e7;
+.cleanBtn:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
-.copyBtn:disabled {
+.cleanBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.copied {
-  background: var(--success);
-}
-
-.copied:hover {
-  background: var(--success);
 }
 
 .pathsSection {

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import styles from '../styles/JsonFormatter.module.css';
 
 interface PathEntry {
@@ -43,10 +43,35 @@ function extractPaths(obj: unknown, prefix = ''): PathEntry[] {
   return paths;
 }
 
+function cleanJsonInput(text: string): string {
+  let cleaned = text;
+
+  // Remove BOM and zero-width characters
+  cleaned = cleaned.replace(/[\uFEFF\u200B\u200C\u200D\u00AD]/g, '');
+
+  // Replace smart/curly quotes with straight quotes
+  cleaned = cleaned.replace(/[\u201C\u201D\u00AB\u00BB]/g, '"');
+  cleaned = cleaned.replace(/[\u2018\u2019]/g, "'");
+
+  // Replace non-breaking spaces with regular spaces
+  cleaned = cleaned.replace(/\u00A0/g, ' ');
+
+  // Strip everything before first { or [ and after last } or ]
+  const firstBrace = cleaned.search(/[{[]/);
+  if (firstBrace === -1) return cleaned;
+
+  const lastClose = Math.max(cleaned.lastIndexOf('}'), cleaned.lastIndexOf(']'));
+  if (lastClose === -1 || lastClose < firstBrace) return cleaned;
+
+  cleaned = cleaned.substring(firstBrace, lastClose + 1);
+
+  return cleaned;
+}
+
 export function JsonFormatter() {
   const [input, setInput] = useState('');
   const [copiedPath, setCopiedPath] = useState<string | null>(null);
-  const [copiedJson, setCopiedJson] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const validation = useMemo(() => {
     const trimmed = input.trim();
@@ -71,6 +96,19 @@ export function JsonFormatter() {
     return extractPaths(validation.parsed);
   }, [validation]);
 
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted = e.clipboardData.getData('text/plain');
+    if (!pasted) return;
+
+    e.preventDefault();
+    const cleaned = cleanJsonInput(pasted);
+    setInput(cleaned);
+  }, []);
+
+  const handleClean = useCallback(() => {
+    setInput(prev => cleanJsonInput(prev));
+  }, []);
+
   const handleFormat = useCallback(() => {
     if (formatted) {
       setInput(formatted);
@@ -88,24 +126,14 @@ export function JsonFormatter() {
     }
   }, []);
 
-  const handleCopyJson = useCallback(() => {
-    if (!formatted) return;
-    try {
-      navigator.clipboard.writeText(formatted).then(() => {
-        setCopiedJson(true);
-        setTimeout(() => setCopiedJson(false), 2000);
-      });
-    } catch {
-      // clipboard not available
-    }
-  }, [formatted]);
-
   return (
     <div className={styles.formatter}>
       <textarea
+        ref={textareaRef}
         className={`${styles.textarea} ${validation.error ? styles.textareaError : ''}`}
         value={input}
         onChange={e => setInput(e.target.value)}
+        onPaste={handlePaste}
         placeholder='Вставьте JSON для проверки и получения путей...'
         rows={10}
       />
@@ -116,18 +144,18 @@ export function JsonFormatter() {
 
       <div className={styles.actions}>
         <button
+          className={styles.cleanBtn}
+          onClick={handleClean}
+          disabled={!input.trim()}
+        >
+          Очистить
+        </button>
+        <button
           className={styles.formatBtn}
           onClick={handleFormat}
           disabled={!validation.valid}
         >
           Форматировать
-        </button>
-        <button
-          className={`${styles.copyBtn} ${copiedJson ? styles.copied : ''}`}
-          onClick={handleCopyJson}
-          disabled={!validation.valid}
-        >
-          {copiedJson ? '\u2713 Скопировано' : 'Скопировать JSON'}
         </button>
       </div>
 
