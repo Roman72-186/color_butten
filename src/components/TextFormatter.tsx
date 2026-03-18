@@ -149,8 +149,10 @@ export function TextFormatter() {
   const handleCopy = useCallback(() => {
     if (!text.trim()) return;
 
+    const output = text.replace(/\n/g, '%0a');
+
     try {
-      navigator.clipboard.writeText(text).then(() => {
+      navigator.clipboard.writeText(output).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       });
