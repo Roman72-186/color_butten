@@ -42,6 +42,65 @@ const FORMAT_BUTTONS: FormatButton[] = [
   { type: 'link', label: 'link', title: 'Ссылка' },
 ];
 
+function processNode(node: Node, mode: FormatMode): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent || '';
+  }
+
+  if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+  const el = node as HTMLElement;
+  const tag = el.tagName.toLowerCase();
+  const children = Array.from(el.childNodes).map(n => processNode(n, mode)).join('');
+
+  const isBold = tag === 'b' || tag === 'strong' ||
+    el.style.fontWeight === 'bold' || parseInt(el.style.fontWeight) >= 700;
+  const isItalic = tag === 'i' || tag === 'em' || el.style.fontStyle === 'italic';
+  const isUnderline = tag === 'u' || tag === 'ins';
+  const isStrike = tag === 's' || tag === 'del' || tag === 'strike';
+
+  if (mode === 'html') {
+    if (tag === 'a') {
+      const href = el.getAttribute('href');
+      return href ? `<a href="${href}">${children}</a>` : children;
+    }
+    if (tag === 'code') return `<code>${children}</code>`;
+    if (tag === 'pre') return `<pre>${children}</pre>`;
+    if (tag === 'br') return '\n';
+    if (tag === 'p' || tag === 'div') return children ? children + '\n' : '';
+    if (tag === 'li') return children + '\n';
+
+    let result = children;
+    if (isStrike) result = `<s>${result}</s>`;
+    if (isUnderline) result = `<u>${result}</u>`;
+    if (isItalic) result = `<i>${result}</i>`;
+    if (isBold) result = `<b>${result}</b>`;
+    return result;
+  }
+
+  if (tag === 'a') {
+    const href = el.getAttribute('href');
+    return href ? `[${children}](${href})` : children;
+  }
+  if (tag === 'code') return `\`${children}\``;
+  if (tag === 'pre') return `\`\`\`\n${children}\n\`\`\``;
+  if (tag === 'br') return '\n';
+  if (tag === 'p' || tag === 'div') return children ? children + '\n' : '';
+  if (tag === 'li') return children + '\n';
+
+  let result = children;
+  if (isStrike) result = `~${result}~`;
+  if (isUnderline) result = `__${result}__`;
+  if (isItalic) result = `_${result}_`;
+  if (isBold) result = `*${result}*`;
+  return result;
+}
+
+function convertClipboardHtml(html: string, mode: FormatMode): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return processNode(doc.body, mode).replace(/\n{3,}/g, '\n\n').trim();
+}
+
 function textToPreviewHtml(text: string, mode: FormatMode): string {
   if (!text.trim()) return '';
 
@@ -136,6 +195,30 @@ export function TextFormatter() {
     });
   }, [text, mode]);
 
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const html = e.clipboardData.getData('text/html');
+    if (!html) return;
+
+    e.preventDefault();
+
+    const converted = convertClipboardHtml(html, mode);
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newText = text.substring(0, start) + converted + text.substring(end);
+
+    setText(newText);
+
+    requestAnimationFrame(() => {
+      const newPos = start + converted.length;
+      textarea.selectionStart = newPos;
+      textarea.selectionEnd = newPos;
+      textarea.focus();
+    });
+  }, [text, mode]);
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.ctrlKey || e.metaKey) {
       switch (e.key) {
@@ -200,7 +283,8 @@ export function TextFormatter() {
         value={text}
         onChange={e => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Введите или вставьте текст для форматирования..."
+        onPaste={handlePaste}
+        placeholder="Вставьте текст с форматированием или введите вручную..."
         rows={8}
       />
 
