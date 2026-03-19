@@ -54,6 +54,24 @@ function getAlbumSourcePlaceholder(mode: MediaSourceMode, type: MediaGroupItemTy
   return '';
 }
 
+const SEND_OPTION_DESCRIPTIONS = [
+  {
+    key: 'disableNotification',
+    apiName: 'disable_notification',
+    description: 'Отправить без звука. У пользователя появится уведомление, но без звукового сигнала.',
+  },
+  {
+    key: 'protectContent',
+    apiName: 'protect_content',
+    description: 'Защитить контент от пересылки и сохранения внутри Telegram.',
+  },
+  {
+    key: 'allowPaidBroadcast',
+    apiName: 'allow_paid_broadcast',
+    description: 'Разрешить массовую отправку до 1000 сообщений в секунду за Stars.',
+  },
+] as const;
+
 export function RequestBuilder() {
   const [form, setForm] = useState<RequestFormState>(() => createDefaultRequestForm());
   const [copiedTarget, setCopiedTarget] = useState<'body' | 'powershell' | null>(null);
@@ -715,31 +733,20 @@ export function RequestBuilder() {
           </div>
 
           <div className={styles.fieldFull}>
-            <div className={styles.checkboxRow}>
-              <label className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={form.disableNotification}
-                  onChange={e => updateField('disableNotification', e.target.checked)}
-                />
-                <span>disable_notification</span>
-              </label>
-              <label className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={form.protectContent}
-                  onChange={e => updateField('protectContent', e.target.checked)}
-                />
-                <span>protect_content</span>
-              </label>
-              <label className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={form.allowPaidBroadcast}
-                  onChange={e => updateField('allowPaidBroadcast', e.target.checked)}
-                />
-                <span>allow_paid_broadcast</span>
-              </label>
+            <div className={styles.optionGrid}>
+              {SEND_OPTION_DESCRIPTIONS.map(option => (
+                <label key={option.apiName} className={styles.optionCard}>
+                  <span className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={form[option.key]}
+                      onChange={e => updateField(option.key, e.target.checked)}
+                    />
+                    <span>{option.apiName}</span>
+                  </span>
+                  <span className={styles.optionHint}>{option.description}</span>
+                </label>
+              ))}
             </div>
           </div>
         </div>

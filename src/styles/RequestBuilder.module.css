@@ -135,12 +135,34 @@
   gap: 10px 16px;
 }
 
+.optionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.optionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
 .checkboxLabel {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-size: 13px;
   color: var(--text);
+}
+
+.optionHint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
 }
 
 .checkboxLabel input {
@@ -273,6 +295,10 @@
 
 @media (max-width: 640px) {
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .optionGrid {
     grid-template-columns: 1fr;
   }
 
