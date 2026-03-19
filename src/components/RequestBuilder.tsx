@@ -19,40 +19,23 @@ import {
   buildRequestPreview,
   createDefaultAlbumItem,
   createDefaultRequestForm,
-  getFileAcceptByAlbumType,
-  getFileAcceptByMethod,
   validateRequestForm,
 } from '../utils/requestBuilder';
+import { FormattedTextField } from './FormattedTextField';
 import styles from '../styles/RequestBuilder.module.css';
-
-function formatFileSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  }
-  if (bytes >= 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${bytes} B`;
-}
 
 function getSourcePlaceholder(mode: MediaSourceMode, fieldName: string): string {
   if (mode === 'file_id') {
     return `Введите ${fieldName} как file_id`;
   }
-  if (mode === 'url') {
-    return `Введите ${fieldName} как https://...`;
-  }
-  return '';
+  return `Введите ${fieldName} как https://...`;
 }
 
 function getAlbumSourcePlaceholder(mode: MediaSourceMode, type: MediaGroupItemType): string {
   if (mode === 'file_id') {
     return `Введите ${type} как file_id`;
   }
-  if (mode === 'url') {
-    return `Введите ${type} как https://...`;
-  }
-  return '';
+  return `Введите ${type} как https://...`;
 }
 
 const SEND_OPTION_DESCRIPTIONS = [
@@ -97,14 +80,6 @@ export function RequestBuilder() {
       ...prev,
       mediaSource: sourceMode,
       mediaValue: '',
-      mediaFile: null,
-    }));
-  }, []);
-
-  const handleMediaFileChange = useCallback((file: File | null) => {
-    setForm(prev => ({
-      ...prev,
-      mediaFile: file,
     }));
   }, []);
 
@@ -179,42 +154,25 @@ export function RequestBuilder() {
           </select>
         </div>
 
-        {form.mediaSource !== 'upload' ? (
-          <div className={styles.fieldFull}>
-            <label className={styles.label}>{fieldName}</label>
-            <input
-              type="text"
-              value={form.mediaValue}
-              placeholder={getSourcePlaceholder(form.mediaSource, fieldName)}
-              onChange={e => updateField('mediaValue', e.target.value)}
-            />
-          </div>
-        ) : (
-          <div className={styles.fieldFull}>
-            <label className={styles.label}>Локальный файл</label>
-            <input
-              className={styles.fileInput}
-              type="file"
-              accept={getFileAcceptByMethod(methodConfig)}
-              onChange={e => handleMediaFileChange(e.target.files?.[0] ?? null)}
-            />
-            {form.mediaFile && (
-              <div className={styles.fileMeta}>
-                {form.mediaFile.name} · {formatFileSize(form.mediaFile.size)}
-              </div>
-            )}
-          </div>
-        )}
+        <div className={styles.fieldFull}>
+          <label className={styles.label}>{fieldName}</label>
+          <input
+            type="text"
+            value={form.mediaValue}
+            placeholder={getSourcePlaceholder(form.mediaSource, fieldName)}
+            onChange={e => updateField('mediaValue', e.target.value)}
+          />
+        </div>
 
         {methodConfig.supportsCaption && (
           <div className={styles.fieldFull}>
             <label className={styles.label}>caption</label>
-            <textarea
-              className={styles.textarea}
+            <FormattedTextField
               value={form.caption}
+              parseMode={form.parseMode}
               rows={4}
               placeholder="Подпись к медиа"
-              onChange={e => updateField('caption', e.target.value)}
+              onChange={value => updateField('caption', value)}
             />
           </div>
         )}
@@ -282,12 +240,12 @@ export function RequestBuilder() {
     <>
       <div className={styles.fieldFull}>
         <label className={styles.label}>Подпись первого элемента</label>
-        <textarea
-          className={styles.textarea}
+        <FormattedTextField
           value={form.caption}
+          parseMode={form.parseMode}
           rows={4}
           placeholder="caption для первого элемента media group"
-          onChange={e => updateField('caption', e.target.value)}
+          onChange={value => updateField('caption', value)}
         />
       </div>
 
@@ -344,7 +302,6 @@ export function RequestBuilder() {
                         ...current,
                         type: e.target.value as MediaGroupItemType,
                         value: '',
-                        file: null,
                       }))
                     }
                   >
@@ -365,7 +322,6 @@ export function RequestBuilder() {
                         ...current,
                         sourceMode: e.target.value as MediaSourceMode,
                         value: '',
-                        file: null,
                       }))
                     }
                   >
@@ -377,42 +333,20 @@ export function RequestBuilder() {
                   </select>
                 </div>
 
-                {item.sourceMode !== 'upload' ? (
-                  <div className={styles.fieldFull}>
-                    <label className={styles.label}>media</label>
-                    <input
-                      type="text"
-                      value={item.value}
-                      placeholder={getAlbumSourcePlaceholder(item.sourceMode, item.type)}
-                      onChange={e =>
-                        updateAlbumItem(item.id, current => ({
-                          ...current,
-                          value: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                ) : (
-                  <div className={styles.fieldFull}>
-                    <label className={styles.label}>Локальный файл</label>
-                    <input
-                      className={styles.fileInput}
-                      type="file"
-                      accept={getFileAcceptByAlbumType(item.type)}
-                      onChange={e =>
-                        updateAlbumItem(item.id, current => ({
-                          ...current,
-                          file: e.target.files?.[0] ?? null,
-                        }))
-                      }
-                    />
-                    {item.file && (
-                      <div className={styles.fileMeta}>
-                        {item.file.name} · {formatFileSize(item.file.size)}
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className={styles.fieldFull}>
+                  <label className={styles.label}>media</label>
+                  <input
+                    type="text"
+                    value={item.value}
+                    placeholder={getAlbumSourcePlaceholder(item.sourceMode, item.type)}
+                    onChange={e =>
+                      updateAlbumItem(item.id, current => ({
+                        ...current,
+                        value: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
               </div>
             </div>
           ))}
@@ -428,12 +362,12 @@ export function RequestBuilder() {
           <>
             <div className={styles.fieldFull}>
               <label className={styles.label}>text</label>
-              <textarea
-                className={styles.textarea}
+              <FormattedTextField
                 value={form.text}
+                parseMode={form.parseMode}
                 rows={6}
                 placeholder="Текст сообщения"
-                onChange={e => updateField('text', e.target.value)}
+                onChange={value => updateField('text', value)}
               />
             </div>
 
@@ -789,7 +723,6 @@ export function RequestBuilder() {
           </div>
           <div className={styles.badges}>
             <span className={styles.badge}>{preview.transportLabel}</span>
-            {preview.usesMultipart && <span className={styles.badge}>attach://</span>}
           </div>
         </div>
 

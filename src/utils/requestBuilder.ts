@@ -1,5 +1,6 @@
 import { DEFAULT_CHAT_ID, DICE_EMOJI_OPTIONS, REQUEST_METHODS } from '../constants/requestBuilder';
 import { generateId } from './helpers';
+import { getFormatModeFromParseMode, validateFormattedText } from './textFormatting';
 import type {
   AlbumItem,
   MediaGroupItemType,
@@ -44,21 +45,6 @@ function getMethodConfig(method: RequestMethodId): RequestMethodConfig {
   return REQUEST_METHODS.find(item => item.id === method) ?? REQUEST_METHODS[0];
 }
 
-function getSingleUploadFieldName(method: RequestMethodConfig): string {
-  return method.mediaField ?? 'file';
-}
-
-function getSingleAttachName(form: RequestFormState, method: RequestMethodConfig): string {
-  const fieldName = getSingleUploadFieldName(method);
-  const fileName = form.mediaFile?.name?.trim();
-  return fileName ? `${fieldName}_${fileName}` : `${fieldName}_file`;
-}
-
-function getAlbumAttachName(index: number, item: AlbumItem): string {
-  const fileName = item.file?.name?.trim();
-  return fileName ? `media_${index + 1}_${fileName}` : `media_${index + 1}`;
-}
-
 function createCommonPayload(
   form: RequestFormState,
   config: RequestMethodConfig
@@ -85,21 +71,13 @@ function createCommonPayload(
   return payload;
 }
 
-function getSingleMediaValue(
-  form: RequestFormState,
-  method: RequestMethodConfig
-): string {
-  if (form.mediaSource === 'upload') {
-    return `attach://${getSingleAttachName(form, method)}`;
-  }
+function getSingleMediaValue(form: RequestFormState): string {
   return form.mediaValue.trim();
 }
 
 function buildAlbumMediaArray(form: RequestFormState): Array<Record<string, unknown>> {
   return form.albumItems.map((item, index) => {
-    const mediaValue = item.sourceMode === 'upload'
-      ? `attach://${getAlbumAttachName(index, item)}`
-      : item.value.trim();
+    const mediaValue = item.value.trim();
 
     const mediaItem: Record<string, unknown> = {
       type: item.type,
@@ -139,7 +117,7 @@ function buildPayload(
     case 'sendVoice':
     case 'sendVideoNote':
       if (config.mediaField) {
-        payload[config.mediaField] = getSingleMediaValue(form, config);
+        payload[config.mediaField] = getSingleMediaValue(form);
       }
       if (config.supportsCaption && form.caption.trim()) {
         payload.caption = form.caption.trim();
@@ -202,24 +180,8 @@ function buildPayload(
   return payload;
 }
 
-function formatFormPreview(payload: Record<string, unknown>): string {
-  return JSON.stringify(payload, null, 2);
-}
-
 function formatJsonBodyPreview(payload: Record<string, unknown>): string {
   return JSON.stringify(payload, null, 2);
-}
-
-function usesMultipart(form: RequestFormState, config: RequestMethodConfig): boolean {
-  if (config.category === 'media') {
-    return form.mediaSource === 'upload';
-  }
-
-  if (config.category === 'album') {
-    return form.albumItems.some(item => item.sourceMode === 'upload');
-  }
-
-  return false;
 }
 
 export function createDefaultAlbumItem(type: MediaGroupItemType = 'photo'): AlbumItem {
@@ -228,7 +190,6 @@ export function createDefaultAlbumItem(type: MediaGroupItemType = 'photo'): Albu
     type,
     sourceMode: 'file_id',
     value: '',
-    file: null,
   };
 }
 
@@ -248,7 +209,6 @@ export function createDefaultRequestForm(): RequestFormState {
     caption: '',
     mediaSource: 'file_id',
     mediaValue: '',
-    mediaFile: null,
     showCaptionAboveMedia: false,
     hasSpoiler: false,
     stickerEmoji: '',
@@ -270,55 +230,23 @@ export function createDefaultRequestForm(): RequestFormState {
   };
 }
 
-export function getFileAcceptByMethod(method: RequestMethodConfig): string | undefined {
-  switch (method.id) {
-    case 'sendPhoto':
-      return 'image/*';
-    case 'sendVideo':
-    case 'sendAnimation':
-    case 'sendVideoNote':
-      return 'video/*';
-    case 'sendAudio':
-    case 'sendVoice':
-      return 'audio/*';
-    case 'sendSticker':
-      return '.webp,.png,.tgs,.webm';
-    default:
-      return undefined;
-  }
-}
-
-export function getFileAcceptByAlbumType(type: MediaGroupItemType): string | undefined {
-  switch (type) {
-    case 'photo':
-      return 'image/*';
-    case 'video':
-      return 'video/*';
-    case 'audio':
-      return 'audio/*';
-    default:
-      return undefined;
-  }
-}
-
 export function buildRequestPreview(form: RequestFormState): RequestPreview {
   const config = getMethodConfig(form.method);
   const payload = buildPayload(form, config);
   const endpoint = `https://api.telegram.org/bot<token>/${config.id}`;
-  const multipart = usesMultipart(form, config);
 
   return {
     endpoint,
-    transportLabel: multipart ? 'multipart/form-data' : 'application/json',
-    bodyPreview: multipart ? formatFormPreview(payload) : formatJsonBodyPreview(payload),
+    transportLabel: 'application/json',
+    bodyPreview: formatJsonBodyPreview(payload),
     warnings: getRequestWarnings(form, config),
-    usesMultipart: multipart,
   };
 }
 
 export function validateRequestForm(form: RequestFormState): string[] {
   const config = getMethodConfig(form.method);
   const errors: string[] = [];
+  const formatMode = getFormatModeFromParseMode(form.parseMode);
 
   if (!form.chatId.trim()) {
     errors.push('Поле chat_id обязательно.');
@@ -341,16 +269,24 @@ export function validateRequestForm(form: RequestFormState): string[] {
       if (!form.text.trim()) {
         errors.push('Для sendMessage нужен текст.');
       }
+      if (formatMode) {
+        errors.push(
+          ...validateFormattedText(form.text, formatMode, { validatePercentEncoding: false })
+            .map(error => `text: ${error}`)
+        );
+      }
       break;
     case 'media':
-      if (form.mediaSource === 'upload') {
-        if (!form.mediaFile) {
-          errors.push('Выберите локальный файл для загрузки.');
-        }
-      } else if (!form.mediaValue.trim()) {
+      if (!form.mediaValue.trim()) {
         errors.push(`Заполните поле ${config.mediaField}.`);
       } else if (form.mediaSource === 'url' && !isHttpUrl(form.mediaValue)) {
         errors.push('Для режима URL ссылка должна начинаться с http:// или https://.');
+      }
+      if (config.supportsCaption && formatMode) {
+        errors.push(
+          ...validateFormattedText(form.caption, formatMode, { validatePercentEncoding: false })
+            .map(error => `caption: ${error}`)
+        );
       }
       break;
     case 'album': {
@@ -359,11 +295,7 @@ export function validateRequestForm(form: RequestFormState): string[] {
       }
 
       form.albumItems.forEach((item, index) => {
-        if (item.sourceMode === 'upload' && !item.file) {
-          errors.push(`Элемент ${index + 1}: выберите файл для загрузки.`);
-        }
-
-        if ((item.sourceMode === 'file_id' || item.sourceMode === 'url') && !item.value.trim()) {
+        if (!item.value.trim()) {
           errors.push(`Элемент ${index + 1}: заполните media.`);
         }
 
@@ -382,6 +314,12 @@ export function validateRequestForm(form: RequestFormState): string[] {
 
       if (hasDocument && !itemTypes.every(type => type === 'document')) {
         errors.push('Альбом с document должен содержать только элементы типа document.');
+      }
+      if (formatMode) {
+        errors.push(
+          ...validateFormattedText(form.caption, formatMode, { validatePercentEncoding: false })
+            .map(error => `caption: ${error}`)
+        );
       }
       break;
     }
@@ -455,20 +393,14 @@ export function getRequestWarnings(
   }
 
   if (config.id === 'sendSticker' && form.mediaSource === 'url') {
-    warnings.push('Для animated/video sticker HTTP URL не подходит; используйте file_id или multipart upload.');
+    warnings.push('Для animated/video sticker HTTP URL не подходит; используйте file_id.');
   }
 
   if (config.id === 'sendMediaGroup' && form.caption.trim()) {
     warnings.push('Подпись media group будет добавлена только к первому элементу массива media.');
   }
 
-  if (form.mediaSource === 'upload' && config.category === 'media') {
-    warnings.push('Локальный файл отправляется через multipart/form-data, без публичной ссылки.');
-  }
-
-  if (config.category === 'album' && form.albumItems.some(item => item.sourceMode === 'upload')) {
-    warnings.push('Для album с локальными файлами Bot API использует attach:// и multipart/form-data.');
-  }
+  warnings.push('Локальный файл не поддерживается в этом конструкторе: сначала получите file_id или публичный URL через свой backend/хранилище.');
 
   return warnings;
 }

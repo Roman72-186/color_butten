@@ -149,7 +149,6 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
 export const MEDIA_SOURCE_OPTIONS: Array<{ value: MediaSourceMode; label: string }> = [
   { value: 'file_id', label: 'file_id' },
   { value: 'url', label: 'HTTP URL' },
-  { value: 'upload', label: 'Загрузка файла' },
 ];
 
 export const PARSE_MODE_OPTIONS: Array<{ value: RequestParseMode; label: string }> = [

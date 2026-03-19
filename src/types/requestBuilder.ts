@@ -27,7 +27,7 @@ export type RequestMethodCategory =
 
 export type RequestParseMode = '' | 'HTML' | 'Markdown' | 'MarkdownV2';
 
-export type MediaSourceMode = 'file_id' | 'url' | 'upload';
+export type MediaSourceMode = 'file_id' | 'url';
 
 export type MediaGroupItemType = 'photo' | 'video' | 'document' | 'audio';
 
@@ -52,7 +52,6 @@ export interface AlbumItem {
   type: MediaGroupItemType;
   sourceMode: MediaSourceMode;
   value: string;
-  file: File | null;
 }
 
 export interface RequestFormState {
@@ -70,7 +69,6 @@ export interface RequestFormState {
   caption: string;
   mediaSource: MediaSourceMode;
   mediaValue: string;
-  mediaFile: File | null;
   showCaptionAboveMedia: boolean;
   hasSpoiler: boolean;
   stickerEmoji: string;
@@ -96,5 +94,4 @@ export interface RequestPreview {
   transportLabel: string;
   bodyPreview: string;
   warnings: string[];
-  usesMultipart: boolean;
 }
