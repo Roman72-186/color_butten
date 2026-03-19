@@ -45,7 +45,7 @@ textarea {
   background: none;
 }
 
-input,
+input:not([type='checkbox']):not([type='radio']):not([type='file']),
 select {
   width: 100%;
   padding: 8px 10px;
@@ -55,7 +55,7 @@ select {
   transition: border-color 0.2s;
 }
 
-input:focus,
+input:not([type='checkbox']):not([type='radio']):not([type='file']):focus,
 select:focus {
   border-color: var(--accent);
 }

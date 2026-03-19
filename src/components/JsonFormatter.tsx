@@ -47,7 +47,7 @@ function cleanJsonInput(text: string): string {
   let cleaned = text;
 
   // Remove BOM and zero-width characters
-  cleaned = cleaned.replace(/[\uFEFF\u200B\u200C\u200D\u00AD]/g, '');
+  cleaned = cleaned.replace(/\uFEFF|\u200B|\u200C|\u200D|\u00AD/g, '');
 
   // Replace smart/curly quotes with straight quotes
   cleaned = cleaned.replace(/[\u201C\u201D\u00AB\u00BB]/g, '"');
@@ -57,7 +57,12 @@ function cleanJsonInput(text: string): string {
   cleaned = cleaned.replace(/\u00A0/g, ' ');
 
   // Strip everything before first { or [ and after last } or ]
-  const firstBrace = cleaned.search(/[{[]/);
+  const firstObjectBrace = cleaned.indexOf('{');
+  const firstArrayBrace = cleaned.indexOf('[');
+  const firstBraceCandidates = [firstObjectBrace, firstArrayBrace].filter(index => index !== -1);
+  const firstBrace = firstBraceCandidates.length > 0
+    ? Math.min(...firstBraceCandidates)
+    : -1;
   if (firstBrace === -1) return cleaned;
 
   const lastClose = Math.max(cleaned.lastIndexOf('}'), cleaned.lastIndexOf(']'));

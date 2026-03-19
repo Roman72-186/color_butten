@@ -7,12 +7,13 @@ import { Preview } from './components/Preview';
 import { JsonOutput } from './components/JsonOutput';
 import { TextFormatter } from './components/TextFormatter';
 import { JsonFormatter } from './components/JsonFormatter';
+import { RequestBuilder } from './components/RequestBuilder';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
 import { createDefaultButton, getNextAvailableRow, groupButtonsByRow } from './utils/helpers';
 import styles from './styles/App.module.css';
 
-type TabType = 'keyboard' | 'formatter' | 'json';
+type TabType = 'keyboard' | 'requests' | 'formatter' | 'json';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('keyboard');
@@ -74,6 +75,12 @@ function App() {
             Конструктор кнопок
           </button>
           <button
+            className={`${styles.tab} ${activeTab === 'requests' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('requests')}
+          >
+            Конструктор запросов
+          </button>
+          <button
             className={`${styles.tab} ${activeTab === 'formatter' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('formatter')}
           >
@@ -133,6 +140,10 @@ function App() {
 
         <div style={{ display: activeTab === 'formatter' ? undefined : 'none' }}>
           <TextFormatter />
+        </div>
+
+        <div style={{ display: activeTab === 'requests' ? undefined : 'none' }}>
+          <RequestBuilder />
         </div>
 
         <div style={{ display: activeTab === 'json' ? undefined : 'none' }}>

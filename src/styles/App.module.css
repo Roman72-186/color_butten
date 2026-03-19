@@ -12,7 +12,8 @@
 }
 
 .tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 4px;
   margin-bottom: 16px;
   background: var(--surface-alt);
@@ -21,7 +22,6 @@
 }
 
 .tab {
-  flex: 1;
   padding: 12px 16px;
   background: transparent;
   color: var(--text-muted);
@@ -104,10 +104,11 @@
   .tabs {
     gap: 2px;
     padding: 3px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .tab {
-    padding: 8px 4px;
+    padding: 9px 6px;
     font-size: 11px;
     line-height: 1.2;
   }
