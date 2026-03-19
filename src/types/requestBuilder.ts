@@ -95,7 +95,6 @@ export interface RequestPreview {
   endpoint: string;
   transportLabel: string;
   bodyPreview: string;
-  powershellPreview: string;
   warnings: string[];
   usesMultipart: boolean;
 }

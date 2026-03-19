@@ -74,7 +74,7 @@ const SEND_OPTION_DESCRIPTIONS = [
 
 export function RequestBuilder() {
   const [form, setForm] = useState<RequestFormState>(() => createDefaultRequestForm());
-  const [copiedTarget, setCopiedTarget] = useState<'body' | 'powershell' | null>(null);
+  const [copiedBody, setCopiedBody] = useState(false);
 
   const methodConfig = useMemo(
     () => REQUEST_METHODS.find(item => item.id === form.method) ?? REQUEST_METHODS[0],
@@ -141,13 +141,13 @@ export function RequestBuilder() {
     });
   }, []);
 
-  const handleCopy = useCallback((target: 'body' | 'powershell', value: string) => {
+  const handleCopy = useCallback((value: string) => {
     if (validationErrors.length > 0) return;
 
     try {
       navigator.clipboard.writeText(value).then(() => {
-        setCopiedTarget(target);
-        setTimeout(() => setCopiedTarget(null), 1800);
+        setCopiedBody(true);
+        setTimeout(() => setCopiedBody(false), 1800);
       });
     } catch {
       // clipboard not available
@@ -156,7 +156,7 @@ export function RequestBuilder() {
 
   const handleReset = useCallback(() => {
     setForm(createDefaultRequestForm());
-    setCopiedTarget(null);
+    setCopiedBody(false);
   }, []);
 
   const renderMediaSourceInput = () => {
@@ -784,7 +784,7 @@ export function RequestBuilder() {
         <div className={styles.inlineHeader}>
           <div>
             <div className={styles.sectionTitle}>Результат</div>
-            <div className={styles.sectionText}>Endpoint, тело запроса и готовый PowerShell.</div>
+            <div className={styles.sectionText}>Endpoint и тело запроса.</div>
           </div>
           <div className={styles.badges}>
             <span className={styles.badge}>{preview.transportLabel}</span>
@@ -798,28 +798,14 @@ export function RequestBuilder() {
           <div className={styles.outputHeader}>
             <div className={styles.outputTitle}>Тело запроса</div>
             <button
-              className={`${styles.primaryBtn} ${copiedTarget === 'body' ? styles.copiedBtn : ''}`}
-              onClick={() => handleCopy('body', preview.bodyPreview)}
+              className={`${styles.primaryBtn} ${copiedBody ? styles.copiedBtn : ''}`}
+              onClick={() => handleCopy(preview.bodyPreview)}
               disabled={validationErrors.length > 0}
             >
-              {copiedTarget === 'body' ? 'Скопировано' : 'Скопировать body'}
+              {copiedBody ? 'Скопировано' : 'Скопировать body'}
             </button>
           </div>
           <pre className={styles.pre}>{preview.bodyPreview}</pre>
-        </div>
-
-        <div className={styles.outputBlock}>
-          <div className={styles.outputHeader}>
-            <div className={styles.outputTitle}>PowerShell</div>
-            <button
-              className={`${styles.primaryBtn} ${copiedTarget === 'powershell' ? styles.copiedBtn : ''}`}
-              onClick={() => handleCopy('powershell', preview.powershellPreview)}
-              disabled={validationErrors.length > 0}
-            >
-              {copiedTarget === 'powershell' ? 'Скопировано' : 'Скопировать PowerShell'}
-            </button>
-          </div>
-          <pre className={styles.pre}>{preview.powershellPreview}</pre>
         </div>
       </div>
     </div>

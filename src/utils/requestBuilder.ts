@@ -9,10 +9,6 @@ import type {
   RequestPreview,
 } from '../types/requestBuilder';
 
-function escapePowerShellString(value: string): string {
-  return value.replace(/'/g, "''");
-}
-
 function maybeNumber(value: string): number | string {
   const trimmed = value.trim();
   if (/^-?\d+$/.test(trimmed)) {
@@ -58,25 +54,9 @@ function getSingleAttachName(form: RequestFormState, method: RequestMethodConfig
   return fileName ? `${fieldName}_${fileName}` : `${fieldName}_file`;
 }
 
-function getSingleUploadPath(form: RequestFormState, method: RequestMethodConfig): string {
-  const fileName = form.mediaFile?.name?.trim();
-  if (fileName) {
-    return `C:\\path\\to\\${fileName}`;
-  }
-  return `C:\\path\\to\\${getSingleUploadFieldName(method)}.bin`;
-}
-
 function getAlbumAttachName(index: number, item: AlbumItem): string {
   const fileName = item.file?.name?.trim();
   return fileName ? `media_${index + 1}_${fileName}` : `media_${index + 1}`;
-}
-
-function getAlbumUploadPath(index: number, item: AlbumItem): string {
-  const fileName = item.file?.name?.trim();
-  if (fileName) {
-    return `C:\\path\\to\\${fileName}`;
-  }
-  return `C:\\path\\to\\album_${index + 1}.bin`;
 }
 
 function createCommonPayload(
@@ -230,68 +210,6 @@ function formatJsonBodyPreview(payload: Record<string, unknown>): string {
   return JSON.stringify(payload, null, 2);
 }
 
-function buildJsonPowerShell(endpoint: string, payload: Record<string, unknown>): string {
-  const body = JSON.stringify(payload, null, 2);
-
-  return [
-    '$body = @\'',
-    body,
-    '\'@',
-    '',
-    'Invoke-RestMethod -Method Post `',
-    `  -Uri '${endpoint}' \``,
-    "  -ContentType 'application/json' `",
-    '  -Body $body',
-  ].join('\n');
-}
-
-function buildMultipartPowerShell(
-  endpoint: string,
-  payload: Record<string, unknown>,
-  form: RequestFormState,
-  config: RequestMethodConfig
-): string {
-  const lines = ['$form = @{'];
-
-  for (const [key, rawValue] of Object.entries(payload)) {
-    if (key === 'media') {
-      const mediaValue = JSON.stringify(rawValue);
-      lines.push(`  ${key} = '${escapePowerShellString(mediaValue)}'`);
-      continue;
-    }
-
-    if (typeof rawValue === 'string') {
-      lines.push(`  ${key} = '${escapePowerShellString(rawValue)}'`);
-      continue;
-    }
-
-    lines.push(`  ${key} = ${JSON.stringify(rawValue)}`);
-  }
-
-  if (config.category === 'media') {
-    const fieldName = getSingleUploadFieldName(config);
-    lines.push(`  ${fieldName} = Get-Item '${escapePowerShellString(getSingleUploadPath(form, config))}'`);
-  }
-
-  if (config.category === 'album') {
-    form.albumItems.forEach((item, index) => {
-      if (item.sourceMode === 'upload') {
-        lines.push(
-          `  ${getAlbumAttachName(index, item)} = Get-Item '${escapePowerShellString(getAlbumUploadPath(index, item))}'`
-        );
-      }
-    });
-  }
-
-  lines.push('}');
-  lines.push('');
-  lines.push('Invoke-RestMethod -Method Post `');
-  lines.push(`  -Uri '${endpoint}' \``);
-  lines.push('  -Form $form');
-
-  return lines.join('\n');
-}
-
 function usesMultipart(form: RequestFormState, config: RequestMethodConfig): boolean {
   if (config.category === 'media') {
     return form.mediaSource === 'upload';
@@ -393,9 +311,6 @@ export function buildRequestPreview(form: RequestFormState): RequestPreview {
     endpoint,
     transportLabel: multipart ? 'multipart/form-data' : 'application/json',
     bodyPreview: multipart ? formatFormPreview(payload) : formatJsonBodyPreview(payload),
-    powershellPreview: multipart
-      ? buildMultipartPowerShell(endpoint, payload, form, config)
-      : buildJsonPowerShell(endpoint, payload),
     warnings: getRequestWarnings(form, config),
     usesMultipart: multipart,
   };
