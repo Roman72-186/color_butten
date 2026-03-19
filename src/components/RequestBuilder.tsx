@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
   ALBUM_ITEM_TYPE_OPTIONS,
+  DEFAULT_CHAT_ID,
   DICE_EMOJI_OPTIONS,
   MEDIA_SOURCE_OPTIONS,
   PARSE_MODE_OPTIONS,
@@ -685,7 +686,7 @@ export function RequestBuilder() {
             <input
               type="text"
               value={form.chatId}
-              placeholder="@channelusername или 123456789"
+              placeholder={DEFAULT_CHAT_ID}
               onChange={e => updateField('chatId', e.target.value)}
             />
           </div>

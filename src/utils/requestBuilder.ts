@@ -1,4 +1,4 @@
-import { DICE_EMOJI_OPTIONS, REQUEST_METHODS } from '../constants/requestBuilder';
+import { DEFAULT_CHAT_ID, DICE_EMOJI_OPTIONS, REQUEST_METHODS } from '../constants/requestBuilder';
 import { generateId } from './helpers';
 import type {
   AlbumItem,
@@ -64,7 +64,7 @@ function createCommonPayload(
   config: RequestMethodConfig
 ): Record<string, unknown> {
   const payload: Record<string, unknown> = {
-    chat_id: form.chatId.trim() || '{{chat_id}}',
+    chat_id: form.chatId.trim() || DEFAULT_CHAT_ID,
   };
 
   pushIfValue(payload, 'business_connection_id', form.businessConnectionId);
@@ -235,7 +235,7 @@ export function createDefaultAlbumItem(type: MediaGroupItemType = 'photo'): Albu
 export function createDefaultRequestForm(): RequestFormState {
   return {
     method: 'sendMessage',
-    chatId: '',
+    chatId: DEFAULT_CHAT_ID,
     businessConnectionId: '',
     messageThreadId: '',
     directMessagesTopicId: '',

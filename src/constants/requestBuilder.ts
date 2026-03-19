@@ -6,6 +6,8 @@ import type {
   RequestParseMode,
 } from '../types/requestBuilder';
 
+export const DEFAULT_CHAT_ID = '{{ telegram_id}}';
+
 export const REQUEST_METHODS: RequestMethodConfig[] = [
   {
     id: 'sendMessage',
