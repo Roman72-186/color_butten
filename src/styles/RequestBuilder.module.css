@@ -94,6 +94,13 @@
   color: var(--text-muted);
 }
 
+.fieldHint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .textarea {
   width: 100%;
   min-height: 88px;

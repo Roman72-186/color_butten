@@ -4,6 +4,7 @@ import {
   DEFAULT_CHAT_ID,
   DICE_EMOJI_OPTIONS,
   MEDIA_SOURCE_OPTIONS,
+  MESSAGE_EFFECT_OPTIONS,
   PARSE_MODE_OPTIONS,
   POLL_TYPE_OPTIONS,
   REQUEST_METHODS,
@@ -66,6 +67,15 @@ export function RequestBuilder() {
   );
   const validationErrors = useMemo(() => validateRequestForm(form), [form]);
   const preview = useMemo(() => buildRequestPreview(form), [form]);
+  const selectedMessageEffectPreset = useMemo(() => {
+    const trimmed = form.messageEffectId.trim();
+
+    if (!trimmed) {
+      return '';
+    }
+
+    return MESSAGE_EFFECT_OPTIONS.some(option => option.value === trimmed) ? trimmed : 'custom';
+  }, [form.messageEffectId]);
 
   const updateField = useCallback(<K extends keyof RequestFormState>(field: K, value: RequestFormState[K]) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -82,6 +92,26 @@ export function RequestBuilder() {
       mediaValue: '',
     }));
   }, []);
+
+  const handleMessageEffectPresetChange = useCallback((value: string) => {
+    if (!value) {
+      updateField('messageEffectId', '');
+      return;
+    }
+
+    if (value === 'custom') {
+      const isPresetSelected = MESSAGE_EFFECT_OPTIONS.some(
+        option => option.value === form.messageEffectId.trim()
+      );
+
+      if (isPresetSelected) {
+        updateField('messageEffectId', '');
+      }
+      return;
+    }
+
+    updateField('messageEffectId', value);
+  }, [form.messageEffectId, updateField]);
 
   const updateAlbumItem = useCallback(
     (id: string, updater: (item: AlbumItem) => AlbumItem) => {
@@ -658,13 +688,35 @@ export function RequestBuilder() {
           )}
 
           <div className={styles.field}>
+            <label className={styles.label}>Эффект сообщения</label>
+            <select
+              value={selectedMessageEffectPreset}
+              onChange={e => handleMessageEffectPresetChange(e.target.value)}
+            >
+              <option value="">Без эффекта</option>
+              {MESSAGE_EFFECT_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+              <option value="custom">Свой ID</option>
+            </select>
+            <div className={styles.fieldHint}>
+              Выберите эффект по эмодзи, и его ID подставится в поле ниже.
+            </div>
+          </div>
+
+          <div className={styles.field}>
             <label className={styles.label}>message_effect_id</label>
             <input
               type="text"
               value={form.messageEffectId}
-              placeholder="Опционально, для private chats"
+              placeholder="Выберите эффект выше или вставьте свой ID"
               onChange={e => updateField('messageEffectId', e.target.value)}
             />
+            <div className={styles.fieldHint}>
+              Подходит для private chats. Если нужного эффекта нет в списке, вставьте ID вручную.
+            </div>
           </div>
 
           <div className={styles.fieldFull}>

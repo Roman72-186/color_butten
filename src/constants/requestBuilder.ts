@@ -158,6 +158,15 @@ export const PARSE_MODE_OPTIONS: Array<{ value: RequestParseMode; label: string 
   { value: 'MarkdownV2', label: 'MarkdownV2' },
 ];
 
+export const MESSAGE_EFFECT_OPTIONS = [
+  { value: '5104841245755180586', label: '🔥 Огонь' },
+  { value: '5107584321108051014', label: '👍 Лайк' },
+  { value: '5104858069142078462', label: '👎 Дизлайк' },
+  { value: '5159385139981059251', label: '❤️ Сердце' },
+  { value: '5046509860389126442', label: '🎉 Праздник' },
+  { value: '5046589136895476101', label: '💩 Мем' },
+] as const;
+
 export const ALBUM_ITEM_TYPE_OPTIONS: Array<{ value: MediaGroupItemType; label: string }> = [
   { value: 'photo', label: 'Фото' },
   { value: 'video', label: 'Видео' },
