@@ -1,6 +1,6 @@
 import { DEFAULT_CHAT_ID, DICE_EMOJI_OPTIONS, REQUEST_METHODS } from '../constants/requestBuilder';
 import { generateId } from './helpers';
-import { getFormatModeFromParseMode, validateFormattedText } from './textFormatting';
+import { getFormatModeFromParseMode, normalizeTextFormattingInput, validateFormattedText } from './textFormatting';
 import type {
   AlbumItem,
   MediaGroupItemType,
@@ -75,7 +75,20 @@ function getSingleMediaValue(form: RequestFormState): string {
   return form.mediaValue.trim();
 }
 
+function normalizeFormattedValue(text: string, parseMode: RequestFormState['parseMode']): string {
+  const formatMode = getFormatModeFromParseMode(parseMode);
+  const trimmed = text.trim();
+
+  if (!formatMode || !trimmed) {
+    return trimmed;
+  }
+
+  return normalizeTextFormattingInput(trimmed, formatMode);
+}
+
 function buildAlbumMediaArray(form: RequestFormState): Array<Record<string, unknown>> {
+  const normalizedCaption = normalizeFormattedValue(form.caption, form.parseMode);
+
   return form.albumItems.map((item, index) => {
     const mediaValue = item.value.trim();
 
@@ -84,8 +97,8 @@ function buildAlbumMediaArray(form: RequestFormState): Array<Record<string, unkn
       media: mediaValue,
     };
 
-    if (index === 0 && form.caption.trim()) {
-      mediaItem.caption = form.caption.trim();
+    if (index === 0 && normalizedCaption) {
+      mediaItem.caption = normalizedCaption;
       if (form.parseMode) {
         mediaItem.parse_mode = form.parseMode;
       }
@@ -100,10 +113,12 @@ function buildPayload(
   config: RequestMethodConfig
 ): Record<string, unknown> {
   const payload = createCommonPayload(form, config);
+  const normalizedText = normalizeFormattedValue(form.text, form.parseMode);
+  const normalizedCaption = normalizeFormattedValue(form.caption, form.parseMode);
 
   switch (config.id) {
     case 'sendMessage':
-      payload.text = form.text.trim();
+      payload.text = normalizedText;
       if (form.parseMode) {
         payload.parse_mode = form.parseMode;
       }
@@ -119,8 +134,8 @@ function buildPayload(
       if (config.mediaField) {
         payload[config.mediaField] = getSingleMediaValue(form);
       }
-      if (config.supportsCaption && form.caption.trim()) {
-        payload.caption = form.caption.trim();
+      if (config.supportsCaption && normalizedCaption) {
+        payload.caption = normalizedCaption;
       }
       if (config.supportsParseMode && form.parseMode) {
         payload.parse_mode = form.parseMode;
@@ -247,6 +262,8 @@ export function validateRequestForm(form: RequestFormState): string[] {
   const config = getMethodConfig(form.method);
   const errors: string[] = [];
   const formatMode = getFormatModeFromParseMode(form.parseMode);
+  const normalizedText = formatMode ? normalizeTextFormattingInput(form.text, formatMode) : form.text;
+  const normalizedCaption = formatMode ? normalizeTextFormattingInput(form.caption, formatMode) : form.caption;
 
   if (!form.chatId.trim()) {
     errors.push('Поле chat_id обязательно.');
@@ -271,7 +288,7 @@ export function validateRequestForm(form: RequestFormState): string[] {
       }
       if (formatMode) {
         errors.push(
-          ...validateFormattedText(form.text, formatMode, { validatePercentEncoding: false })
+          ...validateFormattedText(normalizedText, formatMode, { validatePercentEncoding: false })
             .map(error => `text: ${error}`)
         );
       }
@@ -284,7 +301,7 @@ export function validateRequestForm(form: RequestFormState): string[] {
       }
       if (config.supportsCaption && formatMode) {
         errors.push(
-          ...validateFormattedText(form.caption, formatMode, { validatePercentEncoding: false })
+          ...validateFormattedText(normalizedCaption, formatMode, { validatePercentEncoding: false })
             .map(error => `caption: ${error}`)
         );
       }
@@ -317,7 +334,7 @@ export function validateRequestForm(form: RequestFormState): string[] {
       }
       if (formatMode) {
         errors.push(
-          ...validateFormattedText(form.caption, formatMode, { validatePercentEncoding: false })
+          ...validateFormattedText(normalizedCaption, formatMode, { validatePercentEncoding: false })
             .map(error => `caption: ${error}`)
         );
       }

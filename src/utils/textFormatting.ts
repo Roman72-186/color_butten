@@ -68,6 +68,7 @@ const BLOCK_TAGS = new Set([
 
 const INDENT_UNIT_PX = 48;
 const INDENT_SPACES = '    ';
+const STASH_TOKEN_PREFIX = '@@TGFORMATTOKEN';
 
 export interface FormatButtonConfig {
   type: FormatType;
@@ -92,6 +93,16 @@ function normalizeClipboardText(text: string): string {
     .replace(/\r\n?/g, '\n')
     .replace(/\u00a0/g, ' ')
     .replace(/[\u200B-\u200D\uFEFF]/g, '');
+}
+
+function stashValue(storage: string[], value: string): string {
+  const token = `${STASH_TOKEN_PREFIX}${storage.length}@@`;
+  storage.push(value);
+  return token;
+}
+
+function restoreStashedValues(text: string, storage: string[]): string {
+  return text.replace(/@@TGFORMATTOKEN(\d+)@@/g, (_, index) => storage[Number(index)] ?? '');
 }
 
 function parseCssLength(value: string): number {
@@ -354,10 +365,53 @@ export function convertClipboardHtml(html: string, mode: FormatMode): string {
     .replace(/\n+$/, '');
 }
 
-export function textToPreviewHtml(text: string, mode: FormatMode): string {
-  if (!text.trim()) return '';
+export function normalizeTextFormattingInput(text: string, mode: FormatMode): string {
+  const normalized = normalizeClipboardText(text);
 
-  let safe = text
+  if (mode !== 'html' || !normalized.trim()) {
+    return normalized;
+  }
+
+  const stashed: string[] = [];
+  let result = normalized;
+
+  result = result.replace(/<pre(?:\s[^>]*)?>[\s\S]*?<\/pre>/gi, match => stashValue(stashed, match));
+  result = result.replace(/<code(?:\s[^>]*)?>[\s\S]*?<\/code>/gi, match => stashValue(stashed, match));
+  result = result.replace(/<a\s[^>]*>[\s\S]*?<\/a>/gi, match => stashValue(stashed, match));
+  result = result.replace(/<tg-spoiler>[\s\S]*?<\/tg-spoiler>/gi, match => stashValue(stashed, match));
+  result = result.replace(/<\/?[a-z][^>]*>/gi, match => stashValue(stashed, match));
+
+  result = result.replace(/```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, (_, language = '', code: string) => {
+    const cleanCode = code.replace(/\n$/, '');
+    const html = language
+      ? `<pre><code class="language-${language}">${cleanCode}</code></pre>`
+      : `<pre>${cleanCode}</pre>`;
+
+    return stashValue(stashed, html);
+  });
+
+  result = result.replace(/`([^`\n]+)`/g, (_, code: string) => {
+    return stashValue(stashed, `<code>${code}</code>`);
+  });
+
+  result = result.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, label: string, url: string) => {
+    return stashValue(stashed, `<a href="${url}">${label}</a>`);
+  });
+
+  result = result.replace(/\|\|([^|\n][\s\S]*?[^|\n]|[^|\n])\|\|/g, '<tg-spoiler>$1</tg-spoiler>');
+  result = result.replace(/__([^_\n][\s\S]*?[^_\n]|[^_\n])__/g, '<u>$1</u>');
+  result = result.replace(/\*([^*\n][\s\S]*?[^*\n]|[^*\n])\*/g, '<b>$1</b>');
+  result = result.replace(/_([^_\n][\s\S]*?[^_\n]|[^_\n])_/g, '<i>$1</i>');
+  result = result.replace(/~([^~\n][\s\S]*?[^~\n]|[^~\n])~/g, '<s>$1</s>');
+
+  return restoreStashedValues(result, stashed);
+}
+
+export function textToPreviewHtml(text: string, mode: FormatMode): string {
+  const preparedText = mode === 'html' ? normalizeTextFormattingInput(text, mode) : text;
+  if (!preparedText.trim()) return '';
+
+  let safe = preparedText
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

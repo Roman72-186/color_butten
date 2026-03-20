@@ -5,6 +5,7 @@ import {
   convertClipboardHtml,
   FORMAT_BUTTONS,
   getFormatModeFromParseMode,
+  normalizeTextFormattingInput,
   textToPreviewHtml,
   validateFormattedText,
   type FormatType,
@@ -28,13 +29,17 @@ export function FormattedTextField({
 }: FormattedTextFieldProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const formatMode = useMemo(() => getFormatModeFromParseMode(parseMode), [parseMode]);
+  const normalizedValue = useMemo(
+    () => (formatMode ? normalizeTextFormattingInput(value, formatMode) : value),
+    [formatMode, value]
+  );
   const textErrors = useMemo(
-    () => (formatMode ? validateFormattedText(value, formatMode, { validatePercentEncoding: false }) : []),
-    [value, formatMode]
+    () => (formatMode ? validateFormattedText(normalizedValue, formatMode, { validatePercentEncoding: false }) : []),
+    [normalizedValue, formatMode]
   );
   const previewHtml = useMemo(
-    () => (formatMode && value.trim() ? textToPreviewHtml(value, formatMode) : ''),
-    [value, formatMode]
+    () => (formatMode && normalizedValue.trim() ? textToPreviewHtml(normalizedValue, formatMode) : ''),
+    [normalizedValue, formatMode]
   );
 
   const applyFormat = useCallback((type: FormatType) => {
@@ -112,6 +117,16 @@ export function FormattedTextField({
     }
   }, [applyFormat, formatMode]);
 
+  const handleBlur = useCallback(() => {
+    if (!formatMode) {
+      return;
+    }
+
+    if (normalizedValue !== value) {
+      onChange(normalizedValue);
+    }
+  }, [formatMode, normalizedValue, onChange, value]);
+
   return (
     <div className={styles.wrapper}>
       <div className={styles.header}>
@@ -154,6 +169,7 @@ export function FormattedTextField({
         onChange={e => onChange(e.target.value)}
         onPaste={handlePaste}
         onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
       />
 
       {textErrors.length > 0 && (

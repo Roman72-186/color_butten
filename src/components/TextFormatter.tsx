@@ -3,6 +3,7 @@ import {
   applyTextFormat,
   convertClipboardHtml,
   FORMAT_BUTTONS,
+  normalizeTextFormattingInput,
   textToPreviewHtml,
   validateFormattedText,
   type FormatMode,
@@ -16,7 +17,8 @@ export function TextFormatter() {
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const textErrors = useMemo(() => validateFormattedText(text, mode), [text, mode]);
+  const normalizedText = useMemo(() => normalizeTextFormattingInput(text, mode), [text, mode]);
+  const textErrors = useMemo(() => validateFormattedText(normalizedText, mode), [normalizedText, mode]);
 
   const applyFormat = useCallback((type: FormatType) => {
     const textarea = textareaRef.current;
@@ -83,7 +85,7 @@ export function TextFormatter() {
   const handleCopy = useCallback(() => {
     if (!text.trim() || textErrors.length > 0) return;
 
-    const output = text.replace(/\n/g, '%0a');
+    const output = normalizedText.replace(/\n/g, '%0a');
 
     try {
       navigator.clipboard.writeText(output).then(() => {
@@ -93,9 +95,15 @@ export function TextFormatter() {
     } catch {
       // clipboard not available
     }
-  }, [text, textErrors]);
+  }, [normalizedText, text, textErrors]);
 
-  const previewHtml = useMemo(() => textToPreviewHtml(text, mode), [text, mode]);
+  const previewHtml = useMemo(() => textToPreviewHtml(normalizedText, mode), [normalizedText, mode]);
+
+  const handleBlur = useCallback(() => {
+    if (mode === 'html' && normalizedText !== text) {
+      setText(normalizedText);
+    }
+  }, [mode, normalizedText, text]);
 
   return (
     <div className={styles.formatter}>
@@ -140,6 +148,7 @@ export function TextFormatter() {
         onChange={e => setText(e.target.value)}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
+        onBlur={handleBlur}
         placeholder="Вставьте текст с форматированием или введите вручную..."
         rows={8}
       />
