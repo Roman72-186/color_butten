@@ -18,29 +18,6 @@ export function TextFormatter() {
 
   const textErrors = useMemo(() => validateFormattedText(text, mode), [text, mode]);
 
-  const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const rawText = e.target.value;
-    const cursorPos = e.target.selectionStart;
-
-    if (!rawText.includes('  ')) {
-      setText(rawText);
-      return;
-    }
-
-    const beforeCursor = rawText.substring(0, cursorPos);
-    const replacementsBeforeCursor = (beforeCursor.match(/ {2}/g) || []).length;
-    const newText = rawText.replace(/ {2}/g, '\n');
-    setText(newText);
-
-    const adjustedPos = cursorPos - replacementsBeforeCursor;
-    requestAnimationFrame(() => {
-      if (textareaRef.current) {
-        textareaRef.current.selectionStart = adjustedPos;
-        textareaRef.current.selectionEnd = adjustedPos;
-      }
-    });
-  }, []);
-
   const applyFormat = useCallback((type: FormatType) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -151,11 +128,16 @@ export function TextFormatter() {
         ))}
       </div>
 
+      <div className={styles.hint}>
+        Вставка из Word, Google Docs и других редакторов автоматически переносит жирный, курсив,
+        ссылки, переносы строк и абзацы в Telegram-разметку.
+      </div>
+
       <textarea
         ref={textareaRef}
         className={styles.textarea}
         value={text}
-        onChange={handleTextChange}
+        onChange={e => setText(e.target.value)}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         placeholder="Вставьте текст с форматированием или введите вручную..."

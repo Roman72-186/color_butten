@@ -120,19 +120,25 @@ export function FormattedTextField({
       </div>
 
       {formatMode ? (
-        <div className={styles.toolbar}>
-          {FORMAT_BUTTONS.map(btn => (
-            <button
-              key={btn.type}
-              className={styles.fmtBtn}
-              style={btn.style}
-              title={btn.title}
-              onClick={() => applyFormat(btn.type)}
-            >
-              {btn.label}
-            </button>
-          ))}
-        </div>
+        <>
+          <div className={styles.toolbar}>
+            {FORMAT_BUTTONS.map(btn => (
+              <button
+                key={btn.type}
+                className={styles.fmtBtn}
+                style={btn.style}
+                title={btn.title}
+                onClick={() => applyFormat(btn.type)}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+          <div className={styles.hint}>
+            Вставка из Word, Docs и редакторов с rich text автоматически переносит жирный, курсив,
+            ссылки и структуру абзацев в Telegram-разметку.
+          </div>
+        </>
       ) : (
         <div className={styles.hint}>
           Выберите `HTML`, `Markdown` или `MarkdownV2` в parse_mode, чтобы использовать форматирование.

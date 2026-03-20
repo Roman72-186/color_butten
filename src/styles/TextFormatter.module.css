@@ -66,6 +66,16 @@
   border-color: var(--accent);
 }
 
+.hint {
+  padding: 10px 12px;
+  background: rgba(94, 181, 247, 0.08);
+  border: 1px solid rgba(94, 181, 247, 0.25);
+  border-radius: var(--radius);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .textarea {
   width: 100%;
   min-height: 180px;
@@ -110,6 +120,7 @@
   line-height: 1.6;
   color: var(--text);
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .previewContent code {

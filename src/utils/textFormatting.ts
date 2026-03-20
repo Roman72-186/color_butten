@@ -31,6 +31,44 @@ const MD_TAGS: Record<Exclude<FormatType, 'link'>, [string, string]> = {
   spoiler: ['||', '||'],
 };
 
+const BLOCK_TAGS = new Set([
+  'address',
+  'article',
+  'aside',
+  'blockquote',
+  'dd',
+  'div',
+  'dl',
+  'dt',
+  'figcaption',
+  'figure',
+  'footer',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'header',
+  'li',
+  'main',
+  'nav',
+  'ol',
+  'p',
+  'section',
+  'table',
+  'tbody',
+  'td',
+  'tfoot',
+  'th',
+  'thead',
+  'tr',
+  'ul',
+]);
+
+const INDENT_UNIT_PX = 48;
+const INDENT_SPACES = '    ';
+
 export interface FormatButtonConfig {
   type: FormatType;
   label: string;
@@ -49,58 +87,247 @@ export const FORMAT_BUTTONS: FormatButtonConfig[] = [
   { type: 'link', label: 'link', title: 'Ссылка' },
 ] as const;
 
-function processNode(node: Node, mode: FormatMode): string {
-  if (node.nodeType === Node.TEXT_NODE) {
-    return node.textContent || '';
+function normalizeClipboardText(text: string): string {
+  return text
+    .replace(/\r\n?/g, '\n')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '');
+}
+
+function parseCssLength(value: string): number {
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) {
+    return 0;
   }
 
-  if (node.nodeType !== Node.ELEMENT_NODE) return '';
+  const numeric = Number.parseFloat(trimmed);
+  if (Number.isNaN(numeric)) {
+    return 0;
+  }
+
+  if (trimmed.endsWith('pt')) {
+    return numeric * (96 / 72);
+  }
+
+  if (trimmed.endsWith('rem') || trimmed.endsWith('em')) {
+    return numeric * 16;
+  }
+
+  return numeric;
+}
+
+function getIndentPrefixes(el: HTMLElement): { firstLine: string; restLines: string } {
+  const blockIndentPx =
+    parseCssLength(el.style.marginLeft) +
+    parseCssLength(el.style.paddingLeft) +
+    parseCssLength(el.style.marginInlineStart) +
+    parseCssLength(el.style.paddingInlineStart);
+  const textIndentPx = parseCssLength(el.style.textIndent);
+
+  const blockLevels = Math.max(0, Math.round(blockIndentPx / INDENT_UNIT_PX));
+  const textIndentLevels = Math.max(0, Math.round(textIndentPx / INDENT_UNIT_PX));
+
+  return {
+    firstLine: INDENT_SPACES.repeat(blockLevels + textIndentLevels),
+    restLines: INDENT_SPACES.repeat(blockLevels),
+  };
+}
+
+function prefixLines(text: string, firstPrefix: string, restPrefix: string = firstPrefix): string {
+  if (!text) {
+    return text;
+  }
+
+  return text
+    .split('\n')
+    .map((line, index) => {
+      if (!line) {
+        return line;
+      }
+
+      return `${index === 0 ? firstPrefix : restPrefix}${line}`;
+    })
+    .join('\n');
+}
+
+function wrapFormattedText(
+  text: string,
+  mode: FormatMode,
+  options: {
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    strikethrough?: boolean;
+    spoiler?: boolean;
+  }
+): string {
+  let result = text;
+
+  if (options.spoiler) {
+    result = mode === 'html' ? `<tg-spoiler>${result}</tg-spoiler>` : `||${result}||`;
+  }
+
+  if (options.strikethrough) {
+    result = mode === 'html' ? `<s>${result}</s>` : `~${result}~`;
+  }
+
+  if (options.underline) {
+    result = mode === 'html' ? `<u>${result}</u>` : `__${result}__`;
+  }
+
+  if (options.italic) {
+    result = mode === 'html' ? `<i>${result}</i>` : `_${result}_`;
+  }
+
+  if (options.bold) {
+    result = mode === 'html' ? `<b>${result}</b>` : `*${result}*`;
+  }
+
+  return result;
+}
+
+function getListItemPrefix(el: HTMLElement): { first: string; rest: string } {
+  const parentTag = el.parentElement?.tagName.toLowerCase();
+
+  if (parentTag === 'ol') {
+    const siblings = Array.from(el.parentElement?.children ?? []).filter(
+      child => child.tagName.toLowerCase() === 'li'
+    );
+    const index = Math.max(0, siblings.indexOf(el)) + 1;
+    const marker = `${index}. `;
+
+    return {
+      first: marker,
+      rest: ' '.repeat(marker.length),
+    };
+  }
+
+  return {
+    first: '• ',
+    rest: '  ',
+  };
+}
+
+function extractCodeLanguage(el: HTMLElement): string {
+  const classNames = [...el.classList];
+  for (const className of classNames) {
+    if (className.startsWith('language-')) {
+      return className.slice('language-'.length);
+    }
+  }
+
+  const nestedCode = el.querySelector('code[class*="language-"]');
+  if (!nestedCode) {
+    return '';
+  }
+
+  for (const className of [...nestedCode.classList]) {
+    if (className.startsWith('language-')) {
+      return className.slice('language-'.length);
+    }
+  }
+
+  return '';
+}
+
+function processNode(node: Node, mode: FormatMode): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return normalizeClipboardText(node.textContent || '');
+  }
+
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    return '';
+  }
 
   const el = node as HTMLElement;
   const tag = el.tagName.toLowerCase();
-  const children = Array.from(el.childNodes).map(n => processNode(n, mode)).join('');
 
-  const isBold = tag === 'b' || tag === 'strong' ||
-    el.style.fontWeight === 'bold' || parseInt(el.style.fontWeight) >= 700;
-  const isItalic = tag === 'i' || tag === 'em' || el.style.fontStyle === 'italic';
-  const isUnderline = tag === 'u' || tag === 'ins';
-  const isStrike = tag === 's' || tag === 'del' || tag === 'strike';
+  if (tag === 'br') {
+    return '\n';
+  }
 
-  if (mode === 'html') {
-    if (tag === 'a') {
-      const href = el.getAttribute('href');
-      return href ? `<a href="${href}">${children}</a>` : children;
+  if (tag === 'hr') {
+    return '\n\n';
+  }
+
+  if (tag === 'pre') {
+    const language = extractCodeLanguage(el);
+    const codeContent = normalizeClipboardText(el.textContent || '').replace(/\n+$/, '');
+
+    if (mode === 'html') {
+      if (language) {
+        return `<pre><code class="language-${language}">${codeContent}</code></pre>`;
+      }
+
+      return `<pre>${codeContent}</pre>`;
     }
-    if (tag === 'code') return `<code>${children}</code>`;
-    if (tag === 'pre') return `<pre>${children}</pre>`;
-    if (tag === 'br') return '\n';
-    if (tag === 'p' || tag === 'div') return children ? `${children}\n` : '';
-    if (tag === 'li') return `${children}\n`;
 
-    let result = children;
-    if (isStrike) result = `<s>${result}</s>`;
-    if (isUnderline) result = `<u>${result}</u>`;
-    if (isItalic) result = `<i>${result}</i>`;
-    if (isBold) result = `<b>${result}</b>`;
-    return result;
+    const languageSuffix = language ? language : '';
+    return `\`\`\`${languageSuffix}\n${codeContent}\n\`\`\``;
+  }
+
+  const children = Array.from(el.childNodes)
+    .map(child => processNode(child, mode))
+    .join('');
+
+  if (tag === 'code') {
+    return mode === 'html' ? `<code>${children}</code>` : `\`${children}\``;
   }
 
   if (tag === 'a') {
     const href = el.getAttribute('href');
-    return href ? `[${children}](${href})` : children;
-  }
-  if (tag === 'code') return `\`${children}\``;
-  if (tag === 'pre') return `\`\`\`\n${children}\n\`\`\``;
-  if (tag === 'br') return '\n';
-  if (tag === 'p' || tag === 'div') return children ? `${children}\n` : '';
-  if (tag === 'li') return `${children}\n`;
+    if (!href) {
+      return children;
+    }
 
-  let result = children;
-  if (isStrike) result = `~${result}~`;
-  if (isUnderline) result = `__${result}__`;
-  if (isItalic) result = `_${result}_`;
-  if (isBold) result = `*${result}*`;
-  return result;
+    return mode === 'html' ? `<a href="${href}">${children}</a>` : `[${children}](${href})`;
+  }
+
+  const textDecoration = `${el.style.textDecoration} ${el.style.textDecorationLine}`.toLowerCase();
+
+  const result = wrapFormattedText(children, mode, {
+    bold:
+      tag === 'b' ||
+      tag === 'strong' ||
+      el.style.fontWeight === 'bold' ||
+      Number.parseInt(el.style.fontWeight, 10) >= 700,
+    italic: tag === 'i' || tag === 'em' || el.style.fontStyle === 'italic',
+    underline: tag === 'u' || tag === 'ins' || textDecoration.includes('underline'),
+    strikethrough:
+      tag === 's' ||
+      tag === 'del' ||
+      tag === 'strike' ||
+      textDecoration.includes('line-through'),
+    spoiler:
+      tag === 'tg-spoiler' ||
+      el.classList.contains('tg-spoiler') ||
+      el.dataset.entityType === 'spoiler',
+  });
+
+  if (!BLOCK_TAGS.has(tag)) {
+    return result;
+  }
+
+  const trimmedBlock = result.replace(/^\n+|\n+$/g, '');
+  const { firstLine, restLines } = getIndentPrefixes(el);
+
+  if (tag === 'li') {
+    const marker = getListItemPrefix(el);
+    const prefixed = prefixLines(
+      trimmedBlock,
+      `${firstLine}${marker.first}`,
+      `${restLines}${marker.rest}`
+    );
+
+    return `${prefixed}\n`;
+  }
+
+  if (!trimmedBlock) {
+    return '\n';
+  }
+
+  const prefixed = prefixLines(trimmedBlock, firstLine, restLines);
+  return `${prefixed}\n\n`;
 }
 
 export function getFormatModeFromParseMode(parseMode: string): FormatMode | null {
@@ -117,7 +344,14 @@ export function getFormatModeFromParseMode(parseMode: string): FormatMode | null
 
 export function convertClipboardHtml(html: string, mode: FormatMode): string {
   const doc = new DOMParser().parseFromString(html, 'text/html');
-  return processNode(doc.body, mode).replace(/\n{3,}/g, '\n\n').trim();
+  const converted = Array.from(doc.body.childNodes)
+    .map(node => processNode(node, mode))
+    .join('');
+
+  return converted
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/^\n+/, '')
+    .replace(/\n+$/, '');
 }
 
 export function textToPreviewHtml(text: string, mode: FormatMode): string {
@@ -136,6 +370,10 @@ export function textToPreviewHtml(text: string, mode: FormatMode): string {
       .replace(/&lt;u&gt;([\s\S]*?)&lt;\/u&gt;/g, '<u>$1</u>')
       .replace(/&lt;s&gt;([\s\S]*?)&lt;\/s&gt;/g, '<s>$1</s>')
       .replace(/&lt;code&gt;([\s\S]*?)&lt;\/code&gt;/g, '<code>$1</code>')
+      .replace(
+        /&lt;pre&gt;&lt;code class=&quot;language-([^&]*)&quot;&gt;([\s\S]*?)&lt;\/code&gt;&lt;\/pre&gt;/g,
+        '<pre><code class="language-$1">$2</code></pre>'
+      )
       .replace(/&lt;pre&gt;([\s\S]*?)&lt;\/pre&gt;/g, '<pre>$1</pre>')
       .replace(/&lt;tg-spoiler&gt;([\s\S]*?)&lt;\/tg-spoiler&gt;/g, '<span class="spoiler">$1</span>')
       .replace(
@@ -145,7 +383,7 @@ export function textToPreviewHtml(text: string, mode: FormatMode): string {
   } else {
     safe = safe
       .replace(/\|\|([\s\S]*?)\|\|/g, '<span class="spoiler">$1</span>')
-      .replace(/```([\s\S]*?)```/g, '<pre>$1</pre>')
+      .replace(/```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, '<pre>$2</pre>')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/__([\s\S]*?)__/g, '<u>$1</u>')
       .replace(/\*([^*]+)\*/g, '<b>$1</b>')
@@ -171,7 +409,7 @@ export function validateFormattedText(
   if (mode === 'html') {
     const simpleTags = ['b', 'i', 'u', 's', 'code', 'pre'];
     for (const tag of simpleTags) {
-      const openCount = (text.match(new RegExp(`<${tag}>`, 'g')) || []).length;
+      const openCount = (text.match(new RegExp(`<${tag}(?:\\s[^>]*)?>`, 'g')) || []).length;
       const closeCount = (text.match(new RegExp(`</${tag}>`, 'g')) || []).length;
       if (openCount > closeCount) {
         errors.push(`Незакрытый тег <${tag}>`);
