@@ -54,6 +54,11 @@ export interface AlbumItem {
   value: string;
 }
 
+export interface PollOptionItem {
+  id: string;
+  text: string;
+}
+
 export interface RequestFormState {
   method: RequestMethodId;
   chatId: string;
@@ -81,11 +86,16 @@ export interface RequestFormState {
   contactFirstName: string;
   contactLastName: string;
   pollQuestion: string;
-  pollOptions: string;
+  pollOptions: PollOptionItem[];
   pollType: PollType;
   pollIsAnonymous: boolean;
   pollAllowsMultipleAnswers: boolean;
   pollCorrectOptionId: string;
+  pollExplanation: string;
+  pollExplanationParseMode: RequestParseMode;
+  pollOpenPeriod: string;
+  pollCloseDate: string;
+  pollIsClosed: boolean;
   diceEmoji: string;
 }
 

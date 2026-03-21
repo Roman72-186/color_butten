@@ -13,12 +13,14 @@ import type {
   AlbumItem,
   MediaGroupItemType,
   MediaSourceMode,
+  PollOptionItem,
   RequestFormState,
   RequestMethodId,
 } from '../types/requestBuilder';
 import {
   buildRequestPreview,
   createDefaultAlbumItem,
+  createDefaultPollOption,
   createDefaultRequestForm,
   validateRequestForm,
 } from '../utils/requestBuilder';
@@ -145,6 +147,51 @@ export function RequestBuilder() {
         albumItems: prev.albumItems.filter(item => item.id !== id),
       };
     });
+  }, []);
+
+  const updatePollOption = useCallback((id: string, updater: (item: PollOptionItem) => PollOptionItem) => {
+    setForm(prev => ({
+      ...prev,
+      pollOptions: prev.pollOptions.map(item => (item.id === id ? updater(item) : item)),
+    }));
+  }, []);
+
+  const addPollOption = useCallback(() => {
+    setForm(prev => {
+      if (prev.pollOptions.length >= 12) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        pollOptions: [...prev.pollOptions, createDefaultPollOption()],
+      };
+    });
+  }, []);
+
+  const removePollOption = useCallback((id: string) => {
+    setForm(prev => {
+      if (prev.pollOptions.length <= 2) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        pollOptions: prev.pollOptions.filter(item => item.id !== id),
+        pollCorrectOptionId: prev.pollCorrectOptionId === id ? '' : prev.pollCorrectOptionId,
+      };
+    });
+  }, []);
+
+  const handlePollTypeChange = useCallback((pollType: RequestFormState['pollType']) => {
+    setForm(prev => ({
+      ...prev,
+      pollType,
+      pollAllowsMultipleAnswers: pollType === 'quiz' ? false : prev.pollAllowsMultipleAnswers,
+      pollExplanation: pollType === 'quiz' ? prev.pollExplanation : '',
+      pollExplanationParseMode: pollType === 'quiz' ? prev.pollExplanationParseMode : 'HTML',
+      pollCorrectOptionId: pollType === 'quiz' ? prev.pollCorrectOptionId : '',
+    }));
   }, []);
 
   const handleCopy = useCallback((value: string) => {
@@ -528,22 +575,78 @@ export function RequestBuilder() {
                 placeholder="Вопрос опроса"
                 onChange={e => updateField('pollQuestion', e.target.value)}
               />
+              <div className={styles.fieldHint}>Один вопрос на один poll, до 300 символов.</div>
             </div>
+
             <div className={styles.fieldFull}>
-              <label className={styles.label}>options</label>
-              <textarea
-                className={styles.textarea}
-                value={form.pollOptions}
-                rows={5}
-                placeholder={'Один вариант на строку\nДа\nНет'}
-                onChange={e => updateField('pollOptions', e.target.value)}
-              />
+              <div className={styles.inlineHeader}>
+                <div>
+                  <label className={styles.label}>options</label>
+                  <div className={styles.fieldHint}>От 2 до 12 вариантов ответа. У каждого ответа лимит 100 символов.</div>
+                </div>
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={addPollOption}
+                  disabled={form.pollOptions.length >= 12}
+                >
+                  + Ответ
+                </button>
+              </div>
+
+              <div className={styles.albumList}>
+                {form.pollOptions.map((option, index) => (
+                  <div key={option.id} className={styles.albumCard}>
+                    <div className={styles.albumHeader}>
+                      <span className={styles.albumTitle}>Вариант {index + 1}</span>
+                      <button
+                        className={styles.linkBtn}
+                        onClick={() => removePollOption(option.id)}
+                        disabled={form.pollOptions.length <= 2}
+                      >
+                        Удалить
+                      </button>
+                    </div>
+
+                    <div className={styles.grid}>
+                      <div className={styles.fieldFull}>
+                        <label className={styles.label}>text</label>
+                        <input
+                          type="text"
+                          value={option.text}
+                          placeholder={`Ответ ${index + 1}`}
+                          onChange={e =>
+                            updatePollOption(option.id, current => ({
+                              ...current,
+                              text: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+
+                      {form.pollType === 'quiz' && (
+                        <div className={styles.fieldFull}>
+                          <label className={styles.checkboxLabel}>
+                            <input
+                              type="radio"
+                              name="poll-correct-option"
+                              checked={form.pollCorrectOptionId === option.id}
+                              onChange={() => updateField('pollCorrectOptionId', option.id)}
+                            />
+                            <span>Правильный ответ</span>
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
+
             <div className={styles.field}>
               <label className={styles.label}>type</label>
               <select
                 value={form.pollType}
-                onChange={e => updateField('pollType', e.target.value as RequestFormState['pollType'])}
+                onChange={e => handlePollTypeChange(e.target.value as RequestFormState['pollType'])}
               >
                 {POLL_TYPE_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>
@@ -552,17 +655,29 @@ export function RequestBuilder() {
                 ))}
               </select>
             </div>
-            {form.pollType === 'quiz' && (
-              <div className={styles.field}>
-                <label className={styles.label}>correct_option_id</label>
-                <input
-                  type="text"
-                  value={form.pollCorrectOptionId}
-                  placeholder="0"
-                  onChange={e => updateField('pollCorrectOptionId', e.target.value)}
-                />
-              </div>
-            )}
+
+            <div className={styles.field}>
+              <label className={styles.label}>open_period</label>
+              <input
+                type="number"
+                value={form.pollOpenPeriod}
+                placeholder="Например: 60"
+                onChange={e => updateField('pollOpenPeriod', e.target.value)}
+              />
+              <div className={styles.fieldHint}>От 5 до 600 секунд. Нельзя вместе с close_date.</div>
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>close_date</label>
+              <input
+                type="number"
+                value={form.pollCloseDate}
+                placeholder="Unix timestamp"
+                onChange={e => updateField('pollCloseDate', e.target.value)}
+              />
+              <div className={styles.fieldHint}>Unix timestamp на ближайшие 5-600 секунд.</div>
+            </div>
+
             <div className={styles.fieldFull}>
               <div className={styles.checkboxRow}>
                 <label className={styles.checkboxLabel}>
@@ -577,12 +692,55 @@ export function RequestBuilder() {
                   <input
                     type="checkbox"
                     checked={form.pollAllowsMultipleAnswers}
+                    disabled={form.pollType === 'quiz'}
                     onChange={e => updateField('pollAllowsMultipleAnswers', e.target.checked)}
                   />
                   <span>allows_multiple_answers</span>
                 </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.pollIsClosed}
+                    onChange={e => updateField('pollIsClosed', e.target.checked)}
+                  />
+                  <span>is_closed</span>
+                </label>
               </div>
             </div>
+
+            {form.pollType === 'quiz' && (
+              <>
+                <div className={styles.fieldFull}>
+                  <label className={styles.label}>explanation</label>
+                  <FormattedTextField
+                    value={form.pollExplanation}
+                    parseMode={form.pollExplanationParseMode}
+                    rows={4}
+                    placeholder="Пояснение при неправильном ответе"
+                    onChange={value => updateField('pollExplanation', value)}
+                  />
+                </div>
+
+                <div className={styles.field}>
+                  <label className={styles.label}>explanation_parse_mode</label>
+                  <select
+                    value={form.pollExplanationParseMode}
+                    onChange={e =>
+                      updateField(
+                        'pollExplanationParseMode',
+                        e.target.value as RequestFormState['pollExplanationParseMode']
+                      )
+                    }
+                  >
+                    {PARSE_MODE_OPTIONS.map(option => (
+                      <option key={option.value || 'none'} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
           </>
         );
       case 'dice':

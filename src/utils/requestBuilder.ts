@@ -4,6 +4,7 @@ import { getFormatModeFromParseMode, normalizeTextFormattingInput, validateForma
 import type {
   AlbumItem,
   MediaGroupItemType,
+  PollOptionItem,
   RequestFormState,
   RequestMethodConfig,
   RequestMethodId,
@@ -86,6 +87,20 @@ function normalizeFormattedValue(text: string, parseMode: RequestFormState['pars
   return normalizeTextFormattingInput(trimmed, formatMode);
 }
 
+function getPollOptionTexts(options: PollOptionItem[]): string[] {
+  return options
+    .map(item => item.text.trim())
+    .filter(Boolean);
+}
+
+function getPollCorrectOptionIndex(form: RequestFormState): number {
+  if (!form.pollCorrectOptionId) {
+    return -1;
+  }
+
+  return form.pollOptions.findIndex(option => option.id === form.pollCorrectOptionId);
+}
+
 function buildAlbumMediaArray(form: RequestFormState): Array<Record<string, unknown>> {
   const normalizedCaption = normalizeFormattedValue(form.caption, form.parseMode);
 
@@ -115,6 +130,10 @@ function buildPayload(
   const payload = createCommonPayload(form, config);
   const normalizedText = normalizeFormattedValue(form.text, form.parseMode);
   const normalizedCaption = normalizeFormattedValue(form.caption, form.parseMode);
+  const normalizedPollExplanation = normalizeFormattedValue(
+    form.pollExplanation,
+    form.pollExplanationParseMode
+  );
 
   switch (config.id) {
     case 'sendMessage':
@@ -172,18 +191,38 @@ function buildPayload(
       break;
     case 'sendPoll': {
       const options = form.pollOptions
-        .split('\n')
-        .map(item => item.trim())
-        .filter(Boolean);
+        .map(item => item.text.trim())
+        .filter(Boolean)
+        .map(text => ({ text }));
+      const correctOptionIndex = getPollCorrectOptionIndex(form);
 
       payload.question = form.pollQuestion.trim();
       payload.options = options;
       payload.type = form.pollType;
       payload.is_anonymous = form.pollIsAnonymous;
-      payload.allows_multiple_answers = form.pollAllowsMultipleAnswers;
+      payload.allows_multiple_answers = form.pollType === 'quiz' ? false : form.pollAllowsMultipleAnswers;
 
-      if (form.pollType === 'quiz' && form.pollCorrectOptionId.trim()) {
-        payload.correct_option_id = Number(form.pollCorrectOptionId);
+      if (form.pollType === 'quiz' && correctOptionIndex >= 0) {
+        payload.correct_option_id = correctOptionIndex;
+      }
+
+      if (normalizedPollExplanation) {
+        payload.explanation = normalizedPollExplanation;
+        if (form.pollExplanationParseMode) {
+          payload.explanation_parse_mode = form.pollExplanationParseMode;
+        }
+      }
+
+      if (form.pollOpenPeriod.trim()) {
+        payload.open_period = Number(form.pollOpenPeriod);
+      }
+
+      if (form.pollCloseDate.trim()) {
+        payload.close_date = Number(form.pollCloseDate);
+      }
+
+      if (form.pollIsClosed) {
+        payload.is_closed = true;
       }
       break;
     }
@@ -205,6 +244,13 @@ export function createDefaultAlbumItem(type: MediaGroupItemType = 'photo'): Albu
     type,
     sourceMode: 'file_id',
     value: '',
+  };
+}
+
+export function createDefaultPollOption(text = ''): PollOptionItem {
+  return {
+    id: generateId(),
+    text,
   };
 }
 
@@ -236,11 +282,16 @@ export function createDefaultRequestForm(): RequestFormState {
     contactFirstName: '',
     contactLastName: '',
     pollQuestion: '',
-    pollOptions: '',
+    pollOptions: [createDefaultPollOption(), createDefaultPollOption()],
     pollType: 'regular',
     pollIsAnonymous: true,
     pollAllowsMultipleAnswers: false,
     pollCorrectOptionId: '',
+    pollExplanation: '',
+    pollExplanationParseMode: 'HTML',
+    pollOpenPeriod: '',
+    pollCloseDate: '',
+    pollIsClosed: false,
     diceEmoji: DICE_EMOJI_OPTIONS[0].value,
   };
 }
@@ -371,26 +422,83 @@ export function validateRequestForm(form: RequestFormState): string[] {
       }
       break;
     case 'poll': {
-      const options = form.pollOptions
-        .split('\n')
-        .map(item => item.trim())
-        .filter(Boolean);
+      const options = getPollOptionTexts(form.pollOptions);
+      const correctOptionIndex = getPollCorrectOptionIndex(form);
+      const normalizedExplanation = normalizeFormattedValue(
+        form.pollExplanation,
+        form.pollExplanationParseMode
+      );
+      const explanationMode = getFormatModeFromParseMode(form.pollExplanationParseMode);
+      const openPeriod = form.pollOpenPeriod.trim();
+      const closeDate = form.pollCloseDate.trim();
+      const explanationLineBreaks = (normalizedExplanation.match(/\n/g) || []).length;
 
       if (!form.pollQuestion.trim()) {
         errors.push('Для poll нужен вопрос.');
+      }
+
+      if (form.pollQuestion.trim().length > 300) {
+        errors.push('Вопрос poll не должен превышать 300 символов.');
       }
 
       if (options.length < 2) {
         errors.push('Для poll нужно минимум 2 варианта ответа.');
       }
 
-      if (
-        form.pollType === 'quiz' &&
-        form.pollCorrectOptionId.trim() &&
-        (!/^\d+$/.test(form.pollCorrectOptionId.trim()) ||
-          Number(form.pollCorrectOptionId) >= options.length)
-      ) {
-        errors.push('correct_option_id должен ссылаться на существующий вариант ответа.');
+      if (options.length > 12) {
+        errors.push('В poll можно передать не больше 12 вариантов ответа.');
+      }
+
+      form.pollOptions.forEach((option, index) => {
+        const trimmed = option.text.trim();
+
+        if (!trimmed) {
+          errors.push(`Вариант ${index + 1}: введите текст ответа.`);
+          return;
+        }
+
+        if (trimmed.length > 100) {
+          errors.push(`Вариант ${index + 1}: текст ответа не должен превышать 100 символов.`);
+        }
+      });
+
+      if (form.pollType === 'quiz' && correctOptionIndex < 0) {
+        errors.push('Для quiz нужно выбрать правильный ответ.');
+      }
+
+      if (normalizedExplanation.length > 200) {
+        errors.push('explanation не должно превышать 200 символов.');
+      }
+
+      if (explanationLineBreaks > 2) {
+        errors.push('explanation может содержать не более 2 переносов строк.');
+      }
+
+      if (explanationMode && normalizedExplanation) {
+        errors.push(
+          ...validateFormattedText(normalizedExplanation, explanationMode, {
+            validatePercentEncoding: false,
+          }).map(error => `explanation: ${error}`)
+        );
+      }
+
+      if (openPeriod && closeDate) {
+        errors.push('В sendPoll нельзя одновременно задавать open_period и close_date.');
+      }
+
+      if (openPeriod && (!/^\d+$/.test(openPeriod) || Number(openPeriod) < 5 || Number(openPeriod) > 600)) {
+        errors.push('open_period должен быть числом от 5 до 600 секунд.');
+      }
+
+      if (closeDate) {
+        const now = Math.floor(Date.now() / 1000);
+        const closeDateValue = Number(closeDate);
+
+        if (!/^\d+$/.test(closeDate) || Number.isNaN(closeDateValue)) {
+          errors.push('close_date должен быть Unix timestamp.');
+        } else if (closeDateValue < now + 5 || closeDateValue > now + 600) {
+          errors.push('close_date должен быть между +5 и +600 секунд от текущего времени.');
+        }
       }
       break;
     }
