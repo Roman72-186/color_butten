@@ -25,6 +25,7 @@ import {
   validateRequestForm,
 } from '../utils/requestBuilder';
 import { FormattedTextField } from './FormattedTextField';
+import { MaxRequestBuilder } from './MaxRequestBuilder';
 import styles from '../styles/RequestBuilder.module.css';
 
 function getSourcePlaceholder(mode: MediaSourceMode, fieldName: string): string {
@@ -60,6 +61,7 @@ const SEND_OPTION_DESCRIPTIONS = [
 ] as const;
 
 export function RequestBuilder() {
+  const [platform, setPlatform] = useState<'telegram' | 'max'>('telegram');
   const [form, setForm] = useState<RequestFormState>(() => createDefaultRequestForm());
   const [copiedBody, setCopiedBody] = useState(false);
 
@@ -766,6 +768,24 @@ export function RequestBuilder() {
 
   return (
     <div className={styles.builder}>
+      <div className={styles.platformTabs}>
+        <button
+          className={`${styles.platformTab} ${platform === 'telegram' ? styles.platformTabActive : ''}`}
+          onClick={() => setPlatform('telegram')}
+        >
+          Telegram Bot API
+        </button>
+        <button
+          className={`${styles.platformTab} ${platform === 'max' ? styles.platformTabActive : ''}`}
+          onClick={() => setPlatform('max')}
+        >
+          MAX API
+        </button>
+      </div>
+
+      {platform === 'max' && <MaxRequestBuilder />}
+
+      {platform === 'telegram' && <>
       <div className={styles.notice}>
         <div className={styles.noticeTitle}>Конструктор запросов Telegram Bot API</div>
         <div className={styles.noticeText}>
@@ -952,6 +972,7 @@ export function RequestBuilder() {
           <pre className={styles.pre}>{preview.bodyPreview}</pre>
         </div>
       </div>
+      </>}
     </div>
   );
 }

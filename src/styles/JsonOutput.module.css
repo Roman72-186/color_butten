@@ -39,6 +39,41 @@
   background: var(--success);
 }
 
+.formatTabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.formatTab {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.formatTab:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.formatTabActive {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.formatTabActive:hover {
+  background: #4da5e7;
+  border-color: #4da5e7;
+  color: #fff;
+}
+
 .pre {
   background: var(--input-bg);
   border: 1px solid var(--border);
