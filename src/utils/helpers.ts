@@ -33,6 +33,7 @@ export function createDefaultButton(row: number): ButtonConfig {
     actionType: 'callback_data',
     actionValue: '',
     row,
+    iconCustomEmojiId: '',
   };
 }
 

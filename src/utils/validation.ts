@@ -7,7 +7,10 @@ export function validateButton(button: ButtonConfig): ButtonErrors {
     errors.text = 'Название кнопки обязательно';
   }
 
-  if (!button.actionValue.trim()) {
+  const switchTypes = ['switch_inline_query', 'switch_inline_query_current_chat'] as const;
+  const isSwitchType = (switchTypes as readonly string[]).includes(button.actionType);
+
+  if (!isSwitchType && !button.actionValue.trim()) {
     errors.actionValue = 'Значение действия обязательно';
   } else if (
     (button.actionType === 'url' || button.actionType === 'web_app') &&

@@ -100,6 +100,16 @@ export function ButtonCard({
             onChange={val => onUpdate(index, 'actionValue', val)}
           />
         </div>
+
+        <div className={styles.fieldFull}>
+          <label className={styles.label}>icon_custom_emoji_id</label>
+          <input
+            type="text"
+            value={button.iconCustomEmojiId}
+            placeholder="Числовой ID кастомного эмодзи (необязательно)"
+            onChange={e => onUpdate(index, 'iconCustomEmojiId', e.target.value)}
+          />
+        </div>
       </div>
     </div>
   );

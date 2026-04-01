@@ -18,6 +18,16 @@ function buttonToJson(button: ButtonConfig): InlineKeyboardButton {
     case 'web_app':
       result.web_app = { url: button.actionValue };
       break;
+    case 'switch_inline_query_current_chat':
+      result.switch_inline_query_current_chat = button.actionValue;
+      break;
+    case 'switch_inline_query':
+      result.switch_inline_query = button.actionValue;
+      break;
+  }
+
+  if (button.iconCustomEmojiId.trim()) {
+    result.icon_custom_emoji_id = button.iconCustomEmojiId.trim();
   }
 
   return result;

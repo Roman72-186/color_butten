@@ -9,13 +9,17 @@ export const STYLES = [
 ] as const;
 
 export const ACTION_TYPES = [
-  { value: 'callback_data', label: 'Callback Data' },
-  { value: 'url',           label: 'URL' },
-  { value: 'web_app',       label: 'Web App' },
+  { value: 'callback_data',                    label: 'Callback Data' },
+  { value: 'url',                              label: 'URL' },
+  { value: 'web_app',                          label: 'Web App' },
+  { value: 'switch_inline_query_current_chat', label: 'Switch inline (этот чат)' },
+  { value: 'switch_inline_query',              label: 'Switch inline (выбор чата)' },
 ] as const;
 
 export const ACTION_PLACEHOLDERS: Record<string, string> = {
-  callback_data: 'Введите callback_data',
-  url: 'Введите URL (https://...)',
-  web_app: 'Введите ссылку WebApp (https://...)',
+  callback_data:                    'Введите callback_data',
+  url:                              'Введите URL (https://...)',
+  web_app:                          'Введите ссылку WebApp (https://...)',
+  switch_inline_query_current_chat: 'Введите inline-запрос, например #my',
+  switch_inline_query:              'Введите inline-запрос или оставьте пустым',
 };

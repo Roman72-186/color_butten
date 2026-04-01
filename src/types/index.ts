@@ -17,6 +17,7 @@ export interface ButtonConfig {
   actionType: ActionType;
   actionValue: string;
   row: number;
+  iconCustomEmojiId: string;
 }
 
 export interface ButtonErrors {
@@ -52,4 +53,5 @@ export interface InlineKeyboardButton {
   login_url?: { url: string };
   pay?: boolean;
   copy_text?: { text: string };
+  icon_custom_emoji_id?: string;
 }
