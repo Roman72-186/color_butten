@@ -16,6 +16,15 @@ export const ACTION_TYPES = [
   { value: 'switch_inline_query',              label: 'Switch inline (выбор чата)' },
 ] as const;
 
+export const ICON_EMOJI_OPTIONS = [
+  { id: '5257965174979042426', label: '☰ Меню' },
+  { id: '5258204546391351475', label: '💰 Баланс' },
+  { id: '5258024802010026053', label: '🔍 Поиск (inline)' },
+  { id: '5258011929993026890', label: '👤 Профиль' },
+  { id: '5429571366384842791', label: '🔎 Выбрать' },
+  { id: '5453900977432188793', label: '⭐️ Отзывы' },
+] as const;
+
 export const ACTION_PLACEHOLDERS: Record<string, string> = {
   callback_data:                    'Введите callback_data',
   url:                              'Введите URL (https://...)',

@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { ButtonConfig, ButtonErrors, ButtonStyle, ActionType } from '../types';
-import { STYLES, ACTION_TYPES } from '../constants';
+import { STYLES, ACTION_TYPES, ICON_EMOJI_OPTIONS } from '../constants';
 import { RowSelector } from './RowSelector';
 import { ActionValueInput } from './ActionValueInput';
 import { ValidationError } from './ValidationError';
@@ -27,6 +28,21 @@ export function ButtonCard({
   onRemove,
 }: ButtonCardProps) {
   const styleColor = STYLES.find(s => s.value === button.style)?.color ?? '#8597a8';
+  const isPredefined = ICON_EMOJI_OPTIONS.some(o => o.id === button.iconCustomEmojiId);
+  const [customMode, setCustomMode] = useState(
+    () => button.iconCustomEmojiId !== '' && !isPredefined
+  );
+
+  const selectValue = customMode ? 'custom' : button.iconCustomEmojiId;
+
+  function handleEmojiSelect(val: string) {
+    if (val === 'custom') {
+      setCustomMode(true);
+    } else {
+      setCustomMode(false);
+      onUpdate(index, 'iconCustomEmojiId', val);
+    }
+  }
 
   return (
     <div className={styles.card}>
@@ -103,12 +119,22 @@ export function ButtonCard({
 
         <div className={styles.fieldFull}>
           <label className={styles.label}>icon_custom_emoji_id</label>
-          <input
-            type="text"
-            value={button.iconCustomEmojiId}
-            placeholder="Числовой ID кастомного эмодзи (необязательно)"
-            onChange={e => onUpdate(index, 'iconCustomEmojiId', e.target.value)}
-          />
+          <select value={selectValue} onChange={e => handleEmojiSelect(e.target.value)}>
+            <option value="">— без иконки —</option>
+            {ICON_EMOJI_OPTIONS.map(o => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+            <option value="custom">Свой ID...</option>
+          </select>
+          {customMode && (
+            <input
+              type="text"
+              value={button.iconCustomEmojiId}
+              placeholder="Вставьте числовой ID"
+              style={{ marginTop: 6 }}
+              onChange={e => onUpdate(index, 'iconCustomEmojiId', e.target.value)}
+            />
+          )}
         </div>
       </div>
     </div>
