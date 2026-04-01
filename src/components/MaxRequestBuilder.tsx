@@ -43,7 +43,7 @@ function createDefaultImage(): MaxImageItem {
 function createDefaultForm(): MaxFormState {
   return {
     targetType: 'user',
-    targetId: '{{ $user_id }}',
+    targetId: '{{max_id}}',
     text: '',
     format: '',
     images: [],
@@ -106,7 +106,7 @@ export function MaxRequestBuilder() {
   const [form, setForm] = useState<MaxFormState>(createDefaultForm);
   const [copied, setCopied] = useState(false);
 
-  const endpoint = `https://platform-api.max.ru/messages?${form.targetType}_id=${form.targetId || `{{ $${form.targetType}_id }}`}`;
+  const endpoint = `https://platform-api.max.ru/messages?${form.targetType}_id=${form.targetId || (form.targetType === 'user' ? '{{max_id}}' : '{{max_chat_id}}')}` ;
   const bodyPreview = useMemo(() => JSON.stringify(buildBody(form), null, 2), [form]);
 
   const maxRow = form.buttons.reduce((m, b) => Math.max(m, b.row), 0);
@@ -188,7 +188,7 @@ export function MaxRequestBuilder() {
               onChange={e => {
                 const t = e.target.value as 'user' | 'chat';
                 updateField('targetType', t);
-                updateField('targetId', t === 'user' ? '{{ $user_id }}' : '{{ $chat_id }}');
+                updateField('targetId', t === 'user' ? '{{max_id}}' : '{{max_chat_id}}');
               }}
             >
               <option value="user">user_id</option>
@@ -197,11 +197,11 @@ export function MaxRequestBuilder() {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>{form.targetType}_id</label>
+            <label className={styles.label}>{form.targetType === 'user' ? 'max_id' : 'max_chat_id'}</label>
             <input
               type="text"
               value={form.targetId}
-              placeholder={`{{ $${form.targetType}_id }}`}
+              placeholder={form.targetType === 'user' ? '{{max_id}}' : '{{max_chat_id}}'}
               onChange={e => updateField('targetId', e.target.value)}
             />
           </div>
