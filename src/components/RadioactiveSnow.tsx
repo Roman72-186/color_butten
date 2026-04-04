@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const FLAKE_COUNT  = 180;
-const MIN_RADIUS   = 1.2;
-const MAX_RADIUS   = 3.8;
-const MIN_SPEED    = 0.4;
-const MAX_SPEED    = 1.4;
-const GLOW_MULT    = 4.5;   // glow radius = particle radius * GLOW_MULT
-const PULSE_SPEED  = 0.04;
+const FLAKE_COUNT  = 70;
+const MIN_RADIUS   = 0.6;
+const MAX_RADIUS   = 1.8;
+const MIN_SPEED    = 0.12;
+const MAX_SPEED    = 0.45;
+const GLOW_MULT    = 3.5;   // glow radius = particle radius * GLOW_MULT
+const PULSE_SPEED  = 0.025;
 
 // Radioactive neon palette (r, g, b)
 const PALETTE: [number, number, number][] = [
@@ -59,7 +59,7 @@ export function RadioactiveSnow() {
         driftPhase: Math.random() * Math.PI * 2,
         pulsePhase: Math.random() * Math.PI * 2,
         color:      PALETTE[Math.floor(Math.random() * PALETTE.length)],
-        opacity:    0.55 + Math.random() * 0.45,
+        opacity:    0.18 + Math.random() * 0.22,
       };
     }
 
@@ -120,7 +120,7 @@ export function RadioactiveSnow() {
         ctx.fill();
 
         // White hot center for larger flakes
-        if (f.r > 2.2) {
+        if (f.r > 1.2) {
           ctx.beginPath();
           ctx.arc(f.x, f.y, f.r * 0.38, 0, Math.PI * 2);
           ctx.fillStyle = `rgba(255, 255, 255, ${(alpha * 0.8).toFixed(3)})`;
