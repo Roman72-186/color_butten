@@ -12,19 +12,21 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
-  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-family: 'Share Tech Mono', monospace;
   font-size: 14px;
   line-height: 1.6;
   resize: vertical;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .textarea:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(0,245,255,.25), 0 0 10px rgba(0,245,255,.15);
 }
 
 .textareaError {
   border-color: var(--danger);
+  box-shadow: 0 0 8px rgba(255,34,85,.2);
 }
 
 .textarea::placeholder {
@@ -33,12 +35,12 @@
 
 .error {
   color: var(--danger);
+  font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
   padding: 8px 12px;
-  background: rgba(224, 85, 85, 0.1);
-  border-radius: var(--radius-sm);
+  background: rgba(255,34,85,.07);
   border-left: 3px solid var(--danger);
-  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  border-radius: var(--radius-sm);
   word-break: break-word;
 }
 
@@ -49,47 +51,55 @@
 
 .formatBtn {
   flex: 1;
-  padding: 12px 16px;
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
+  padding: 11px 16px;
+  background: rgba(0,245,255,.07);
+  color: var(--accent);
+  border: 1px solid rgba(0,245,255,.3);
   border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 600;
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .formatBtn:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: rgba(0,245,255,.18);
+  box-shadow: var(--glow-cyan);
+  transform: translateY(-1px);
 }
 
 .formatBtn:disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
 .cleanBtn {
   flex: 1;
-  padding: 12px 16px;
-  background: var(--surface);
+  padding: 11px 16px;
+  background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 600;
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  transition: color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 .cleanBtn:hover:not(:disabled) {
-  border-color: var(--danger);
   color: var(--danger);
+  border-color: var(--danger);
+  box-shadow: var(--glow-red);
 }
 
 .cleanBtn:disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -101,12 +111,13 @@
 }
 
 .pathsTitle {
-  font-size: 12px;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
   padding: 12px 16px 8px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .pathsList {
@@ -125,21 +136,22 @@
 }
 
 .pathRow:hover {
-  background: var(--surface-alt);
+  background: rgba(0,245,255,.05);
 }
 
 .pathCopied {
-  background: var(--success);
+  background: rgba(0,255,136,.08);
+  border-color: rgba(0,255,136,.3);
 }
 
 .pathCopied .pathKey,
 .pathCopied .pathValue {
-  color: #fff;
+  color: var(--success);
 }
 
 .pathKey {
   flex: 1;
-  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
   color: var(--accent);
   word-break: break-all;
@@ -149,6 +161,7 @@
 .pathValue {
   flex-shrink: 0;
   max-width: 200px;
+  font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
   color: var(--text-muted);
   overflow: hidden;

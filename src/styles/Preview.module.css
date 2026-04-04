@@ -7,10 +7,13 @@
 }
 
 .title {
-  font-size: 14px;
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text);
+  color: var(--text-muted);
   margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .container {
@@ -28,21 +31,31 @@
 
 .button {
   flex: 1;
-  padding: 8px 4px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 500;
+  padding: 9px 4px;
+  border-radius: 1px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
   text-align: center;
-  color: #fff;
+  color: #000;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  transition: transform 0.2s, filter 0.2s;
+  filter: drop-shadow(0 0 4px currentColor);
+  text-shadow: 0 0 4px rgba(0,0,0,.8);
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.2) drop-shadow(0 0 6px currentColor);
 }
 
 .empty {
   text-align: center;
   color: var(--text-dim);
-  font-size: 13px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
   padding: 20px 0;
 }

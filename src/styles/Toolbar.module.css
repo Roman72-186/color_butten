@@ -3,31 +3,38 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 14px 20px;
+  padding: 12px 20px;
   background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   border-radius: var(--radius);
   margin-bottom: 16px;
+  box-shadow: -4px 0 16px rgba(0,245,255,.15);
 }
 
 .stats {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
 .stat {
+  font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
   color: var(--text-muted);
 }
 
 .statValue {
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(0,245,255,.7);
+  animation: neon-flicker 4s infinite;
 }
 
 .hint {
+  font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
   color: var(--text-dim);
-  font-style: italic;
+  letter-spacing: 0.5px;
 }

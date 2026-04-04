@@ -3,12 +3,14 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
-  margin-bottom: 12px;
-  transition: border-color 0.2s;
+  margin-bottom: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  animation: cyber-slide .3s ease;
 }
 
 .card:hover {
-  border-color: var(--accent);
+  border-color: rgba(0,245,255,.4);
+  box-shadow: 0 0 0 1px rgba(0,245,255,.1), 0 0 20px rgba(0,245,255,.06);
 }
 
 .cardHeader {
@@ -19,22 +21,27 @@
 }
 
 .cardTitle {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  text-shadow: 0 0 8px rgba(0,245,255,.5);
+  letter-spacing: 0.5px;
 }
 
 .badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 0px;
   font-size: 11px;
-  font-weight: 600;
-  color: #fff;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .rowBadge {
-  background: var(--surface-alt);
+  background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border);
 }
@@ -46,15 +53,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 1px;
   font-size: 14px;
   color: var(--text-dim);
   background: transparent;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
 .deleteBtn:hover {
-  background: var(--danger);
-  color: #fff;
+  background: rgba(255,34,85,.15);
+  color: var(--danger);
+  box-shadow: var(--glow-red);
 }
 
 .fields {
@@ -80,9 +89,10 @@
 
 .label {
   display: block;
-  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
   color: var(--text-muted);
-  margin-bottom: 4px;
+  margin-bottom: 5px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }

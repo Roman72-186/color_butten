@@ -1,8 +1,10 @@
 .jsonOutput {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
   border-radius: var(--radius);
   padding: 16px;
+  box-shadow: 0 -4px 20px rgba(0,245,255,.1);
 }
 
 .header {
@@ -13,41 +15,60 @@
 }
 
 .title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  text-shadow: 0 0 8px rgba(0,245,255,.5);
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 .copyBtn {
-  padding: 6px 14px;
-  background: var(--accent);
-  color: #fff;
+  padding: 7px 16px;
+  background: linear-gradient(135deg, rgba(0,245,255,.15), rgba(0,245,255,.05));
+  color: var(--accent);
+  border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
-  font-size: 12px;
-  font-weight: 600;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .copyBtn:hover {
-  background: #4da5e7;
+  background: rgba(0,245,255,.25);
+  box-shadow: var(--glow-cyan);
+  transform: translateY(-1px);
 }
 
 .copied {
-  background: var(--success);
+  background: rgba(0,255,136,.15);
+  color: var(--success);
+  border-color: var(--success);
+  box-shadow: var(--glow-green);
 }
 
 .copied:hover {
-  background: var(--success);
+  background: rgba(0,255,136,.15);
+  color: var(--success);
+  border-color: var(--success);
+  box-shadow: var(--glow-green);
 }
 
 .pre {
   background: var(--input-bg);
   border: 1px solid var(--border);
+  border-left: 2px solid rgba(0,245,255,.4);
   border-radius: var(--radius-sm);
-  padding: 12px;
-  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  padding: 14px;
+  font-family: 'Share Tech Mono', 'Fira Code', Consolas, monospace;
   font-size: 12px;
-  line-height: 1.6;
-  color: var(--text);
+  line-height: 1.7;
+  color: #7dffc8;
   overflow-x: auto;
   word-break: break-word;
   white-space: pre-wrap;
@@ -58,9 +79,11 @@
 .warning {
   margin-top: 10px;
   padding: 8px 12px;
-  background: rgba(240, 160, 48, 0.1);
-  border: 1px solid var(--warning);
+  background: rgba(255,200,0,.08);
+  border: 1px solid rgba(255,200,0,.4);
+  border-left: 3px solid var(--warning);
   border-radius: var(--radius-sm);
   color: var(--warning);
   font-size: 12px;
+  font-family: 'Share Tech Mono', monospace;
 }

@@ -17,33 +17,43 @@
   gap: 4px;
   margin-bottom: 16px;
   background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-neon);
   border-radius: var(--radius);
   padding: 4px;
 }
 
 .tab {
-  padding: 12px 16px;
+  padding: 11px 16px;
   background: transparent;
   color: var(--text-muted);
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 600;
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: color 0.2s, text-shadow 0.2s;
 }
 
 .tab:hover {
   color: var(--text);
+  text-shadow: 0 0 8px rgba(0,245,255,.6);
 }
 
 .tabActive {
-  background: var(--accent);
-  color: #fff;
+  background: linear-gradient(135deg, rgba(0,245,255,.15), rgba(255,0,204,.08));
+  color: var(--accent);
+  text-shadow: 0 0 8px rgba(0,245,255,.7), 0 0 20px rgba(0,245,255,.3);
+  border-bottom: 2px solid var(--accent);
+  box-shadow: inset 0 0 20px rgba(0,245,255,.08);
 }
 
 .tabActive:hover {
-  color: #fff;
+  color: var(--accent);
+  text-shadow: 0 0 8px rgba(0,245,255,.7), 0 0 20px rgba(0,245,255,.3);
 }
 
 .platformTabs {
@@ -51,6 +61,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 4px;
   background: var(--surface-alt);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 4px;
   margin-bottom: 16px;
@@ -62,23 +73,30 @@
   color: var(--text-muted);
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 600;
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: color 0.2s, text-shadow 0.2s;
 }
 
 .platformTab:hover {
   color: var(--text);
+  text-shadow: 0 0 8px rgba(0,245,255,.6);
 }
 
 .platformTabActive {
-  background: var(--accent);
-  color: #fff;
+  background: linear-gradient(135deg, rgba(0,245,255,.15), rgba(255,0,204,.08));
+  color: var(--accent);
+  text-shadow: 0 0 8px rgba(0,245,255,.7), 0 0 20px rgba(0,245,255,.3);
+  border-bottom: 2px solid var(--accent);
+  box-shadow: inset 0 0 20px rgba(0,245,255,.08);
 }
 
 .platformTabActive:hover {
-  color: #fff;
+  color: var(--accent);
 }
 
 .section {
@@ -94,41 +112,50 @@
 .addBtn {
   flex: 1;
   padding: 10px 16px;
-  background: var(--accent);
-  color: #fff;
+  background: linear-gradient(135deg, rgba(0,245,255,.12), rgba(0,245,255,.04));
+  color: var(--accent);
+  border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 600;
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   cursor: pointer;
-  border: none;
-  transition: background 0.2s, opacity 0.2s;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .addBtn:hover:not(:disabled) {
-  background: #4da5e7;
+  background: rgba(0,245,255,.2);
+  box-shadow: var(--glow-cyan);
+  transform: translateY(-1px);
 }
 
 .addBtn:disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
 .resetBtn {
   padding: 10px 16px;
-  background: var(--surface);
+  background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 600;
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, text-shadow 0.2s;
 }
 
 .resetBtn:hover {
-  background: var(--danger);
-  color: #fff;
+  color: var(--danger);
   border-color: var(--danger);
+  box-shadow: var(--glow-red);
+  text-shadow: 0 0 8px var(--danger);
 }
 
 @media (max-width: 480px) {
@@ -144,7 +171,7 @@
 
   .tab {
     padding: 9px 6px;
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1.2;
   }
 }
