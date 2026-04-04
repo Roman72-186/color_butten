@@ -8,25 +8,28 @@ import { JsonOutput } from './components/JsonOutput';
 import { TextFormatter } from './components/TextFormatter';
 import { JsonFormatter } from './components/JsonFormatter';
 import { RequestBuilder } from './components/RequestBuilder';
+import { MaxKeyboardTab } from './components/MaxKeyboardTab';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
-import { generateMaxJson } from './utils/generateMaxJson';
 import { createDefaultButton, getNextAvailableRow, groupButtonsByRow } from './utils/helpers';
 import styles from './styles/App.module.css';
 
 type TabType = 'keyboard' | 'requests' | 'formatter' | 'json';
+type KeyboardPlatform = 'telegram' | 'max';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('keyboard');
+  const [keyboardPlatform, setKeyboardPlatform] = useState<KeyboardPlatform>('telegram');
+
+  // ── Telegram keyboard state ──────────────────────────────────────────────
   const [buttons, setButtons] = useState<ButtonConfig[]>(() => [createDefaultButton(1)]);
   const [showValidation, setShowValidation] = useState(false);
 
-  const allErrors = useMemo(() => buttons.map(validateButton), [buttons]);
-  const hasErrors = useMemo(() => hasAnyErrors(allErrors), [allErrors]);
+  const allErrors  = useMemo(() => buttons.map(validateButton), [buttons]);
+  const hasErrors  = useMemo(() => hasAnyErrors(allErrors), [allErrors]);
   const jsonResult = useMemo(() => generateJson(buttons), [buttons]);
-  const maxJsonResult = useMemo(() => generateMaxJson(buttons), [buttons]);
   const previewRows = useMemo(() => groupButtonsByRow(buttons), [buttons]);
-  const rowCount = useMemo(() => new Set(buttons.map(b => b.row)).size, [buttons]);
+  const rowCount   = useMemo(() => new Set(buttons.map(b => b.row)).size, [buttons]);
 
   const addButton = useCallback(() => {
     setButtons(prev => {
@@ -97,54 +100,68 @@ function App() {
         </div>
 
         <div style={{ display: activeTab === 'keyboard' ? undefined : 'none' }}>
-          <Toolbar
-            buttonCount={buttons.length}
-            rowCount={rowCount}
-          />
-
-          <div className={styles.section}>
-            {buttons.map((button, index) => (
-              <ButtonCard
-                key={button.id}
-                button={button}
-                index={index}
-                buttons={buttons}
-                errors={allErrors[index]}
-                showValidation={showValidation}
-                canDelete={buttons.length > 1}
-                onUpdate={updateButton}
-                onRemove={removeButton}
-              />
-            ))}
-
-            <div className={styles.cardActions}>
-              <button
-                className={styles.addBtn}
-                onClick={addButton}
-                disabled={isMaxButtons}
-              >
-                + Кнопка
-              </button>
-              <button className={styles.resetBtn} onClick={resetAll}>
-                Сбросить
-              </button>
-            </div>
+          {/* Platform switcher */}
+          <div className={styles.platformTabs}>
+            <button
+              className={`${styles.platformTab} ${keyboardPlatform === 'telegram' ? styles.platformTabActive : ''}`}
+              onClick={() => setKeyboardPlatform('telegram')}
+            >
+              Telegram Bot API
+            </button>
+            <button
+              className={`${styles.platformTab} ${keyboardPlatform === 'max' ? styles.platformTabActive : ''}`}
+              onClick={() => setKeyboardPlatform('max')}
+            >
+              MAX API
+            </button>
           </div>
 
-          <Preview rows={previewRows} />
+          {/* Telegram keyboard */}
+          {keyboardPlatform === 'telegram' && (
+            <>
+              <Toolbar buttonCount={buttons.length} rowCount={rowCount} />
 
-          <JsonOutput
-            json={jsonResult}
-            hasErrors={showValidation && hasErrors}
-            onCopy={handleCopy}
-          />
+              <div className={styles.section}>
+                {buttons.map((button, index) => (
+                  <ButtonCard
+                    key={button.id}
+                    button={button}
+                    index={index}
+                    buttons={buttons}
+                    errors={allErrors[index]}
+                    showValidation={showValidation}
+                    canDelete={buttons.length > 1}
+                    onUpdate={updateButton}
+                    onRemove={removeButton}
+                  />
+                ))}
 
-          <JsonOutput
-            title="MAX API (platform-api.max.ru)"
-            json={maxJsonResult}
-            hasErrors={false}
-            onCopy={() => {}}
-          />
+                <div className={styles.cardActions}>
+                  <button
+                    className={styles.addBtn}
+                    onClick={addButton}
+                    disabled={isMaxButtons}
+                  >
+                    + Кнопка
+                  </button>
+                  <button className={styles.resetBtn} onClick={resetAll}>
+                    Сбросить
+                  </button>
+                </div>
+              </div>
+
+              <Preview rows={previewRows} />
+
+              <JsonOutput
+                json={jsonResult}
+                hasErrors={showValidation && hasErrors}
+                onCopy={handleCopy}
+              />
+            </>
+          )}
+
+          {/* MAX keyboard */}
+          {keyboardPlatform === 'max' && <MaxKeyboardTab />}
         </div>
 
         <div style={{ display: activeTab === 'formatter' ? undefined : 'none' }}>
