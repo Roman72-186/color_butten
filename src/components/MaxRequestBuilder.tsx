@@ -1,4 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
+import type { ButtonConfig } from '../types';
+import { Preview } from './Preview';
 import styles from '../styles/RequestBuilder.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -107,6 +109,69 @@ const MAX_BUTTON_TYPES: { value: MaxButtonType; label: string }[] = [
 ];
 
 const BASE_URL = 'https://platform-api.max.ru';
+const MAX_PER_ROW = 3;
+
+// ─── Row selector ─────────────────────────────────────────────────────────────
+
+function MaxRowSelector({
+  buttons,
+  currentId,
+  currentRow,
+  onChange,
+}: {
+  buttons: MaxButtonItem[];
+  currentId: string;
+  currentRow: number;
+  onChange: (row: number) => void;
+}) {
+  const existingRows = Array.from(new Set(buttons.map(b => b.row))).sort((a, b) => a - b);
+  const nextRow = existingRows.length > 0 ? existingRows[existingRows.length - 1] + 1 : 1;
+
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        Строка в клавиатуре
+      </label>
+      <select value={currentRow} onChange={e => onChange(Number(e.target.value))}>
+        {existingRows.map(row => {
+          const count = buttons.filter(b => b.row === row && b.id !== currentId).length;
+          const isFull = count >= MAX_PER_ROW;
+          const free = MAX_PER_ROW - count;
+          return (
+            <option key={row} value={row} disabled={isFull}>
+              Строка {row}{isFull ? ' (заполнена)' : ` · свободно ${free} из ${MAX_PER_ROW}`}
+            </option>
+          );
+        })}
+        <option value={nextRow}>+ Новая строка {nextRow}</option>
+      </select>
+    </div>
+  );
+}
+
+// ─── Preview conversion ───────────────────────────────────────────────────────
+
+function maxButtonsToPreviewRows(buttons: MaxButtonItem[]): ButtonConfig[][] {
+  const rowMap = new Map<number, MaxButtonItem[]>();
+  for (const btn of buttons) {
+    const row = rowMap.get(btn.row) ?? [];
+    row.push(btn);
+    rowMap.set(btn.row, row);
+  }
+  return Array.from(rowMap.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([, row]) =>
+      row.map(btn => ({
+        id: btn.id,
+        text: btn.text || '...',
+        style: 'default' as const,
+        actionType: 'callback_data' as const,
+        actionValue: btn.payload,
+        row: btn.row,
+        iconCustomEmojiId: '',
+      }))
+    );
+}
 
 // ─── ID factory ──────────────────────────────────────────────────────────────
 
@@ -250,10 +315,10 @@ export function MaxRequestBuilder() {
   const [copiedEndpoint, setCopiedEndpoint] = useState(false);
   const [copiedBody, setCopiedBody]         = useState(false);
 
-  const methodCfg = useMemo(() => MAX_METHODS.find(m => m.id === form.method)!, [form.method]);
-  const request   = useMemo(() => buildRequest(form), [form]);
-  const bodyText  = useMemo(() => request.body ? JSON.stringify(request.body, null, 2) : null, [request]);
-  const maxRow    = form.buttons.reduce((m, b) => Math.max(m, b.row), 0);
+  const methodCfg    = useMemo(() => MAX_METHODS.find(m => m.id === form.method)!, [form.method]);
+  const request      = useMemo(() => buildRequest(form), [form]);
+  const bodyText     = useMemo(() => request.body ? JSON.stringify(request.body, null, 2) : null, [request]);
+  const previewRows  = useMemo(() => maxButtonsToPreviewRows(form.buttons), [form.buttons]);
 
   function updateField<K extends keyof MaxFormState>(key: K, value: MaxFormState[K]) {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -264,8 +329,24 @@ export function MaxRequestBuilder() {
   }, []);
 
   const addButton = useCallback(() => {
-    setForm(prev => ({ ...prev, buttons: [...prev.buttons, createDefaultButton(maxRow + 1)] }));
-  }, [maxRow]);
+    setForm(prev => {
+      // find first row with fewer than MAX_PER_ROW buttons, otherwise open a new row
+      const rowCounts = new Map<number, number>();
+      for (const btn of prev.buttons) {
+        rowCounts.set(btn.row, (rowCounts.get(btn.row) ?? 0) + 1);
+      }
+      const existingRows = Array.from(new Set(prev.buttons.map(b => b.row))).sort((a, b) => a - b);
+      const maxRow = existingRows.length > 0 ? existingRows[existingRows.length - 1] : 0;
+      let targetRow = maxRow + 1;
+      for (const r of existingRows) {
+        if ((rowCounts.get(r) ?? 0) < MAX_PER_ROW) {
+          targetRow = r;
+          break;
+        }
+      }
+      return { ...prev, buttons: [...prev.buttons, createDefaultButton(targetRow)] };
+    });
+  }, []);
 
   const removeButton = useCallback((id: string) => {
     setForm(prev => ({ ...prev, buttons: prev.buttons.filter(b => b.id !== id) }));
@@ -607,13 +688,12 @@ export function MaxRequestBuilder() {
                               ))}
                             </select>
                           </div>
-                          <div className={styles.field}>
-                            <label className={styles.label}>Строка</label>
-                            <input
-                              type="number"
-                              min={1}
-                              value={btn.row}
-                              onChange={e => updateButton(btn.id, { row: Math.max(1, Number(e.target.value)) })}
+                          <div className={styles.fieldFull}>
+                            <MaxRowSelector
+                              buttons={form.buttons}
+                              currentId={btn.id}
+                              currentRow={btn.row}
+                              onChange={row => updateButton(btn.id, { row })}
                             />
                           </div>
                           <div className={styles.fieldFull}>
@@ -653,6 +733,10 @@ export function MaxRequestBuilder() {
                   </div>
                 ))}
               </div>
+            )}
+
+            {form.buttons.length > 0 && (
+              <Preview rows={previewRows} />
             )}
           </div>
         </>

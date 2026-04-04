@@ -10,6 +10,7 @@ import { JsonFormatter } from './components/JsonFormatter';
 import { RequestBuilder } from './components/RequestBuilder';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
+import { generateMaxJson } from './utils/generateMaxJson';
 import { createDefaultButton, getNextAvailableRow, groupButtonsByRow } from './utils/helpers';
 import styles from './styles/App.module.css';
 
@@ -23,6 +24,7 @@ function App() {
   const allErrors = useMemo(() => buttons.map(validateButton), [buttons]);
   const hasErrors = useMemo(() => hasAnyErrors(allErrors), [allErrors]);
   const jsonResult = useMemo(() => generateJson(buttons), [buttons]);
+  const maxJsonResult = useMemo(() => generateMaxJson(buttons), [buttons]);
   const previewRows = useMemo(() => groupButtonsByRow(buttons), [buttons]);
   const rowCount = useMemo(() => new Set(buttons.map(b => b.row)).size, [buttons]);
 
@@ -135,6 +137,13 @@ function App() {
             json={jsonResult}
             hasErrors={showValidation && hasErrors}
             onCopy={handleCopy}
+          />
+
+          <JsonOutput
+            title="MAX API (platform-api.max.ru)"
+            json={maxJsonResult}
+            hasErrors={false}
+            onCopy={() => {}}
           />
         </div>
 

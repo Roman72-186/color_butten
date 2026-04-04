@@ -5,9 +5,10 @@ interface JsonOutputProps {
   json: string;
   hasErrors: boolean;
   onCopy: () => void;
+  title?: string;
 }
 
-export function JsonOutput({ json, hasErrors, onCopy }: JsonOutputProps) {
+export function JsonOutput({ json, hasErrors, onCopy, title = 'Результат JSON' }: JsonOutputProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
@@ -27,7 +28,7 @@ export function JsonOutput({ json, hasErrors, onCopy }: JsonOutputProps) {
   return (
     <div className={styles.jsonOutput}>
       <div className={styles.header}>
-        <div className={styles.title}>Результат JSON</div>
+        <div className={styles.title}>{title}</div>
         <button
           className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
           onClick={handleCopy}
