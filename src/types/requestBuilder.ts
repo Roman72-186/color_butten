@@ -1,3 +1,7 @@
+import type { ButtonConfig } from './index';
+
+export type { ButtonConfig };
+
 export type RequestMethodId =
   | 'sendMessage'
   | 'sendPhoto'
@@ -97,6 +101,7 @@ export interface RequestFormState {
   pollCloseDate: string;
   pollIsClosed: boolean;
   diceEmoji: string;
+  inlineButtons: ButtonConfig[];
 }
 
 export interface RequestPreview {

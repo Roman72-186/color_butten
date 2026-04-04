@@ -9,6 +9,9 @@ import {
   POLL_TYPE_OPTIONS,
   REQUEST_METHODS,
 } from '../constants/requestBuilder';
+import type { ButtonConfig, ActionType, ButtonStyle } from '../types';
+import { STYLES, ACTION_TYPES, MAX_BUTTONS } from '../constants';
+import { createDefaultButton, getNextAvailableRow, groupButtonsByRow } from '../utils/helpers';
 import type {
   AlbumItem,
   MediaGroupItemType,
@@ -26,6 +29,9 @@ import {
 } from '../utils/requestBuilder';
 import { FormattedTextField } from './FormattedTextField';
 import { MaxRequestBuilder } from './MaxRequestBuilder';
+import { RowSelector } from './RowSelector';
+import { ActionValueInput } from './ActionValueInput';
+import { Preview } from './Preview';
 import styles from '../styles/RequestBuilder.module.css';
 
 function getSourcePlaceholder(mode: MediaSourceMode, fieldName: string): string {
@@ -213,6 +219,27 @@ export function RequestBuilder() {
     setForm(createDefaultRequestForm());
     setCopiedBody(false);
   }, []);
+
+  const addInlineButton = useCallback(() => {
+    setForm(prev => {
+      if (prev.inlineButtons.length >= MAX_BUTTONS) return prev;
+      const row = getNextAvailableRow(prev.inlineButtons);
+      return { ...prev, inlineButtons: [...prev.inlineButtons, createDefaultButton(row)] };
+    });
+  }, []);
+
+  const removeInlineButton = useCallback((id: string) => {
+    setForm(prev => ({ ...prev, inlineButtons: prev.inlineButtons.filter(b => b.id !== id) }));
+  }, []);
+
+  const updateInlineButton = useCallback((id: string, patch: Partial<ButtonConfig>) => {
+    setForm(prev => ({
+      ...prev,
+      inlineButtons: prev.inlineButtons.map(b => b.id === id ? { ...b, ...patch } : b),
+    }));
+  }, []);
+
+  const inlinePreviewRows = useMemo(() => groupButtonsByRow(form.inlineButtons), [form.inlineButtons]);
 
   const renderMediaSourceInput = () => {
     const fieldName = methodConfig.mediaField ?? 'media';
@@ -922,6 +949,101 @@ export function RequestBuilder() {
         {methodConfig.note && <div className={styles.sectionText}>{methodConfig.note}</div>}
         <div className={styles.grid}>{renderMethodFields()}</div>
       </div>
+
+      {form.method !== 'sendMediaGroup' && (
+        <div className={styles.card}>
+          <div className={styles.inlineHeader}>
+            <div>
+              <div className={styles.sectionTitle}>Inline-клавиатура (reply_markup)</div>
+              <div className={styles.sectionText}>
+                Кнопки прикрепятся к сообщению. Макс. {MAX_BUTTONS} кнопок, 3 в строке.
+              </div>
+            </div>
+            <button
+              className={styles.secondaryBtn}
+              onClick={addInlineButton}
+              disabled={form.inlineButtons.length >= MAX_BUTTONS}
+            >
+              + Кнопка
+            </button>
+          </div>
+
+          {form.inlineButtons.length > 0 && (
+            <div className={styles.albumList}>
+              {form.inlineButtons.map((button, index) => (
+                <div key={button.id} className={styles.albumCard}>
+                  <div className={styles.albumHeader}>
+                    <span className={styles.albumTitle}>Кнопка {index + 1}</span>
+                    <button className={styles.linkBtn} onClick={() => removeInlineButton(button.id)}>
+                      Удалить
+                    </button>
+                  </div>
+
+                  <div className={styles.grid}>
+                    <div className={styles.fieldFull}>
+                      <label className={styles.label}>text</label>
+                      <input
+                        type="text"
+                        value={button.text}
+                        placeholder="Текст кнопки"
+                        onChange={e => updateInlineButton(button.id, { text: e.target.value })}
+                      />
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className={styles.label}>style</label>
+                      <select
+                        value={button.style}
+                        onChange={e => updateInlineButton(button.id, { style: e.target.value as ButtonStyle })}
+                      >
+                        {STYLES.map(s => (
+                          <option key={s.value} value={s.value}>{s.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className={styles.label}>Тип действия</label>
+                      <select
+                        value={button.actionType}
+                        onChange={e => updateInlineButton(button.id, {
+                          actionType: e.target.value as ActionType,
+                          actionValue: '',
+                        })}
+                      >
+                        {ACTION_TYPES.map(t => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className={styles.fieldFull}>
+                      <RowSelector
+                        buttons={form.inlineButtons}
+                        currentButtonId={button.id}
+                        currentRow={button.row}
+                        onChange={row => updateInlineButton(button.id, { row })}
+                      />
+                    </div>
+
+                    <div className={styles.fieldFull}>
+                      <ActionValueInput
+                        actionType={button.actionType}
+                        value={button.actionValue}
+                        onChange={value => updateInlineButton(button.id, { actionValue: value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {form.inlineButtons.length > 0 && (
+            <Preview rows={inlinePreviewRows} />
+          )}
+        </div>
+      )}
 
       {validationErrors.length > 0 && (
         <div className={styles.errorBox}>
