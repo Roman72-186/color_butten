@@ -9,6 +9,7 @@ import { TextFormatter } from './components/TextFormatter';
 import { JsonFormatter } from './components/JsonFormatter';
 import { RequestBuilder } from './components/RequestBuilder';
 import { MaxKeyboardTab } from './components/MaxKeyboardTab';
+import { BulletAnimation } from './components/BulletAnimation';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
 import { createDefaultButton, getNextAvailableRow, groupButtonsByRow } from './utils/helpers';
@@ -71,6 +72,7 @@ function App() {
 
   return (
     <div className={styles.app}>
+      <BulletAnimation />
       <div className={styles.content}>
         <div className={styles.tabs}>
           <button
