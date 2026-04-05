@@ -13,6 +13,11 @@ import {
 import { PREMIUM_EMOJI_OPTIONS } from '../constants';
 import styles from '../styles/TextFormatter.module.css';
 
+interface ExtractedEmoji {
+  id: string;
+  fallback: string;
+}
+
 export function TextFormatter() {
   const [text, setText] = useState('');
   const [mode, setMode] = useState<FormatMode>('html');
@@ -26,6 +31,11 @@ export function TextFormatter() {
   const [selectedEmojiId, setSelectedEmojiId] = useState('');
   const [customEmojiId, setCustomEmojiId] = useState('');
   const [customEmojiFallback, setCustomEmojiFallback] = useState('');
+
+  // ── Extractor state ─────────────────────────────────────────────────────────
+  const [extractorOpen, setExtractorOpen] = useState(false);
+  const [extractedEmojis, setExtractedEmojis] = useState<ExtractedEmoji[]>([]);
+  const [extractedInserted, setExtractedInserted] = useState<string | null>(null);
 
   const normalizedText = useMemo(() => normalizeTextFormattingInput(text, mode), [text, mode]);
   const textErrors = useMemo(() => validateFormattedText(normalizedText, mode), [normalizedText, mode]);
@@ -78,22 +88,12 @@ export function TextFormatter() {
     }
   }, []);
 
-  const handleInsertEmoji = useCallback(() => {
-    const id = emojiCustomMode ? customEmojiId.trim() : selectedEmojiId;
-    if (!id) return;
-
-    let fallback: string;
-    if (emojiCustomMode) {
-      fallback = customEmojiFallback || '⭐';
-    } else {
-      fallback = PREMIUM_EMOJI_OPTIONS.find(o => o.id === id)?.fallback ?? '⭐';
-    }
-
+  const doInsertEmoji = useCallback((id: string, fallback: string) => {
     const { start, end } = lastSelectionRef.current;
     const result = insertCustomEmoji(text, mode, id, fallback, start, end);
     setText(result.text);
-
     setEmojiPickerOpen(false);
+    setExtractorOpen(false);
 
     requestAnimationFrame(() => {
       const textarea = textareaRef.current;
@@ -103,7 +103,50 @@ export function TextFormatter() {
       textarea.selectionEnd = result.selectionEnd;
       lastSelectionRef.current = { start: result.selectionStart, end: result.selectionEnd };
     });
-  }, [emojiCustomMode, customEmojiId, customEmojiFallback, selectedEmojiId, text, mode]);
+  }, [text, mode]);
+
+  const handleInsertEmoji = useCallback(() => {
+    const id = emojiCustomMode ? customEmojiId.trim() : selectedEmojiId;
+    if (!id) return;
+    const fallback = emojiCustomMode
+      ? (customEmojiFallback || '⭐')
+      : (PREMIUM_EMOJI_OPTIONS.find(o => o.id === id)?.fallback ?? '⭐');
+    doInsertEmoji(id, fallback);
+  }, [emojiCustomMode, customEmojiId, customEmojiFallback, selectedEmojiId, doInsertEmoji]);
+
+  // ── Extract IDs from pasted Telegram text ──────────────────────────────────
+  const handleExtractPaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    const html = e.clipboardData.getData('text/html');
+
+    if (!html) {
+      setExtractedEmojis([]);
+      return;
+    }
+
+    const matches = [...html.matchAll(/<tg-emoji\s+emoji-id="(\d+)"[^>]*>([\s\S]*?)<\/tg-emoji>/gi)];
+
+    // deduplicate by ID
+    const seen = new Set<string>();
+    const extracted: ExtractedEmoji[] = [];
+    for (const m of matches) {
+      const id = m[1];
+      if (!seen.has(id)) {
+        seen.add(id);
+        // strip any inner HTML tags to get plain fallback char
+        const fallback = m[2].replace(/<[^>]+>/g, '').trim() || '?';
+        extracted.push({ id, fallback });
+      }
+    }
+
+    setExtractedEmojis(extracted);
+  }, []);
+
+  const handleInsertExtracted = useCallback((emoji: ExtractedEmoji) => {
+    doInsertEmoji(emoji.id, emoji.fallback);
+    setExtractedInserted(emoji.id);
+    setTimeout(() => setExtractedInserted(null), 1500);
+  }, [doInsertEmoji]);
 
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const html = e.clipboardData.getData('text/html');
@@ -199,13 +242,21 @@ export function TextFormatter() {
         ))}
         <button
           className={`${styles.fmtBtn} ${emojiPickerOpen ? styles.fmtBtnActive : ''}`}
-          title="Вставить premium emoji"
-          onClick={() => setEmojiPickerOpen(v => !v)}
+          title="Вставить premium emoji из списка"
+          onClick={() => { setEmojiPickerOpen(v => !v); setExtractorOpen(false); }}
         >
           ✨ emoji
         </button>
+        <button
+          className={`${styles.fmtBtn} ${extractorOpen ? styles.fmtBtnActive : ''}`}
+          title="Вставить текст из Telegram и получить ID emoji"
+          onClick={() => { setExtractorOpen(v => !v); setEmojiPickerOpen(false); }}
+        >
+          📋 ID из Telegram
+        </button>
       </div>
 
+      {/* ── Emoji picker ──────────────────────────────────────────────────── */}
       {emojiPickerOpen && (
         <div className={styles.emojiPicker}>
           <div className={styles.emojiPickerRow}>
@@ -255,6 +306,65 @@ export function TextFormatter() {
               ? 'Вставит: <tg-emoji emoji-id="...">FALLBACK</tg-emoji>'
               : 'Вставит: ![FALLBACK](tg://emoji?id=...)'}
           </div>
+        </div>
+      )}
+
+      {/* ── ID extractor ─────────────────────────────────────────────────── */}
+      {extractorOpen && (
+        <div className={styles.emojiPicker}>
+          <div className={styles.extractorLabel}>
+            Скопируй сообщение из Telegram с premium emoji и вставь сюда:
+          </div>
+          <textarea
+            className={styles.extractorTextarea}
+            placeholder="Вставьте текст из Telegram (Ctrl+V)..."
+            rows={3}
+            onPaste={handleExtractPaste}
+            readOnly={extractedEmojis.length > 0}
+            value={extractedEmojis.length > 0
+              ? `Найдено emoji: ${extractedEmojis.length}`
+              : ''}
+            onChange={() => {}}
+          />
+
+          {extractedEmojis.length === 0 && (
+            <div className={styles.emojiHint}>
+              Работает с текстом скопированным из Telegram Desktop или Telegram Web.
+              В буфере обмена содержится HTML с emoji-id.
+            </div>
+          )}
+
+          {extractedEmojis.length > 0 && (
+            <>
+              <div className={styles.extractedList}>
+                {extractedEmojis.map(emoji => (
+                  <div key={emoji.id} className={styles.extractedItem}>
+                    <span className={styles.extractedFallback}>{emoji.fallback}</span>
+                    <span className={styles.extractedId}>{emoji.id}</span>
+                    <button
+                      className={`${styles.emojiInsertBtn} ${extractedInserted === emoji.id ? styles.emojiInsertedOk : ''}`}
+                      onClick={() => handleInsertExtracted(emoji)}
+                    >
+                      {extractedInserted === emoji.id ? '✓' : 'Вставить'}
+                    </button>
+                    <button
+                      className={styles.extractedCopyBtn}
+                      onClick={() => navigator.clipboard.writeText(emoji.id)}
+                      title="Скопировать ID"
+                    >
+                      ID
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                className={styles.extractorClearBtn}
+                onClick={() => setExtractedEmojis([])}
+              >
+                Очистить
+              </button>
+            </>
+          )}
         </div>
       )}
 
