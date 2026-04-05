@@ -16,6 +16,7 @@ type MaxMethod =
   | 'getChat'
   | 'editChat'
   | 'getChatMembers'
+  | 'getChatMember'
   | 'addChatMember'
   | 'kickChatMember'
   | 'leaveChat'
@@ -79,6 +80,7 @@ const MAX_METHODS: MaxMethodConfig[] = [
   { id: 'getChat',        label: 'getChat',        description: 'Информация о конкретном чате или канале',          category: 'chats',    httpMethod: 'GET'    },
   { id: 'editChat',       label: 'editChat',       description: 'Изменить название чата',                           category: 'chats',    httpMethod: 'PATCH'  },
   { id: 'getChatMembers', label: 'getChatMembers', description: 'Список участников чата с пагинацией',              category: 'chats',    httpMethod: 'GET'    },
+  { id: 'getChatMember',  label: 'getChatMember',  description: 'Проверить конкретного пользователя в чате',        category: 'chats',    httpMethod: 'GET'    },
   { id: 'addChatMember',  label: 'addChatMember',  description: 'Добавить пользователя в чат',                     category: 'chats',    httpMethod: 'POST'   },
   { id: 'kickChatMember', label: 'kickChatMember', description: 'Удалить участника из чата',                       category: 'chats',    httpMethod: 'DELETE' },
   { id: 'leaveChat',      label: 'leaveChat',      description: 'Бот покидает чат',                                category: 'chats',    httpMethod: 'DELETE' },
@@ -281,6 +283,8 @@ function buildRequest(form: MaxFormState): BuildResult {
       return { httpMethod: 'PATCH', endpoint: `${BASE_URL}/chats/${chatId}`, body: { title: form.chatTitle || 'Новое название' } };
     case 'getChatMembers':
       return { httpMethod: 'GET', endpoint: `${BASE_URL}/chats/${chatId}/members?count=${form.count || '50'}`, body: null };
+    case 'getChatMember':
+      return { httpMethod: 'GET', endpoint: `${BASE_URL}/chats/${chatId}/members?user_ids=${userId}`, body: null };
     case 'addChatMember':
       return { httpMethod: 'POST', endpoint: `${BASE_URL}/chats/${chatId}/members`, body: { user_ids: [userId] } };
     case 'kickChatMember':
@@ -302,8 +306,8 @@ function buildRequest(form: MaxFormState): BuildResult {
 const NEEDS_TARGET   = new Set<MaxMethod>(['sendMessage']);
 const NEEDS_MSG_BODY = new Set<MaxMethod>(['sendMessage', 'editMessage']);
 const NEEDS_MSG_ID   = new Set<MaxMethod>(['editMessage', 'deleteMessage', 'pinMessage']);
-const NEEDS_CHAT_ID  = new Set<MaxMethod>(['getChat', 'editChat', 'getChatMembers', 'addChatMember', 'kickChatMember', 'leaveChat', 'pinMessage', 'unpinMessage']);
-const NEEDS_USER_ID  = new Set<MaxMethod>(['addChatMember', 'kickChatMember']);
+const NEEDS_CHAT_ID  = new Set<MaxMethod>(['getChat', 'editChat', 'getChatMembers', 'getChatMember', 'addChatMember', 'kickChatMember', 'leaveChat', 'pinMessage', 'unpinMessage']);
+const NEEDS_USER_ID  = new Set<MaxMethod>(['getChatMember', 'addChatMember', 'kickChatMember']);
 const NEEDS_COUNT    = new Set<MaxMethod>(['getChats', 'getChatMembers']);
 const NEEDS_TITLE    = new Set<MaxMethod>(['editChat']);
 const NEEDS_PIN_OPT  = new Set<MaxMethod>(['pinMessage']);
