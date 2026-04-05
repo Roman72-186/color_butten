@@ -37,6 +37,11 @@ export function TextFormatter() {
   const [extractedEmojis, setExtractedEmojis] = useState<ExtractedEmoji[]>([]);
   const [extractedInserted, setExtractedInserted] = useState<string | null>(null);
 
+  // ── Bot code helper state ────────────────────────────────────────────────────
+  const [botCodeOpen, setBotCodeOpen] = useState(false);
+  const [botCodeLang, setBotCodeLang] = useState<'python' | 'node'>('python');
+  const [botCodeCopied, setBotCodeCopied] = useState(false);
+
   const normalizedText = useMemo(() => normalizeTextFormattingInput(text, mode), [text, mode]);
   const textErrors = useMemo(() => validateFormattedText(normalizedText, mode), [normalizedText, mode]);
 
@@ -211,6 +216,47 @@ export function TextFormatter() {
     ? customEmojiId.trim().length > 0
     : selectedEmojiId.length > 0;
 
+  const BOT_CODE = {
+    python: `# Добавь в своего бота временно, отправь ему сообщение с premium emoji
+@bot.message_handler(func=lambda m: True)
+def get_emoji_ids(message):
+    if not message.entities:
+        bot.reply_to(message, "Нет entities — отправь сообщение с premium emoji")
+        return
+    ids = []
+    for e in message.entities:
+        if e.type == "custom_emoji":
+            char = message.text[e.offset : e.offset + e.length]
+            ids.append(f"{char}  →  {e.custom_emoji_id}")
+    if ids:
+        bot.reply_to(message, "\\n".join(ids))
+    else:
+        bot.reply_to(message, "custom_emoji не найдено")`,
+
+    node: `// Добавь в своего бота временно, отправь ему сообщение с premium emoji
+bot.on('message', (msg) => {
+  const entities = msg.entities || [];
+  const ids = entities
+    .filter(e => e.type === 'custom_emoji')
+    .map(e => {
+      const char = [...msg.text].slice(e.offset, e.offset + e.length).join('');
+      return \`\${char}  →  \${e.custom_emoji_id}\`;
+    });
+  if (ids.length) {
+    bot.sendMessage(msg.chat.id, ids.join('\\n'));
+  } else {
+    bot.sendMessage(msg.chat.id, 'Нет custom_emoji — отправь сообщение с premium emoji');
+  }
+});`,
+  };
+
+  const handleCopyBotCode = useCallback(() => {
+    navigator.clipboard.writeText(BOT_CODE[botCodeLang]).then(() => {
+      setBotCodeCopied(true);
+      setTimeout(() => setBotCodeCopied(false), 2000);
+    });
+  }, [botCodeLang, BOT_CODE]);
+
   return (
     <div className={styles.formatter}>
       <div className={styles.modeToggle}>
@@ -250,9 +296,16 @@ export function TextFormatter() {
         <button
           className={`${styles.fmtBtn} ${extractorOpen ? styles.fmtBtnActive : ''}`}
           title="Вставить текст из Telegram и получить ID emoji"
-          onClick={() => { setExtractorOpen(v => !v); setEmojiPickerOpen(false); }}
+          onClick={() => { setExtractorOpen(v => !v); setEmojiPickerOpen(false); setBotCodeOpen(false); }}
         >
           📋 ID из Telegram
+        </button>
+        <button
+          className={`${styles.fmtBtn} ${botCodeOpen ? styles.fmtBtnActive : ''}`}
+          title="Код бота для получения emoji ID"
+          onClick={() => { setBotCodeOpen(v => !v); setEmojiPickerOpen(false); setExtractorOpen(false); }}
+        >
+          📟 код бота
         </button>
       </div>
 
@@ -365,6 +418,39 @@ export function TextFormatter() {
               </button>
             </>
           )}
+        </div>
+      )}
+
+      {/* ── Bot code helper ──────────────────────────────────────────────── */}
+      {botCodeOpen && (
+        <div className={styles.emojiPicker}>
+          <div className={styles.extractorLabel}>
+            Добавь в бота, отправь ему любое сообщение с premium emoji — получишь ID:
+          </div>
+          <div className={styles.botCodeTabs}>
+            <button
+              className={`${styles.botCodeTab} ${botCodeLang === 'python' ? styles.botCodeTabActive : ''}`}
+              onClick={() => setBotCodeLang('python')}
+            >
+              Python (pyTelegramBotAPI)
+            </button>
+            <button
+              className={`${styles.botCodeTab} ${botCodeLang === 'node' ? styles.botCodeTabActive : ''}`}
+              onClick={() => setBotCodeLang('node')}
+            >
+              Node.js (node-telegram-bot-api)
+            </button>
+          </div>
+          <pre className={styles.botCodeBlock}>{BOT_CODE[botCodeLang]}</pre>
+          <button
+            className={`${styles.emojiInsertBtn} ${botCodeCopied ? styles.emojiInsertedOk : ''}`}
+            onClick={handleCopyBotCode}
+          >
+            {botCodeCopied ? '✓ Скопировано' : 'Скопировать код'}
+          </button>
+          <div className={styles.emojiHint}>
+            После получения ID — вставь его через ✨ emoji → "Свой ID..."
+          </div>
         </div>
       )}
 
