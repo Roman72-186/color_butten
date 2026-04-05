@@ -26,7 +26,7 @@
 .tab {
   padding: 11px 16px;
   background: transparent;
-  color: var(--text-muted);
+  color: #88b8d4;
   border: none;
   border-radius: var(--radius-sm);
   font-family: 'Orbitron', monospace;
@@ -70,7 +70,7 @@
 .platformTab {
   padding: 10px 16px;
   background: transparent;
-  color: var(--text-muted);
+  color: #88b8d4;
   border: none;
   border-radius: var(--radius-sm);
   font-family: 'Orbitron', monospace;
@@ -139,7 +139,7 @@
 .resetBtn {
   padding: 10px 16px;
   background: transparent;
-  color: var(--text-muted);
+  color: #88b8d4;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-family: 'Orbitron', monospace;

@@ -22,7 +22,7 @@
 .stat {
   font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
-  color: var(--text-muted);
+  color: #88b8d4;
 }
 
 .statValue {
@@ -35,6 +35,6 @@
 .hint {
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
-  color: var(--text-dim);
+  color: #6090ac;
   letter-spacing: 0.5px;
 }

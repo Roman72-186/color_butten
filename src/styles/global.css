@@ -12,8 +12,8 @@
   --success:     #00ff88;
   --warning:     #ffc800;
   --text:        #b8e0ff;
-  --text-muted:  #3d6080;
-  --text-dim:    #1a3050;
+  --text-muted:  #88b8d4;
+  --text-dim:    #6090ac;
   --input-bg:    #020408;
   --radius:      3px;
   --radius-sm:   2px;
@@ -133,8 +133,9 @@ select:focus {
   box-shadow: 0 0 0 1px rgba(0,245,255,.25), 0 0 10px rgba(0,245,255,.15);
 }
 
-input::placeholder {
-  color: var(--text-dim);
+input::placeholder,
+textarea::placeholder {
+  color: #6090ac;
 }
 
 select {

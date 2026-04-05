@@ -30,7 +30,7 @@
 }
 
 .textarea::placeholder {
-  color: var(--text-dim);
+  color: #6090ac;
 }
 
 .error {
@@ -80,7 +80,7 @@
   flex: 1;
   padding: 11px 16px;
   background: transparent;
-  color: var(--text-muted);
+  color: #88b8d4;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-family: 'Orbitron', monospace;
@@ -114,7 +114,7 @@
   font-family: 'Orbitron', monospace;
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #88b8d4;
   padding: 12px 16px 8px;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -163,7 +163,7 @@
   max-width: 200px;
   font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
-  color: var(--text-muted);
+  color: #88b8d4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

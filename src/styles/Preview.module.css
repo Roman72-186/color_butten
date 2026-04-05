@@ -10,7 +10,7 @@
   font-family: 'Orbitron', monospace;
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #88b8d4;
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -54,7 +54,7 @@
 
 .empty {
   text-align: center;
-  color: var(--text-dim);
+  color: #6090ac;
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
   padding: 20px 0;
