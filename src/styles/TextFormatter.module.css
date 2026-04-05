@@ -76,6 +76,84 @@
   text-shadow: 0 0 6px rgba(0,245,255,.6);
 }
 
+.fmtBtnActive {
+  background: rgba(255,0,204,.15);
+  color: var(--accent2);
+  border-color: var(--accent2);
+  box-shadow: 0 0 8px rgba(255,0,204,.3);
+  text-shadow: 0 0 6px rgba(255,0,204,.6);
+}
+
+.fmtBtnActive:hover {
+  background: rgba(255,0,204,.25);
+  color: var(--accent2);
+  border-color: var(--accent2);
+}
+
+.emojiPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid rgba(255,0,204,.3);
+  border-radius: var(--radius);
+  box-shadow: 0 0 16px rgba(255,0,204,.1);
+  animation: cyber-slide 0.15s ease;
+}
+
+.emojiPickerRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.emojiSelect {
+  flex: 1;
+}
+
+.emojiInsertBtn {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: rgba(255,0,204,.12);
+  color: var(--accent2);
+  border: 1px solid rgba(255,0,204,.4);
+  border-radius: var(--radius-sm);
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.emojiInsertBtn:hover:not(:disabled) {
+  background: rgba(255,0,204,.25);
+  box-shadow: var(--glow-pink);
+}
+
+.emojiInsertBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.emojiCustomRow {
+  display: flex;
+  gap: 8px;
+}
+
+.emojiCustomInput {
+  flex: 1;
+}
+
+.emojiHint {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
 .hint {
   padding: 10px 12px;
   background: rgba(0,245,255,.05);
@@ -160,6 +238,17 @@
 .previewContent a {
   color: var(--accent);
   text-decoration: underline;
+}
+
+.previewContent :global(.tg-emoji) {
+  display: inline-block;
+  background: rgba(255,0,204,.1);
+  border: 1px solid rgba(255,0,204,.3);
+  border-radius: 2px;
+  padding: 0 2px;
+  font-size: 1.1em;
+  line-height: 1;
+  cursor: help;
 }
 
 .previewContent :global(.spoiler) {

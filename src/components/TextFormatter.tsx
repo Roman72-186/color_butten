@@ -3,12 +3,14 @@ import {
   applyTextFormat,
   convertClipboardHtml,
   FORMAT_BUTTONS,
+  insertCustomEmoji,
   normalizeTextFormattingInput,
   textToPreviewHtml,
   validateFormattedText,
   type FormatMode,
   type FormatType,
 } from '../utils/textFormatting';
+import { PREMIUM_EMOJI_OPTIONS } from '../constants';
 import styles from '../styles/TextFormatter.module.css';
 
 export function TextFormatter() {
@@ -16,9 +18,26 @@ export function TextFormatter() {
   const [mode, setMode] = useState<FormatMode>('html');
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastSelectionRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
+
+  // ── Emoji picker state ──────────────────────────────────────────────────────
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [emojiCustomMode, setEmojiCustomMode] = useState(false);
+  const [selectedEmojiId, setSelectedEmojiId] = useState('');
+  const [customEmojiId, setCustomEmojiId] = useState('');
+  const [customEmojiFallback, setCustomEmojiFallback] = useState('');
 
   const normalizedText = useMemo(() => normalizeTextFormattingInput(text, mode), [text, mode]);
   const textErrors = useMemo(() => validateFormattedText(normalizedText, mode), [normalizedText, mode]);
+
+  const trackSelection = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    lastSelectionRef.current = {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  }, []);
 
   const applyFormat = useCallback((type: FormatType) => {
     const textarea = textareaRef.current;
@@ -45,8 +64,46 @@ export function TextFormatter() {
       textarea.focus();
       textarea.selectionStart = result.selectionStart;
       textarea.selectionEnd = result.selectionEnd;
+      lastSelectionRef.current = { start: result.selectionStart, end: result.selectionEnd };
     });
   }, [text, mode]);
+
+  const handleEmojiSelectChange = useCallback((val: string) => {
+    if (val === 'custom') {
+      setEmojiCustomMode(true);
+      setSelectedEmojiId('');
+    } else {
+      setEmojiCustomMode(false);
+      setSelectedEmojiId(val);
+    }
+  }, []);
+
+  const handleInsertEmoji = useCallback(() => {
+    const id = emojiCustomMode ? customEmojiId.trim() : selectedEmojiId;
+    if (!id) return;
+
+    let fallback: string;
+    if (emojiCustomMode) {
+      fallback = customEmojiFallback || '⭐';
+    } else {
+      fallback = PREMIUM_EMOJI_OPTIONS.find(o => o.id === id)?.fallback ?? '⭐';
+    }
+
+    const { start, end } = lastSelectionRef.current;
+    const result = insertCustomEmoji(text, mode, id, fallback, start, end);
+    setText(result.text);
+
+    setEmojiPickerOpen(false);
+
+    requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      textarea.focus();
+      textarea.selectionStart = result.selectionStart;
+      textarea.selectionEnd = result.selectionEnd;
+      lastSelectionRef.current = { start: result.selectionStart, end: result.selectionEnd };
+    });
+  }, [emojiCustomMode, customEmojiId, customEmojiFallback, selectedEmojiId, text, mode]);
 
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const html = e.clipboardData.getData('text/html');
@@ -69,6 +126,7 @@ export function TextFormatter() {
       textarea.selectionStart = newPos;
       textarea.selectionEnd = newPos;
       textarea.focus();
+      lastSelectionRef.current = { start: newPos, end: newPos };
     });
   }, [text, mode]);
 
@@ -100,10 +158,15 @@ export function TextFormatter() {
   const previewHtml = useMemo(() => textToPreviewHtml(normalizedText, mode), [normalizedText, mode]);
 
   const handleBlur = useCallback(() => {
+    trackSelection();
     if (mode === 'html' && normalizedText !== text) {
       setText(normalizedText);
     }
-  }, [mode, normalizedText, text]);
+  }, [mode, normalizedText, text, trackSelection]);
+
+  const canInsertEmoji = emojiCustomMode
+    ? customEmojiId.trim().length > 0
+    : selectedEmojiId.length > 0;
 
   return (
     <div className={styles.formatter}>
@@ -134,7 +197,66 @@ export function TextFormatter() {
             {btn.label}
           </button>
         ))}
+        <button
+          className={`${styles.fmtBtn} ${emojiPickerOpen ? styles.fmtBtnActive : ''}`}
+          title="Вставить premium emoji"
+          onClick={() => setEmojiPickerOpen(v => !v)}
+        >
+          ✨ emoji
+        </button>
       </div>
+
+      {emojiPickerOpen && (
+        <div className={styles.emojiPicker}>
+          <div className={styles.emojiPickerRow}>
+            <select
+              className={styles.emojiSelect}
+              value={emojiCustomMode ? 'custom' : selectedEmojiId}
+              onChange={e => handleEmojiSelectChange(e.target.value)}
+            >
+              <option value="">— выберите emoji —</option>
+              {PREMIUM_EMOJI_OPTIONS.map(o => (
+                <option key={o.id} value={o.id}>
+                  {o.fallback} {o.label}
+                </option>
+              ))}
+              <option value="custom">✏️ Свой ID...</option>
+            </select>
+            <button
+              className={styles.emojiInsertBtn}
+              onClick={handleInsertEmoji}
+              disabled={!canInsertEmoji}
+            >
+              Вставить
+            </button>
+          </div>
+
+          {emojiCustomMode && (
+            <div className={styles.emojiCustomRow}>
+              <input
+                type="text"
+                className={styles.emojiCustomInput}
+                placeholder="Числовой ID emoji"
+                value={customEmojiId}
+                onChange={e => setCustomEmojiId(e.target.value)}
+              />
+              <input
+                type="text"
+                className={styles.emojiCustomInput}
+                placeholder="Символ-заглушка (1 emoji)"
+                value={customEmojiFallback}
+                onChange={e => setCustomEmojiFallback(e.target.value)}
+              />
+            </div>
+          )}
+
+          <div className={styles.emojiHint}>
+            {mode === 'html'
+              ? 'Вставит: <tg-emoji emoji-id="...">FALLBACK</tg-emoji>'
+              : 'Вставит: ![FALLBACK](tg://emoji?id=...)'}
+          </div>
+        </div>
+      )}
 
       <div className={styles.hint}>
         Вставка из Word, Google Docs и других редакторов автоматически переносит жирный, курсив,
@@ -147,6 +269,9 @@ export function TextFormatter() {
         value={text}
         onChange={e => setText(e.target.value)}
         onKeyDown={handleKeyDown}
+        onKeyUp={trackSelection}
+        onMouseUp={trackSelection}
+        onSelect={trackSelection}
         onPaste={handlePaste}
         onBlur={handleBlur}
         placeholder="Вставьте текст с форматированием или введите вручную..."

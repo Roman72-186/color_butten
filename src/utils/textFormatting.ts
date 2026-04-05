@@ -341,6 +341,25 @@ function processNode(node: Node, mode: FormatMode): string {
   return `${prefixed}\n\n`;
 }
 
+export function insertCustomEmoji(
+  text: string,
+  mode: FormatMode,
+  emojiId: string,
+  fallback: string,
+  cursorStart: number,
+  cursorEnd: number
+): { text: string; selectionStart: number; selectionEnd: number } {
+  const tag =
+    mode === 'html'
+      ? `<tg-emoji emoji-id="${emojiId}">${fallback}</tg-emoji>`
+      : `![${fallback}](tg://emoji?id=${emojiId})`;
+
+  const newText = text.substring(0, cursorStart) + tag + text.substring(cursorEnd);
+  const newPos = cursorStart + tag.length;
+
+  return { text: newText, selectionStart: newPos, selectionEnd: newPos };
+}
+
 export function getFormatModeFromParseMode(parseMode: string): FormatMode | null {
   if (parseMode === 'HTML') {
     return 'html';
@@ -379,6 +398,7 @@ export function normalizeTextFormattingInput(text: string, mode: FormatMode): st
   result = result.replace(/<code(?:\s[^>]*)?>[\s\S]*?<\/code>/gi, match => stashValue(stashed, match));
   result = result.replace(/<a\s[^>]*>[\s\S]*?<\/a>/gi, match => stashValue(stashed, match));
   result = result.replace(/<tg-spoiler>[\s\S]*?<\/tg-spoiler>/gi, match => stashValue(stashed, match));
+  result = result.replace(/<tg-emoji(?:\s[^>]*)?>[\s\S]*?<\/tg-emoji>/gi, match => stashValue(stashed, match));
   result = result.replace(/<\/?[a-z][^>]*>/gi, match => stashValue(stashed, match));
 
   result = result.replace(/```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, (_, language = '', code: string) => {
@@ -431,12 +451,20 @@ export function textToPreviewHtml(text: string, mode: FormatMode): string {
       .replace(/&lt;pre&gt;([\s\S]*?)&lt;\/pre&gt;/g, '<pre>$1</pre>')
       .replace(/&lt;tg-spoiler&gt;([\s\S]*?)&lt;\/tg-spoiler&gt;/g, '<span class="spoiler">$1</span>')
       .replace(
+        /&lt;tg-emoji emoji-id=&quot;([^&]*)&quot;&gt;([\s\S]*?)&lt;\/tg-emoji&gt;/g,
+        '<span class="tg-emoji" title="Premium emoji (id: $1)">$2</span>'
+      )
+      .replace(
         /&lt;a href=&quot;(https?:\/\/.*?)&quot;&gt;([\s\S]*?)&lt;\/a&gt;/g,
         '<a href="$1" target="_blank" rel="noopener noreferrer">$2</a>'
       );
   } else {
     safe = safe
       .replace(/\|\|([\s\S]*?)\|\|/g, '<span class="spoiler">$1</span>')
+      .replace(
+        /!\[([^\]]*)\]\(tg:\/\/emoji\?id=([^)]+)\)/g,
+        '<span class="tg-emoji" title="Premium emoji (id: $2)">$1</span>'
+      )
       .replace(/```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, '<pre>$2</pre>')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/__([\s\S]*?)__/g, '<u>$1</u>')
