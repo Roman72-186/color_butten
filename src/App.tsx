@@ -33,7 +33,11 @@ function App() {
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
+    document.documentElement.classList.add('theme-switching');
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-switching');
+    }, 450);
   }, []);
 
   // ── Telegram keyboard state ──────────────────────────────────────────────
@@ -86,11 +90,22 @@ function App() {
 
   return (
     <div className={styles.app}>
-      <button className={styles.themeToggle} onClick={toggleTheme}>
-        {theme === 'dark' ? '☀' : '☽'}
-      </button>
       <RadioactiveSnow />
       <div className={styles.content}>
+
+        {/* Theme toggle */}
+        <div className={styles.themeBar} onClick={toggleTheme} role="button">
+          <div className={`${styles.themeBarThumb} ${theme === 'light' ? styles.themeBarThumbLeft : styles.themeBarThumbRight}`} />
+          <div className={`${styles.themeBarOption} ${theme === 'light' ? styles.themeBarOptionActive : ''}`}>
+            <span className={styles.themeBarEmoji}>☀</span>
+            <span>Светлая</span>
+          </div>
+          <div className={`${styles.themeBarOption} ${theme === 'dark' ? styles.themeBarOptionActive : ''}`}>
+            <span>Тёмная</span>
+            <span className={styles.themeBarEmoji}>☽</span>
+          </div>
+        </div>
+
         <div className={styles.tabs}>
           <button
             className={`${styles.tab} ${activeTab === 'keyboard' ? styles.tabActive : ''}`}
