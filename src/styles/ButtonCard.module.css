@@ -42,7 +42,7 @@
 
 .rowBadge {
   background: transparent;
-  color: #88b8d4;
+  color: var(--text-muted);
   border: 1px solid var(--border);
 }
 
@@ -55,7 +55,7 @@
   justify-content: center;
   border-radius: 1px;
   font-size: 14px;
-  color: #6090ac;
+  color: var(--text-dim);
   background: transparent;
   transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
@@ -91,7 +91,7 @@
   display: block;
   font-family: 'Share Tech Mono', monospace;
   font-size: 10px;
-  color: #88b8d4;
+  color: var(--text-muted);
   margin-bottom: 5px;
   text-transform: uppercase;
   letter-spacing: 1px;

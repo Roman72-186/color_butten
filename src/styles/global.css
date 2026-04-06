@@ -15,6 +15,8 @@
   --text-muted:  #88b8d4;
   --text-dim:    #6090ac;
   --input-bg:    #020408;
+  --pre-bg:      #020408;
+  --pre-color:   #7dffc8;
   --radius:      3px;
   --radius-sm:   2px;
 
@@ -23,6 +25,30 @@
   --glow-green:  0 0 8px #00ff88, 0 0 20px rgba(0,255,136,.4), 0 0 40px rgba(0,255,136,.15);
   --glow-red:    0 0 8px #ff2255, 0 0 20px rgba(255,34,85,.4),  0 0 40px rgba(255,34,85,.15);
   --glow-yellow: 0 0 8px #ffc800, 0 0 20px rgba(255,200,0,.4),  0 0 40px rgba(255,200,0,.15);
+}
+
+[data-theme="light"] {
+  --bg:          #f0f4ff;
+  --surface:     #ffffff;
+  --surface-alt: #e8edf8;
+  --border:      #c8d4ee;
+  --border-neon: rgba(0, 120, 160, 0.25);
+  --accent:      #0077aa;
+  --accent2:     #aa0088;
+  --danger:      #cc1133;
+  --success:     #007744;
+  --warning:     #aa7700;
+  --text:        #0a1a30;
+  --text-muted:  #3a5878;
+  --text-dim:    #5a7898;
+  --input-bg:    #f8faff;
+  --pre-bg:      #f0f5f0;
+  --pre-color:   #006644;
+  --glow-cyan:   0 0 6px rgba(0,119,170,.3), 0 0 14px rgba(0,119,170,.15);
+  --glow-pink:   0 0 6px rgba(170,0,136,.25), 0 0 14px rgba(170,0,136,.12);
+  --glow-green:  0 0 6px rgba(0,119,68,.25),  0 0 14px rgba(0,119,68,.12);
+  --glow-red:    0 0 6px rgba(204,17,51,.25),  0 0 14px rgba(204,17,51,.12);
+  --glow-yellow: 0 0 6px rgba(170,119,0,.25),  0 0 14px rgba(170,119,0,.12);
 }
 
 *,
@@ -135,7 +161,7 @@ select:focus {
 
 input::placeholder,
 textarea::placeholder {
-  color: #6090ac;
+  color: var(--text-dim);
 }
 
 select {
@@ -145,6 +171,15 @@ select {
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 28px;
+}
+
+html[data-theme="light"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%230077aa'/%3E%3C/svg%3E");
+}
+
+html[data-theme="light"] body::before,
+html[data-theme="light"] body::after {
+  display: none;
 }
 
 select option {

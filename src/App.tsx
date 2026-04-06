@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { ButtonConfig } from './types';
 import { MAX_BUTTONS } from './constants';
 import { Toolbar } from './components/Toolbar';
@@ -21,6 +21,20 @@ type KeyboardPlatform = 'telegram' | 'max';
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('keyboard');
   const [keyboardPlatform, setKeyboardPlatform] = useState<KeyboardPlatform>('telegram');
+
+  // ── Theme state ──────────────────────────────────────────────────────────
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return (localStorage.getItem('theme') as 'dark' | 'light') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  }, []);
 
   // ── Telegram keyboard state ──────────────────────────────────────────────
   const [buttons, setButtons] = useState<ButtonConfig[]>(() => [createDefaultButton(1)]);
@@ -72,6 +86,9 @@ function App() {
 
   return (
     <div className={styles.app}>
+      <button className={styles.themeToggle} onClick={toggleTheme}>
+        {theme === 'dark' ? '☀' : '☽'}
+      </button>
       <RadioactiveSnow />
       <div className={styles.content}>
         <div className={styles.tabs}>

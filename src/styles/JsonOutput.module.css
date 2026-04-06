@@ -60,7 +60,7 @@
 }
 
 .pre {
-  background: var(--input-bg);
+  background: var(--pre-bg);
   border: 1px solid var(--border);
   border-left: 2px solid rgba(0,245,255,.4);
   border-radius: var(--radius-sm);
@@ -68,7 +68,7 @@
   font-family: 'Share Tech Mono', 'Fira Code', Consolas, monospace;
   font-size: 12px;
   line-height: 1.7;
-  color: #7dffc8;
+  color: var(--pre-color);
   overflow-x: auto;
   word-break: break-word;
   white-space: pre-wrap;
