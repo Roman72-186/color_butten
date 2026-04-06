@@ -45,6 +45,18 @@ function App() {
     applyTheme(theme === 'dark' ? 'light' : 'dark');
   }, [theme, applyTheme]);
 
+  // ── Swipe hint (убирается после первого взаимодействия) ────────────────
+  const hintedRef = useRef(!!localStorage.getItem('swipe-hinted'));
+  const [hinted, setHinted] = useState(hintedRef.current);
+
+  const markHinted = useCallback(() => {
+    if (!hintedRef.current) {
+      hintedRef.current = true;
+      setHinted(true);
+      localStorage.setItem('swipe-hinted', '1');
+    }
+  }, []);
+
   // ── Swipe detection (native listeners, passive:false на move) ────────────
   const barRef = useRef<HTMLDivElement>(null);
   const lastTouchEnd = useRef(0);
@@ -64,7 +76,6 @@ function App() {
     const onMove = (e: TouchEvent) => {
       const dx = Math.abs(e.touches[0].clientX - startX);
       const dy = Math.abs(e.touches[0].clientY - startY);
-      // горизонтальный свайп — блокируем скролл браузера
       if (dx > dy && dx > 8) e.preventDefault();
     };
 
@@ -72,6 +83,7 @@ function App() {
       lastTouchEnd.current = Date.now();
       const deltaX = e.changedTouches[0].clientX - startX;
       const deltaY = e.changedTouches[0].clientY - startY;
+      markHinted();
       if (Math.abs(deltaX) < 30 || Math.abs(deltaX) < Math.abs(deltaY)) return;
       applyTheme(deltaX < 0 ? 'light' : 'dark');
     };
@@ -85,13 +97,13 @@ function App() {
       el.removeEventListener('touchmove',  onMove);
       el.removeEventListener('touchend',   onEnd);
     };
-  }, [applyTheme]);
+  }, [applyTheme, markHinted]);
 
-  // клик мышью на десктопе (после touch-тапа click не нужен — покрывается touchend)
   const handleThemeClick = useCallback(() => {
     if (Date.now() - lastTouchEnd.current < 500) return;
+    markHinted();
     toggleTheme();
-  }, [toggleTheme]);
+  }, [toggleTheme, markHinted]);
 
   // ── Telegram keyboard state ──────────────────────────────────────────────
   const [buttons, setButtons] = useState<ButtonConfig[]>(() => [createDefaultButton(1)]);
@@ -153,14 +165,17 @@ function App() {
           onClick={handleThemeClick}
           role="button"
         >
-          <div className={`${styles.themeBarThumb} ${theme === 'light' ? styles.themeBarThumbLeft : styles.themeBarThumbRight}`} />
+          <div className={`${styles.themeBarThumb} ${theme === 'light' ? styles.themeBarThumbLeft : styles.themeBarThumbRight} ${!hinted ? styles.themeBarThumbSwing : ''}`} />
+          {!hinted && <div className={styles.themeBarShimmer} />}
           <div className={`${styles.themeBarOption} ${theme === 'light' ? styles.themeBarOptionActive : ''}`}>
+            {!hinted && <span className={styles.themeHintArrow}>‹</span>}
             <span className={styles.themeBarEmoji}>☀</span>
             <span>Светлая</span>
           </div>
           <div className={`${styles.themeBarOption} ${theme === 'dark' ? styles.themeBarOptionActive : ''}`}>
             <span>Тёмная</span>
             <span className={styles.themeBarEmoji}>☽</span>
+            {!hinted && <span className={styles.themeHintArrow}>›</span>}
           </div>
         </div>
 
