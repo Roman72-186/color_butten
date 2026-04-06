@@ -72,20 +72,20 @@ interface MaxMethodConfig {
 }
 
 const MAX_METHODS: MaxMethodConfig[] = [
-  { id: 'sendMessage',    label: 'sendMessage',    description: 'Отправить сообщение пользователю или в чат/канал', category: 'messages', httpMethod: 'POST'   },
-  { id: 'editMessage',    label: 'editMessage',    description: 'Редактировать отправленное сообщение',             category: 'messages', httpMethod: 'PUT'    },
-  { id: 'deleteMessage',  label: 'deleteMessage',  description: 'Удалить сообщение',                                category: 'messages', httpMethod: 'DELETE' },
-  { id: 'getMe',          label: 'getMe',          description: 'Информация о боте и его настройки',                category: 'bot',      httpMethod: 'GET'    },
-  { id: 'getChats',       label: 'getChats',       description: 'Список чатов и каналов, где состоит бот',          category: 'chats',    httpMethod: 'GET'    },
-  { id: 'getChat',        label: 'getChat',        description: 'Информация о конкретном чате или канале',          category: 'chats',    httpMethod: 'GET'    },
-  { id: 'editChat',       label: 'editChat',       description: 'Изменить название чата',                           category: 'chats',    httpMethod: 'PATCH'  },
-  { id: 'getChatMembers', label: 'getChatMembers', description: 'Список участников чата с пагинацией',              category: 'chats',    httpMethod: 'GET'    },
-  { id: 'getChatMember',  label: 'getChatMember',  description: 'Проверить конкретного пользователя в чате',        category: 'chats',    httpMethod: 'GET'    },
-  { id: 'addChatMember',  label: 'addChatMember',  description: 'Добавить пользователя в чат',                     category: 'chats',    httpMethod: 'POST'   },
-  { id: 'kickChatMember', label: 'kickChatMember', description: 'Удалить участника из чата',                       category: 'chats',    httpMethod: 'DELETE' },
-  { id: 'leaveChat',      label: 'leaveChat',      description: 'Бот покидает чат',                                category: 'chats',    httpMethod: 'DELETE' },
-  { id: 'pinMessage',     label: 'pinMessage',     description: 'Закрепить сообщение в чате или канале',           category: 'chats',    httpMethod: 'POST'   },
-  { id: 'unpinMessage',   label: 'unpinMessage',   description: 'Открепить закреплённое сообщение',                category: 'chats',    httpMethod: 'DELETE' },
+  { id: 'sendMessage',    label: 'Отправить сообщение',    description: 'Отправить сообщение пользователю или в чат/канал', category: 'messages', httpMethod: 'POST'   },
+  { id: 'editMessage',    label: 'Редактировать сообщение', description: 'Редактировать отправленное сообщение',            category: 'messages', httpMethod: 'PUT'    },
+  { id: 'deleteMessage',  label: 'Удалить сообщение',      description: 'Удалить сообщение',                               category: 'messages', httpMethod: 'DELETE' },
+  { id: 'getMe',          label: 'Информация о боте',      description: 'Информация о боте и его настройки',               category: 'bot',      httpMethod: 'GET'    },
+  { id: 'getChats',       label: 'Список чатов',           description: 'Список чатов и каналов, где состоит бот',         category: 'chats',    httpMethod: 'GET'    },
+  { id: 'getChat',        label: 'Информация о чате',      description: 'Информация о конкретном чате или канале',         category: 'chats',    httpMethod: 'GET'    },
+  { id: 'editChat',       label: 'Изменить название чата', description: 'Изменить название чата',                          category: 'chats',    httpMethod: 'PATCH'  },
+  { id: 'getChatMembers', label: 'Участники чата',         description: 'Список участников чата с пагинацией',             category: 'chats',    httpMethod: 'GET'    },
+  { id: 'getChatMember',  label: 'Найти участника',        description: 'Проверить конкретного пользователя в чате',       category: 'chats',    httpMethod: 'GET'    },
+  { id: 'addChatMember',  label: 'Добавить участника',     description: 'Добавить пользователя в чат',                    category: 'chats',    httpMethod: 'POST'   },
+  { id: 'kickChatMember', label: 'Удалить из чата',        description: 'Удалить участника из чата',                      category: 'chats',    httpMethod: 'DELETE' },
+  { id: 'leaveChat',      label: 'Покинуть чат',           description: 'Бот покидает чат',                               category: 'chats',    httpMethod: 'DELETE' },
+  { id: 'pinMessage',     label: 'Закрепить сообщение',    description: 'Закрепить сообщение в чате или канале',          category: 'chats',    httpMethod: 'POST'   },
+  { id: 'unpinMessage',   label: 'Открепить сообщение',    description: 'Открепить закреплённое сообщение',               category: 'chats',    httpMethod: 'DELETE' },
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -103,11 +103,11 @@ const HTTP_METHOD_COLORS: Record<string, string> = {
 };
 
 const MAX_BUTTON_TYPES: { value: MaxButtonType; label: string }[] = [
-  { value: 'callback',             label: 'Callback' },
-  { value: 'message',              label: 'Message (команда)' },
-  { value: 'link',                 label: 'Link (ссылка)' },
-  { value: 'request_contact',      label: 'Request Contact' },
-  { value: 'request_geo_location', label: 'Request Geo' },
+  { value: 'callback',             label: 'Callback (событие)' },
+  { value: 'message',              label: 'Команда (message)' },
+  { value: 'link',                 label: 'Ссылка (link)' },
+  { value: 'request_contact',      label: 'Запрос контакта' },
+  { value: 'request_geo_location', label: 'Запрос геолокации' },
 ];
 
 const BASE_URL = 'https://platform-api.max.ru';
@@ -441,7 +441,7 @@ export function MaxRequestBuilder() {
                   <optgroup key={cat} label={CATEGORY_LABELS[cat]}>
                     {methods.map(m => (
                       <option key={m.id} value={m.id}>
-                        {m.label} · {m.description}
+                        {m.label}
                       </option>
                     ))}
                   </optgroup>
