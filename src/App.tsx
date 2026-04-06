@@ -45,26 +45,51 @@ function App() {
     applyTheme(theme === 'dark' ? 'light' : 'dark');
   }, [theme, applyTheme]);
 
-  // ── Swipe detection ──────────────────────────────────────────────────────
-  const touchStartX = useRef<number | null>(null);
-  const swipeHandled = useRef(false);
+  // ── Swipe detection (native listeners, passive:false на move) ────────────
+  const barRef = useRef<HTMLDivElement>(null);
+  const lastTouchEnd = useRef(0);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    swipeHandled.current = false;
-  }, []);
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
-    const delta = e.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(delta) < 30) return;
-    swipeHandled.current = true;
-    applyTheme(delta < 0 ? 'light' : 'dark');
+    let startX = 0;
+    let startY = 0;
+
+    const onStart = (e: TouchEvent) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    };
+
+    const onMove = (e: TouchEvent) => {
+      const dx = Math.abs(e.touches[0].clientX - startX);
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      // горизонтальный свайп — блокируем скролл браузера
+      if (dx > dy && dx > 8) e.preventDefault();
+    };
+
+    const onEnd = (e: TouchEvent) => {
+      lastTouchEnd.current = Date.now();
+      const deltaX = e.changedTouches[0].clientX - startX;
+      const deltaY = e.changedTouches[0].clientY - startY;
+      if (Math.abs(deltaX) < 30 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+      applyTheme(deltaX < 0 ? 'light' : 'dark');
+    };
+
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove',  onMove,  { passive: false });
+    el.addEventListener('touchend',   onEnd,   { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove',  onMove);
+      el.removeEventListener('touchend',   onEnd);
+    };
   }, [applyTheme]);
 
+  // клик мышью на десктопе (после touch-тапа click не нужен — покрывается touchend)
   const handleThemeClick = useCallback(() => {
-    if (swipeHandled.current) { swipeHandled.current = false; return; }
+    if (Date.now() - lastTouchEnd.current < 500) return;
     toggleTheme();
   }, [toggleTheme]);
 
@@ -123,10 +148,9 @@ function App() {
 
         {/* Theme toggle */}
         <div
+          ref={barRef}
           className={styles.themeBar}
           onClick={handleThemeClick}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
           role="button"
         >
           <div className={`${styles.themeBarThumb} ${theme === 'light' ? styles.themeBarThumbLeft : styles.themeBarThumbRight}`} />
