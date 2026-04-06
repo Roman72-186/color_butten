@@ -158,137 +158,29 @@
   text-shadow: 0 0 8px var(--danger);
 }
 
-/* ── Theme toggle bar ─────────────────────────────────────────────────────── */
+/* ── Theme toggle button ──────────────────────────────────────────────────── */
 
-.themeBar {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.themeBtn {
   width: 100%;
-  height: 48px;
-  background: var(--surface-alt);
+  padding: 11px 16px;
+  margin-bottom: 16px;
+  background: transparent;
+  color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 4px;
-  cursor: pointer;
-  margin-bottom: 16px;
-  overflow: hidden;
-  user-select: none;
-  transition: border-color 0.2s;
-}
-
-.themeBar:hover {
-  border-color: var(--accent);
-}
-
-.themeBarThumb {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  width: calc(50% - 4px);
-  background: var(--surface);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--accent);
-  box-shadow: 0 0 14px rgba(0,245,255,.18);
-  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.4s ease,
-              box-shadow 0.4s ease;
-  z-index: 0;
-}
-
-.themeBarThumbLeft  { left: 4px; }
-.themeBarThumbRight { left: 50%; }
-
-.themeBarOption {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
   font-family: 'Orbitron', monospace;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  color: var(--text-dim);
-  transition: color 0.35s ease, text-shadow 0.35s ease;
-  pointer-events: none;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
-.themeBarOptionActive {
+.themeBtn:hover {
   color: var(--accent);
-  text-shadow: 0 0 10px rgba(0,245,255,.55);
-}
-
-.themeBarEmoji {
-  font-size: 15px;
-  font-family: initial;
-  text-shadow: none;
-  line-height: 1;
-}
-
-/* ── Swipe hint animations ───────────────────────────────────────────────── */
-
-/* Ползунок качается влево-вправо как на iOS "slide to unlock" */
-.themeBarThumbSwing {
-  animation: thumb-swing 2.8s ease-in-out 1.2s infinite;
-}
-
-@keyframes thumb-swing {
-  0%, 100% { transform: translateX(0); }
-  14%      { transform: translateX(-7px); }
-  30%      { transform: translateX(7px); }
-  44%      { transform: translateX(-4px); }
-  58%      { transform: translateX(4px); }
-  70%      { transform: translateX(-1px); }
-  80%      { transform: translateX(0); }
-}
-
-/* Блик скользит по бару */
-.themeBarShimmer {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 3;
-}
-
-.themeBarShimmer::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 40%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.18) 50%,
-    transparent 100%
-  );
-  animation: shimmer-sweep 2.8s ease-in-out 0.6s infinite;
-}
-
-@keyframes shimmer-sweep {
-  0%        { left: -40%; }
-  50%, 100% { left: 120%; }
-}
-
-/* Пульсирующие стрелки по краям */
-.themeHintArrow {
-  font-size: 13px;
-  font-family: initial;
-  color: var(--accent);
-  text-shadow: none;
-  opacity: 0;
-  animation: arrow-pulse 1.6s ease-in-out 0.8s infinite;
-}
-
-@keyframes arrow-pulse {
-  0%, 100% { opacity: 0;   transform: translateX(0); }
-  40%      { opacity: 0.8; transform: translateX(0); }
-  70%      { opacity: 0.4; transform: translateX(0); }
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(0,245,255,.15);
 }
 
 @media (max-width: 480px) {
