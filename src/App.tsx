@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { ButtonConfig } from './types';
 import { MAX_BUTTONS } from './constants';
 import { Toolbar } from './components/Toolbar';
@@ -32,13 +32,41 @@ function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const toggleTheme = useCallback(() => {
-    document.documentElement.classList.add('theme-switching');
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-    setTimeout(() => {
-      document.documentElement.classList.remove('theme-switching');
-    }, 450);
+  const applyTheme = useCallback((next: 'dark' | 'light') => {
+    setTheme(prev => {
+      if (prev === next) return prev;
+      document.documentElement.classList.add('theme-switching');
+      setTimeout(() => document.documentElement.classList.remove('theme-switching'), 450);
+      return next;
+    });
   }, []);
+
+  const toggleTheme = useCallback(() => {
+    applyTheme(theme === 'dark' ? 'light' : 'dark');
+  }, [theme, applyTheme]);
+
+  // ── Swipe detection ──────────────────────────────────────────────────────
+  const touchStartX = useRef<number | null>(null);
+  const swipeHandled = useRef(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    swipeHandled.current = false;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(delta) < 30) return;
+    swipeHandled.current = true;
+    applyTheme(delta < 0 ? 'light' : 'dark');
+  }, [applyTheme]);
+
+  const handleThemeClick = useCallback(() => {
+    if (swipeHandled.current) { swipeHandled.current = false; return; }
+    toggleTheme();
+  }, [toggleTheme]);
 
   // ── Telegram keyboard state ──────────────────────────────────────────────
   const [buttons, setButtons] = useState<ButtonConfig[]>(() => [createDefaultButton(1)]);
@@ -94,7 +122,13 @@ function App() {
       <div className={styles.content}>
 
         {/* Theme toggle */}
-        <div className={styles.themeBar} onClick={toggleTheme} role="button">
+        <div
+          className={styles.themeBar}
+          onClick={handleThemeClick}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          role="button"
+        >
           <div className={`${styles.themeBarThumb} ${theme === 'light' ? styles.themeBarThumbLeft : styles.themeBarThumbRight}`} />
           <div className={`${styles.themeBarOption} ${theme === 'light' ? styles.themeBarOptionActive : ''}`}>
             <span className={styles.themeBarEmoji}>☀</span>
