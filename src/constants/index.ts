@@ -1,8 +1,8 @@
 export const MAX_BUTTONS = 12;
 export const MAX_PER_ROW = 3;
 
-export const MAX_GRID_ROWS = 5;
-export const MAX_GRID_COLS = 8;
+export const MAX_GRID_ROWS = 7;
+export const MAX_GRID_COLS = 7;
 
 export const STYLES = [
   { value: 'default', label: 'Default', color: '#8597a8' },
