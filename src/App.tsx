@@ -107,31 +107,17 @@ function App() {
           {theme === 'dark' ? '☀ Светлая' : '☽ Тёмная'}
         </button>
 
-        <div className={styles.tabs}>
-          <button
-            className={`${styles.tab} ${activeTab === 'keyboard' ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab('keyboard')}
+        <div className={styles.tabSelect}>
+          <select
+            className={styles.tabSelectEl}
+            value={activeTab}
+            onChange={e => setActiveTab(e.target.value as TabType)}
           >
-            Конструктор кнопок
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'requests' ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab('requests')}
-          >
-            Конструктор запросов
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'formatter' ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab('formatter')}
-          >
-            Форматирование текста
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'json' ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab('json')}
-          >
-            JSON-форматор
-          </button>
+            <option value="keyboard">Конструктор кнопок</option>
+            <option value="requests">Конструктор запросов</option>
+            <option value="formatter">Форматирование текста</option>
+            <option value="json">JSON-форматор</option>
+          </select>
         </div>
 
         <div style={{ display: activeTab === 'keyboard' ? undefined : 'none' }}>

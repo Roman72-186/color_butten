@@ -144,15 +144,15 @@ export function TextFormatter() {
 
   return (
     <div className={styles.formatter}>
-      <div className={styles.modeToggle}>
-        <button
-          className={`${styles.modeBtn} ${mode === 'html' ? styles.modeActive : ''}`}
-          onClick={() => setMode('html')}
-        >HTML</button>
-        <button
-          className={`${styles.modeBtn} ${mode === 'markdown' ? styles.modeActive : ''}`}
-          onClick={() => setMode('markdown')}
-        >MarkdownV2</button>
+      <div className={styles.modeSelect}>
+        <select
+          className={styles.modeSelectEl}
+          value={mode}
+          onChange={e => setMode(e.target.value as FormatMode)}
+        >
+          <option value="html">HTML</option>
+          <option value="markdown">MarkdownV2</option>
+        </select>
       </div>
 
       <div className={styles.toolbar}>
