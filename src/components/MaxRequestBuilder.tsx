@@ -1,7 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { ButtonConfig } from '../types';
+import { MAX_GRID_ROWS, MAX_GRID_COLS } from '../constants';
 import { Preview } from './Preview';
 import styles from '../styles/RequestBuilder.module.css';
+import gridStyles from '../styles/GridConstructor.module.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -30,6 +32,7 @@ interface MaxButtonItem {
   payload: string;
   url: string;
   row: number;
+  col: number;
 }
 
 interface MaxImageItem {
@@ -111,45 +114,6 @@ const MAX_BUTTON_TYPES: { value: MaxButtonType; label: string }[] = [
 ];
 
 const BASE_URL = 'https://platform-api.max.ru';
-const MAX_PER_ROW = 3;
-
-// ─── Row selector ─────────────────────────────────────────────────────────────
-
-function MaxRowSelector({
-  buttons,
-  currentId,
-  currentRow,
-  onChange,
-}: {
-  buttons: MaxButtonItem[];
-  currentId: string;
-  currentRow: number;
-  onChange: (row: number) => void;
-}) {
-  const existingRows = Array.from(new Set(buttons.map(b => b.row))).sort((a, b) => a - b);
-  const nextRow = existingRows.length > 0 ? existingRows[existingRows.length - 1] + 1 : 1;
-
-  return (
-    <div>
-      <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        Строка в клавиатуре
-      </label>
-      <select value={currentRow} onChange={e => onChange(Number(e.target.value))}>
-        {existingRows.map(row => {
-          const count = buttons.filter(b => b.row === row && b.id !== currentId).length;
-          const isFull = count >= MAX_PER_ROW;
-          const free = MAX_PER_ROW - count;
-          return (
-            <option key={row} value={row} disabled={isFull}>
-              Строка {row}{isFull ? ' (заполнена)' : ` · свободно ${free} из ${MAX_PER_ROW}`}
-            </option>
-          );
-        })}
-        <option value={nextRow}>+ Новая строка {nextRow}</option>
-      </select>
-    </div>
-  );
-}
 
 // ─── Preview conversion ───────────────────────────────────────────────────────
 
@@ -163,14 +127,14 @@ function maxButtonsToPreviewRows(buttons: MaxButtonItem[]): ButtonConfig[][] {
   return Array.from(rowMap.entries())
     .sort(([a], [b]) => a - b)
     .map(([, row]) =>
-      row.map(btn => ({
+      row.slice().sort((a, b) => a.col - b.col).map(btn => ({
         id: btn.id,
         text: btn.text || '...',
         style: 'default' as const,
         actionType: 'callback_data' as const,
         actionValue: btn.payload,
         row: btn.row,
-        col: 0,
+        col: btn.col,
         iconCustomEmojiId: '',
       }))
     );
@@ -186,8 +150,8 @@ function nextId() {
 
 // ─── Default state ───────────────────────────────────────────────────────────
 
-function createDefaultButton(row: number): MaxButtonItem {
-  return { id: nextId(), type: 'callback', text: '', payload: '', url: '', row };
+function createDefaultButton(row: number, col: number): MaxButtonItem {
+  return { id: nextId(), type: 'callback', text: '', payload: '', url: '', row, col };
 }
 
 function createDefaultImage(): MaxImageItem {
@@ -224,7 +188,7 @@ function buildButtonRows(buttons: MaxButtonItem[]): object[][] {
   return Array.from(rowMap.entries())
     .sort(([a], [b]) => a - b)
     .map(([, row]) =>
-      row.map(btn => {
+      row.slice().sort((a, b) => a.col - b.col).map(btn => {
         if (btn.type === 'link') return { type: btn.type, text: btn.text, url: btn.url };
         if (btn.type === 'request_contact' || btn.type === 'request_geo_location') return { type: btn.type, text: btn.text };
         return { type: btn.type, text: btn.text, payload: btn.payload };
@@ -333,28 +297,12 @@ export function MaxRequestBuilder() {
     setForm(prev => ({ ...prev, method }));
   }, []);
 
-  const addButton = useCallback(() => {
+  const toggleCell = useCallback((row: number, col: number) => {
     setForm(prev => {
-      // find first row with fewer than MAX_PER_ROW buttons, otherwise open a new row
-      const rowCounts = new Map<number, number>();
-      for (const btn of prev.buttons) {
-        rowCounts.set(btn.row, (rowCounts.get(btn.row) ?? 0) + 1);
-      }
-      const existingRows = Array.from(new Set(prev.buttons.map(b => b.row))).sort((a, b) => a - b);
-      const maxRow = existingRows.length > 0 ? existingRows[existingRows.length - 1] : 0;
-      let targetRow = maxRow + 1;
-      for (const r of existingRows) {
-        if ((rowCounts.get(r) ?? 0) < MAX_PER_ROW) {
-          targetRow = r;
-          break;
-        }
-      }
-      return { ...prev, buttons: [...prev.buttons, createDefaultButton(targetRow)] };
+      const exists = prev.buttons.find(b => b.row === row && b.col === col);
+      if (exists) return { ...prev, buttons: prev.buttons.filter(b => !(b.row === row && b.col === col)) };
+      return { ...prev, buttons: [...prev.buttons, createDefaultButton(row, col)] };
     });
-  }, []);
-
-  const removeButton = useCallback((id: string) => {
-    setForm(prev => ({ ...prev, buttons: prev.buttons.filter(b => b.id !== id) }));
   }, []);
 
   const updateButton = useCallback((id: string, patch: Partial<MaxButtonItem>) => {
@@ -394,7 +342,6 @@ export function MaxRequestBuilder() {
     setCopiedBody(false);
   }, []);
 
-  const usedRows = Array.from(new Set(form.buttons.map(b => b.row))).sort((a, b) => a - b);
 
   // Group methods by category for the select
   const categories = ['messages', 'bot', 'chats'] as const;
@@ -666,79 +613,99 @@ export function MaxRequestBuilder() {
             <div className={styles.inlineHeader}>
               <div>
                 <div className={styles.sectionTitle}>Кнопки inline_keyboard</div>
-                <div className={styles.sectionText}>Одинаковый номер строки = один ряд.</div>
+                <div className={styles.sectionText}>Нажмите на ячейку чтобы добавить кнопку</div>
               </div>
-              <button className={styles.secondaryBtn} onClick={addButton}>+ Кнопка</button>
+              {form.buttons.length > 0 && (
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={() => setForm(prev => ({ ...prev, buttons: [] }))}
+                >
+                  Очистить
+                </button>
+              )}
             </div>
-            {form.buttons.length > 0 && (
-              <div className={styles.albumList}>
-                {usedRows.map(row => (
-                  <div key={row}>
-                    <div className={styles.fieldHint} style={{ marginBottom: 6 }}>Строка {row}</div>
-                    {form.buttons.filter(b => b.row === row).map((btn, i) => (
-                      <div key={btn.id} className={styles.albumCard} style={{ marginBottom: 8 }}>
-                        <div className={styles.albumHeader}>
-                          <span className={styles.albumTitle}>Кнопка {i + 1}</span>
-                          <button className={styles.linkBtn} onClick={() => removeButton(btn.id)}>Удалить</button>
-                        </div>
-                        <div className={styles.grid}>
-                          <div className={styles.field}>
-                            <label className={styles.label}>type</label>
-                            <select
-                              value={btn.type}
-                              onChange={e => updateButton(btn.id, { type: e.target.value as MaxButtonType })}
-                            >
-                              {MAX_BUTTON_TYPES.map(t => (
-                                <option key={t.value} value={t.value}>{t.label}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className={styles.fieldFull}>
-                            <MaxRowSelector
-                              buttons={form.buttons}
-                              currentId={btn.id}
-                              currentRow={btn.row}
-                              onChange={row => updateButton(btn.id, { row })}
-                            />
-                          </div>
-                          <div className={styles.fieldFull}>
-                            <label className={styles.label}>text</label>
-                            <input
-                              type="text"
-                              value={btn.text}
-                              placeholder="Текст кнопки"
-                              onChange={e => updateButton(btn.id, { text: e.target.value })}
-                            />
-                          </div>
-                          {btn.type === 'link' && (
-                            <div className={styles.fieldFull}>
-                              <label className={styles.label}>url</label>
-                              <input
-                                type="text"
-                                value={btn.url}
-                                placeholder="https://example.com"
-                                onChange={e => updateButton(btn.id, { url: e.target.value })}
-                              />
-                            </div>
-                          )}
-                          {(btn.type === 'callback' || btn.type === 'message') && (
-                            <div className={styles.fieldFull}>
-                              <label className={styles.label}>payload</label>
-                              <input
-                                type="text"
-                                value={btn.payload}
-                                placeholder={btn.type === 'message' ? '/menu' : 'my_callback'}
-                                onChange={e => updateButton(btn.id, { payload: e.target.value })}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+
+            {/* 7×7 grid */}
+            <div
+              className={gridStyles.grid}
+              style={{ gridTemplateColumns: `repeat(${MAX_GRID_COLS}, 1fr)` }}
+            >
+              {Array.from({ length: MAX_GRID_ROWS }, (_, r) =>
+                Array.from({ length: MAX_GRID_COLS }, (_, c) => {
+                  const row = r + 1, col = c + 1;
+                  const btn = form.buttons.find(b => b.row === row && b.col === col);
+                  return (
+                    <button
+                      key={`${row}:${col}`}
+                      type="button"
+                      className={`${gridStyles.cell} ${btn ? gridStyles.cellActive : gridStyles.cellInactive}`}
+                      onClick={() => toggleCell(row, col)}
+                      title={btn
+                        ? `Р${row}К${col}${btn.text ? ': ' + btn.text : ''} — нажмите для деактивации`
+                        : `Р${row}К${col} — нажмите для активации`}
+                    >
+                      {btn ? (btn.text || '...') : ''}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Config cards */}
+            {[...form.buttons]
+              .sort((a, b) => a.row !== b.row ? a.row - b.row : a.col - b.col)
+              .map(btn => (
+                <div key={btn.id} className={styles.albumCard}>
+                  <div className={styles.albumHeader}>
+                    <span className={styles.albumTitle}>Р{btn.row}К{btn.col}</span>
+                    <button className={styles.linkBtn} onClick={() => toggleCell(btn.row, btn.col)}>Удалить</button>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className={styles.grid}>
+                    <div className={styles.field}>
+                      <label className={styles.label}>type</label>
+                      <select
+                        value={btn.type}
+                        onChange={e => updateButton(btn.id, { type: e.target.value as MaxButtonType })}
+                      >
+                        {MAX_BUTTON_TYPES.map(t => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className={styles.fieldFull}>
+                      <label className={styles.label}>text</label>
+                      <input
+                        type="text"
+                        value={btn.text}
+                        placeholder="Текст кнопки"
+                        onChange={e => updateButton(btn.id, { text: e.target.value })}
+                      />
+                    </div>
+                    {btn.type === 'link' && (
+                      <div className={styles.fieldFull}>
+                        <label className={styles.label}>url</label>
+                        <input
+                          type="text"
+                          value={btn.url}
+                          placeholder="https://example.com"
+                          onChange={e => updateButton(btn.id, { url: e.target.value })}
+                        />
+                      </div>
+                    )}
+                    {(btn.type === 'callback' || btn.type === 'message') && (
+                      <div className={styles.fieldFull}>
+                        <label className={styles.label}>payload</label>
+                        <input
+                          type="text"
+                          value={btn.payload}
+                          placeholder={btn.type === 'message' ? '/menu' : 'my_callback'}
+                          onChange={e => updateButton(btn.id, { payload: e.target.value })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
 
             {form.buttons.length > 0 && (
               <Preview rows={previewRows} />
