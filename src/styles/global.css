@@ -156,7 +156,7 @@ select {
 input:not([type='checkbox']):not([type='radio']):not([type='file']):focus,
 select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(0,245,255,.25), 0 0 10px rgba(0,245,255,.15);
+  box-shadow: var(--glow-cyan);
 }
 
 input::placeholder,

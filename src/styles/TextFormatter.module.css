@@ -5,53 +5,27 @@
 }
 
 .modeSelect {
-  position: relative;
-}
-
-.modeSelect::after {
-  content: '▼';
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #00f5ff;
-  font-size: 9px;
-  pointer-events: none;
-  text-shadow: 0 0 8px rgba(0,245,255,.8);
+  /* wrapper — no extra styles needed */
 }
 
 .modeSelectEl {
-  width: 100%;
-  padding: 11px 36px 11px 14px;
-  appearance: none;
-  -webkit-appearance: none;
   background: var(--surface-alt);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  color: #00f5ff;
+  color: var(--accent);
   font-family: 'Orbitron', monospace;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.8px;
   text-transform: uppercase;
+  padding: 11px 36px 11px 14px;
   cursor: pointer;
-  text-shadow: 0 0 8px rgba(0,245,255,.6);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .modeSelectEl:focus {
-  outline: none;
-  border-color: #00f5ff;
-  box-shadow: 0 0 0 1px rgba(0,245,255,.25), 0 0 10px rgba(0,245,255,.15);
-}
-
-.modeSelectEl option {
-  background: #080c1a;
-  color: #b8e0ff;
-  text-shadow: none;
-  font-size: 13px;
-  text-transform: none;
-  letter-spacing: 0;
+  border-color: var(--accent);
+  box-shadow: var(--glow-cyan);
 }
 
 .toolbar {

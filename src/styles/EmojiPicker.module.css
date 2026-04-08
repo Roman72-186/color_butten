@@ -151,7 +151,7 @@
 }
 
 .item:hover .itemLabel {
-  color: #b8e0ff;
+  color: var(--text);
 }
 
 .premiumDot {

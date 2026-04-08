@@ -12,55 +12,27 @@
 }
 
 .tabSelect {
-  position: relative;
   margin-bottom: 16px;
 }
 
-.tabSelect::after {
-  content: '▼';
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #00f5ff;
-  font-size: 10px;
-  pointer-events: none;
-  text-shadow: 0 0 8px rgba(0,245,255,.8);
-}
-
 .tabSelectEl {
-  width: 100%;
-  padding: 13px 40px 13px 16px;
-  appearance: none;
-  -webkit-appearance: none;
   background: var(--surface-alt);
   border: 1px solid var(--border-neon);
   border-radius: var(--radius);
-  color: #00f5ff;
+  color: var(--accent);
   font-family: 'Orbitron', monospace;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.8px;
   text-transform: uppercase;
+  padding: 13px 36px 13px 16px;
   cursor: pointer;
-  text-shadow: 0 0 8px rgba(0,245,255,.7);
-  box-shadow: 0 0 8px rgba(0,245,255,.08);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .tabSelectEl:focus {
-  outline: none;
-  border-color: #00f5ff;
-  box-shadow: 0 0 0 1px rgba(0,245,255,.25), 0 0 12px rgba(0,245,255,.15);
-}
-
-.tabSelectEl option {
-  background: #080c1a;
-  color: #b8e0ff;
-  text-shadow: none;
-  font-size: 13px;
-  text-transform: none;
-  letter-spacing: 0;
+  border-color: var(--accent);
+  box-shadow: var(--glow-cyan);
 }
 
 .platformTabs {
@@ -193,10 +165,5 @@
 @media (max-width: 480px) {
   .content {
     padding: 12px 8px 32px;
-  }
-
-  .tabSelectEl {
-    font-size: 11px;
-    padding: 11px 36px 11px 12px;
   }
 }
