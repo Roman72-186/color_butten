@@ -135,6 +135,11 @@ export function TextFormatter() {
     }).catch(() => undefined);
   }, [normalizedText, text, textErrors]);
 
+  const handleShare = useCallback(() => {
+    const url = 'https://t.me/share/url?url=&text=' + encodeURIComponent(normalizedText);
+    window.open(url, '_blank');
+  }, [normalizedText]);
+
   const previewHtml = useMemo(() => textToPreviewHtml(normalizedText, mode), [normalizedText, mode]);
 
   const handleBlur = useCallback(() => {
@@ -232,13 +237,22 @@ export function TextFormatter() {
         </div>
       )}
 
-      <button
-        className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
-        onClick={handleCopy}
-        disabled={!text.trim() || textErrors.length > 0}
-      >
-        {copied ? '\u2713 Скопировано' : 'Скопировать текст'}
-      </button>
+      <div className={styles.actions}>
+        <button
+          className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
+          onClick={handleCopy}
+          disabled={!text.trim() || textErrors.length > 0}
+        >
+          {copied ? '\u2713 Скопировано' : 'Скопировать'}
+        </button>
+        <button
+          className={styles.shareBtn}
+          onClick={handleShare}
+          disabled={!text.trim() || textErrors.length > 0}
+        >
+          Поделиться
+        </button>
+      </div>
     </div>
   );
 }

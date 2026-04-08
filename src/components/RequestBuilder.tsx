@@ -791,20 +791,14 @@ export function RequestBuilder() {
 
   return (
     <div className={styles.builder}>
-      <div className={styles.platformTabs}>
-        <button
-          className={`${styles.platformTab} ${platform === 'telegram' ? styles.platformTabActive : ''}`}
-          onClick={() => setPlatform('telegram')}
-        >
-          Telegram Bot API
-        </button>
-        <button
-          className={`${styles.platformTab} ${platform === 'max' ? styles.platformTabActive : ''}`}
-          onClick={() => setPlatform('max')}
-        >
-          MAX API
-        </button>
-      </div>
+      <select
+        className={styles.platformSelect}
+        value={platform}
+        onChange={e => setPlatform(e.target.value as 'telegram' | 'max')}
+      >
+        <option value="telegram">Telegram Bot API</option>
+        <option value="max">MAX API</option>
+      </select>
 
       {platform === 'max' && <MaxRequestBuilder />}
 

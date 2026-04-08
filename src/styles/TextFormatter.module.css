@@ -465,6 +465,38 @@
   box-shadow: var(--glow-green);
 }
 
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shareBtn {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, rgba(255,0,204,.15), rgba(255,0,204,.05));
+  color: var(--accent2);
+  border: 1px solid var(--accent2);
+  border-radius: var(--radius-sm);
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.shareBtn:hover:not(:disabled) {
+  background: rgba(255,0,204,.25);
+  box-shadow: var(--glow-pink);
+  transform: translateY(-1px);
+}
+
+.shareBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 @media (max-width: 480px) {
   .fmtBtn {
     padding: 6px 8px;

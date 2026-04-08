@@ -115,19 +115,15 @@ function App() {
 
         <div style={{ display: activeTab === 'keyboard' ? undefined : 'none' }}>
           {/* Platform switcher */}
-          <div className={styles.platformTabs}>
-            <button
-              className={`${styles.platformTab} ${keyboardPlatform === 'telegram' ? styles.platformTabActive : ''}`}
-              onClick={() => setKeyboardPlatform('telegram')}
+          <div className={styles.tabSelect}>
+            <select
+              className={styles.tabSelectEl}
+              value={keyboardPlatform}
+              onChange={e => setKeyboardPlatform(e.target.value as KeyboardPlatform)}
             >
-              Telegram Bot API
-            </button>
-            <button
-              className={`${styles.platformTab} ${keyboardPlatform === 'max' ? styles.platformTabActive : ''}`}
-              onClick={() => setKeyboardPlatform('max')}
-            >
-              MAX API
-            </button>
+              <option value="telegram">Telegram Bot API</option>
+              <option value="max">MAX API</option>
+            </select>
           </div>
 
           {/* Telegram keyboard — grid constructor */}
