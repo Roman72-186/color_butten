@@ -210,6 +210,20 @@ export function TextFormatter() {
         </div>
       )}
 
+      {text.trim() && (
+        <div className={styles.output}>
+          <div className={styles.previewTitle}>Что скопируется</div>
+          <div className={styles.outputContent}>
+            {normalizedText.split('\n').map((line, i, arr) => (
+              <span key={i}>
+                {line}
+                {i < arr.length - 1 && <span className={styles.lineBreak}>%0a</span>}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {textErrors.length > 0 && (
         <div className={styles.errors}>
           {textErrors.map((err, i) => (
