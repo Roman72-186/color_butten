@@ -16,15 +16,14 @@
 }
 
 .tabSelectEl {
+  width: 100%;
   background: var(--surface-alt);
   border: 1px solid var(--border-neon);
   border-radius: var(--radius);
   color: var(--accent);
-  font-family: 'Orbitron', monospace;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
   padding: 13px 36px 13px 16px;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
