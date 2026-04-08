@@ -22,6 +22,8 @@ export function TextFormatter() {
   const lastSelectionRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
 
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [debugPaste, setDebugPaste] = useState<{ html: string; plain: string } | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
 
   const normalizedText = useMemo(() => normalizeTextFormattingInput(text, mode), [text, mode]);
   const textErrors = useMemo(() => validateFormattedText(normalizedText, mode), [normalizedText, mode]);
@@ -92,6 +94,8 @@ export function TextFormatter() {
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const html = e.clipboardData.getData('text/html');
     const plain = e.clipboardData.getData('text/plain');
+
+    setDebugPaste({ html, plain });
 
     const markup = html || (looksLikeTelegramMarkup(plain) ? plain : '');
     if (!markup) return;
@@ -174,7 +178,30 @@ export function TextFormatter() {
         >
           ✨ emoji
         </button>
+        <button
+          className={`${styles.fmtBtn} ${showDebug ? styles.fmtBtnActive : ''}`}
+          title="Инспектор буфера обмена"
+          onClick={() => setShowDebug(v => !v)}
+        >
+          📋
+        </button>
       </div>
+
+      {showDebug && (
+        <div style={{ background: '#020408', border: '1px solid #1a3a4a', borderRadius: 6, padding: 10, fontSize: 11, fontFamily: 'Share Tech Mono, monospace', color: '#88b8d4', wordBreak: 'break-all' }}>
+          <div style={{ color: '#00f5ff', marginBottom: 4 }}>Инспектор буфера обмена</div>
+          {debugPaste ? (
+            <>
+              <div><span style={{ color: '#ff00cc' }}>text/html</span> ({debugPaste.html.length} байт):</div>
+              <div style={{ background: '#04060f', padding: '4px 6px', margin: '2px 0 8px', borderRadius: 3, maxHeight: 120, overflow: 'auto', whiteSpace: 'pre-wrap' }}>{debugPaste.html || '(пусто)'}</div>
+              <div><span style={{ color: '#ff00cc' }}>text/plain</span> ({debugPaste.plain.length} байт):</div>
+              <div style={{ background: '#04060f', padding: '4px 6px', margin: '2px 0', borderRadius: 3, maxHeight: 80, overflow: 'auto', whiteSpace: 'pre-wrap' }}>{debugPaste.plain || '(пусто)'}</div>
+            </>
+          ) : (
+            <div style={{ color: '#6090ac' }}>Вставьте текст — здесь появится содержимое буфера</div>
+          )}
+        </div>
+      )}
 
       {emojiPickerOpen && (
         <EmojiPicker onInsert={handleEmojiInsert} />
