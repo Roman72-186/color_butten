@@ -17,6 +17,7 @@ export interface ButtonConfig {
   actionType: ActionType;
   actionValue: string;
   row: number;
+  col: number;
   iconCustomEmojiId: string;
 }
 

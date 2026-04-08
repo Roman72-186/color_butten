@@ -25,7 +25,7 @@ export function getNextAvailableRow(buttons: ButtonConfig[]): number {
   return sortedRows.length > 0 ? sortedRows[sortedRows.length - 1] + 1 : 1;
 }
 
-export function createDefaultButton(row: number): ButtonConfig {
+export function createDefaultButton(row: number, col = 0): ButtonConfig {
   return {
     id: generateId(),
     text: '',
@@ -33,6 +33,7 @@ export function createDefaultButton(row: number): ButtonConfig {
     actionType: 'callback_data',
     actionValue: '',
     row,
+    col,
     iconCustomEmojiId: '',
   };
 }
@@ -51,5 +52,5 @@ export function groupButtonsByRow(buttons: ButtonConfig[]): ButtonConfig[][] {
 
   return Array.from(map.entries())
     .sort(([a], [b]) => a - b)
-    .map(([, group]) => group);
+    .map(([, group]) => group.slice().sort((a, b) => a.col - b.col));
 }

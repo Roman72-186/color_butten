@@ -1,6 +1,9 @@
 export const MAX_BUTTONS = 12;
 export const MAX_PER_ROW = 3;
 
+export const MAX_GRID_ROWS = 5;
+export const MAX_GRID_COLS = 8;
+
 export const STYLES = [
   { value: 'default', label: 'Default', color: '#8597a8' },
   { value: 'primary', label: 'Primary', color: '#5eb5f7' },

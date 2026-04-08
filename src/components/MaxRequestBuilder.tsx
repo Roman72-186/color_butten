@@ -170,6 +170,7 @@ function maxButtonsToPreviewRows(buttons: MaxButtonItem[]): ButtonConfig[][] {
         actionType: 'callback_data' as const,
         actionValue: btn.payload,
         row: btn.row,
+        col: 0,
         iconCustomEmojiId: '',
       }))
     );

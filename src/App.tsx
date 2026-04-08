@@ -1,18 +1,16 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { ButtonConfig } from './types';
-import { MAX_BUTTONS } from './constants';
-import { Toolbar } from './components/Toolbar';
-import { ButtonCard } from './components/ButtonCard';
-import { Preview } from './components/Preview';
-import { JsonOutput } from './components/JsonOutput';
 import { TextFormatter } from './components/TextFormatter';
 import { JsonFormatter } from './components/JsonFormatter';
 import { RequestBuilder } from './components/RequestBuilder';
 import { MaxKeyboardTab } from './components/MaxKeyboardTab';
+import { GridConstructor } from './components/GridConstructor';
+import { Preview } from './components/Preview';
+import { JsonOutput } from './components/JsonOutput';
 import { RadioactiveSnow } from './components/RadioactiveSnow';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
-import { createDefaultButton, getNextAvailableRow, groupButtonsByRow } from './utils/helpers';
+import { createDefaultButton, groupButtonsByRow } from './utils/helpers';
 import styles from './styles/App.module.css';
 
 type TabType = 'keyboard' | 'requests' | 'formatter' | 'json';
@@ -50,52 +48,56 @@ function App() {
   }, [toggleTheme]);
 
   // ── Telegram keyboard state ──────────────────────────────────────────────
-  const [buttons, setButtons] = useState<ButtonConfig[]>(() => [createDefaultButton(1)]);
+  const [gridRows, setGridRows] = useState(3);
+  const [gridCols, setGridCols] = useState(3);
+  const [buttons, setButtons] = useState<ButtonConfig[]>([]);
   const [showValidation, setShowValidation] = useState(false);
 
-  const allErrors  = useMemo(() => buttons.map(validateButton), [buttons]);
-  const hasErrors  = useMemo(() => hasAnyErrors(allErrors), [allErrors]);
+  // При уменьшении сетки — удалять ячейки, вышедшие за границы
+  useEffect(() => {
+    setButtons(prev => prev.filter(b => b.row <= gridRows && b.col <= gridCols));
+  }, [gridRows, gridCols]);
+
+  const errorsById = useMemo(
+    () => new Map(buttons.map(b => [b.id, validateButton(b)])),
+    [buttons]
+  );
+
+  const hasErrors = useMemo(
+    () => hasAnyErrors(Array.from(errorsById.values())),
+    [errorsById]
+  );
+
   const jsonResult = useMemo(() => generateJson(buttons), [buttons]);
   const previewRows = useMemo(() => groupButtonsByRow(buttons), [buttons]);
-  const rowCount   = useMemo(() => new Set(buttons.map(b => b.row)).size, [buttons]);
 
-  const addButton = useCallback(() => {
+  const toggleCell = useCallback((row: number, col: number) => {
     setButtons(prev => {
-      const row = getNextAvailableRow(prev);
-      return [...prev, createDefaultButton(row)];
+      const exists = prev.find(b => b.row === row && b.col === col);
+      if (exists) return prev.filter(b => !(b.row === row && b.col === col));
+      return [...prev, createDefaultButton(row, col)];
     });
   }, []);
 
-  const removeButton = useCallback((index: number) => {
-    setButtons(prev => {
-      if (prev.length <= 1) return prev;
-      return prev.filter((_, i) => i !== index);
-    });
-  }, []);
-
-  const updateButton = useCallback((index: number, field: keyof ButtonConfig, value: string | number) => {
-    setButtons(prev =>
-      prev.map((btn, i): ButtonConfig => {
-        if (i !== index) return btn;
-        const updated = { ...btn, [field]: value } as ButtonConfig;
-        if (field === 'actionType' && value !== btn.actionType) {
-          updated.actionValue = '';
-        }
-        return updated;
-      })
-    );
+  const updateButtonById = useCallback((id: string, field: keyof ButtonConfig, value: string | number) => {
+    setButtons(prev => prev.map(b => {
+      if (b.id !== id) return b;
+      const updated = { ...b, [field]: value } as ButtonConfig;
+      if (field === 'actionType') updated.actionValue = '';
+      return updated;
+    }));
   }, []);
 
   const resetAll = useCallback(() => {
-    setButtons([createDefaultButton(1)]);
+    setButtons([]);
+    setGridRows(3);
+    setGridCols(3);
     setShowValidation(false);
   }, []);
 
   const handleCopy = useCallback(() => {
     setShowValidation(true);
   }, []);
-
-  const isMaxButtons = buttons.length >= MAX_BUTTONS;
 
   return (
     <div className={styles.app}>
@@ -137,42 +139,22 @@ function App() {
             </button>
           </div>
 
-          {/* Telegram keyboard */}
+          {/* Telegram keyboard — grid constructor */}
           {keyboardPlatform === 'telegram' && (
             <>
-              <Toolbar buttonCount={buttons.length} rowCount={rowCount} />
-
-              <div className={styles.section}>
-                {buttons.map((button, index) => (
-                  <ButtonCard
-                    key={button.id}
-                    button={button}
-                    index={index}
-                    buttons={buttons}
-                    errors={allErrors[index]}
-                    showValidation={showValidation}
-                    canDelete={buttons.length > 1}
-                    onUpdate={updateButton}
-                    onRemove={removeButton}
-                  />
-                ))}
-
-                <div className={styles.cardActions}>
-                  <button
-                    className={styles.addBtn}
-                    onClick={addButton}
-                    disabled={isMaxButtons}
-                  >
-                    + Кнопка
-                  </button>
-                  <button className={styles.resetBtn} onClick={resetAll}>
-                    Сбросить
-                  </button>
-                </div>
-              </div>
-
+              <GridConstructor
+                gridRows={gridRows}
+                gridCols={gridCols}
+                buttons={buttons}
+                errorsById={errorsById}
+                showValidation={showValidation}
+                onGridRowsChange={setGridRows}
+                onGridColsChange={setGridCols}
+                onToggleCell={toggleCell}
+                onUpdateButton={updateButtonById}
+                onReset={resetAll}
+              />
               <Preview rows={previewRows} />
-
               <JsonOutput
                 json={jsonResult}
                 hasErrors={showValidation && hasErrors}
