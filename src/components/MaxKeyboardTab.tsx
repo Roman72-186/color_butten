@@ -1,15 +1,15 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { ButtonConfig } from '../types';
-import { MAX_BUTTONS } from '../constants';
-import { Toolbar } from './Toolbar';
+import { MAX_GRID_ROWS, MAX_GRID_COLS } from '../constants';
 import { Preview } from './Preview';
 import { JsonOutput } from './JsonOutput';
 import cardStyles from '../styles/ButtonCard.module.css';
-import appStyles from '../styles/App.module.css';
+import gridStyles from '../styles/GridConstructor.module.css';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type MaxBtnType = 'callback' | 'message' | 'link' | 'request_contact' | 'request_geo_location';
+type MaxBtnStyle = 'default' | 'primary' | 'positive' | 'negative';
 
 interface MaxBtn {
   id: string;
@@ -18,11 +18,11 @@ interface MaxBtn {
   payload: string;
   url: string;
   row: number;
+  col: number;
+  style: MaxBtnStyle;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const MAX_PER_ROW = 3;
 
 const MAX_BTN_TYPES: { value: MaxBtnType; label: string; hint: string }[] = [
   { value: 'callback',             label: 'Callback',        hint: 'payload передаётся боту как callback-событие' },
@@ -30,6 +30,13 @@ const MAX_BTN_TYPES: { value: MaxBtnType; label: string; hint: string }[] = [
   { value: 'link',                 label: 'Link',            hint: 'открывает URL в браузере' },
   { value: 'request_contact',      label: 'Request Contact', hint: 'запрашивает номер телефона пользователя' },
   { value: 'request_geo_location', label: 'Request Geo',     hint: 'запрашивает геолокацию пользователя' },
+];
+
+const MAX_BTN_STYLES: { value: MaxBtnStyle; label: string; color: string }[] = [
+  { value: 'default',  label: 'Default',  color: '#8597a8' },
+  { value: 'primary',  label: 'Primary',  color: '#5eb5f7' },
+  { value: 'positive', label: 'Positive', color: '#50c878' },
+  { value: 'negative', label: 'Negative', color: '#e05555' },
 ];
 
 // ─── ID factory ───────────────────────────────────────────────────────────────
@@ -42,19 +49,8 @@ function nextId(): string {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function createDefault(row: number): MaxBtn {
-  return { id: nextId(), type: 'callback', text: '', payload: '', url: '', row };
-}
-
-function getNextRow(buttons: MaxBtn[]): number {
-  const rowCounts = new Map<number, number>();
-  for (const btn of buttons) rowCounts.set(btn.row, (rowCounts.get(btn.row) ?? 0) + 1);
-  const rows = Array.from(new Set(buttons.map(b => b.row))).sort((a, b) => a - b);
-  const maxRow = rows.length > 0 ? rows[rows.length - 1] : 0;
-  for (const r of rows) {
-    if ((rowCounts.get(r) ?? 0) < MAX_PER_ROW) return r;
-  }
-  return maxRow + 1;
+function createDefault(row: number, col: number): MaxBtn {
+  return { id: nextId(), type: 'callback', text: '', payload: '', url: '', row, col, style: 'default' };
 }
 
 function toPreviewRows(buttons: MaxBtn[]): ButtonConfig[][] {
@@ -67,14 +63,16 @@ function toPreviewRows(buttons: MaxBtn[]): ButtonConfig[][] {
   return Array.from(rowMap.entries())
     .sort(([a], [b]) => a - b)
     .map(([, row]) =>
-      row.map(btn => ({
+      row.slice().sort((a, b) => a.col - b.col).map(btn => ({
         id: btn.id,
         text: btn.text || '...',
-        style: 'default' as const,
+        style: (btn.style === 'positive' ? 'success'
+              : btn.style === 'negative' ? 'danger'
+              : btn.style) as 'default' | 'primary' | 'success' | 'danger',
         actionType: 'callback_data' as const,
         actionValue: btn.payload,
         row: btn.row,
-        col: 0,
+        col: btn.col,
         iconCustomEmojiId: '',
       }))
     );
@@ -90,12 +88,13 @@ function buildJson(buttons: MaxBtn[]): string {
   const buttonRows = Array.from(rowMap.entries())
     .sort(([a], [b]) => a - b)
     .map(([, row]) =>
-      row.map(btn => {
-        if (btn.type === 'link') return { type: btn.type, text: btn.text, url: btn.url };
-        if (btn.type === 'request_contact' || btn.type === 'request_geo_location') {
-          return { type: btn.type, text: btn.text };
-        }
-        return { type: btn.type, text: btn.text, payload: btn.payload };
+      row.slice().sort((a, b) => a.col - b.col).map(btn => {
+        const base: Record<string, unknown> = { type: btn.type, text: btn.text };
+        if (btn.style !== 'default') base.style = btn.style;
+        if (btn.type === 'link') { base.url = btn.url; return base; }
+        if (btn.type === 'request_contact' || btn.type === 'request_geo_location') return base;
+        base.payload = btn.payload;
+        return base;
       })
     );
 
@@ -106,39 +105,22 @@ function buildJson(buttons: MaxBtn[]): string {
   return JSON.stringify(body, null, 2);
 }
 
-// ─── MaxRowSelector ───────────────────────────────────────────────────────────
+// ─── Grid cell ────────────────────────────────────────────────────────────────
 
-function MaxRowSelector({
-  buttons,
-  currentId,
-  currentRow,
-  onChange,
-}: {
-  buttons: MaxBtn[];
-  currentId: string;
-  currentRow: number;
-  onChange: (row: number) => void;
-}) {
-  const existingRows = Array.from(new Set(buttons.map(b => b.row))).sort((a, b) => a - b);
-  const nextRow = existingRows.length > 0 ? existingRows[existingRows.length - 1] + 1 : 1;
-
+function GridCell({
+  active, label, row, col, onClick,
+}: { active: boolean; label: string; row: number; col: number; onClick: () => void }) {
   return (
-    <div className={cardStyles.field}>
-      <label className={cardStyles.label}>Строка в клавиатуре</label>
-      <select value={currentRow} onChange={e => onChange(Number(e.target.value))}>
-        {existingRows.map(row => {
-          const count = buttons.filter(b => b.row === row && b.id !== currentId).length;
-          const isFull = count >= MAX_PER_ROW;
-          const free = MAX_PER_ROW - count;
-          return (
-            <option key={row} value={row} disabled={isFull}>
-              Строка {row}{isFull ? ' (заполнена)' : ` · свободно ${free} из ${MAX_PER_ROW}`}
-            </option>
-          );
-        })}
-        <option value={nextRow}>+ Новая строка {nextRow}</option>
-      </select>
-    </div>
+    <button
+      type="button"
+      className={`${gridStyles.cell} ${active ? gridStyles.cellActive : gridStyles.cellInactive}`}
+      onClick={onClick}
+      title={active
+        ? `Р${row}К${col}${label ? ': ' + label : ''} — нажмите для деактивации`
+        : `Р${row}К${col} — нажмите для активации`}
+    >
+      {active ? (label || '...') : ''}
+    </button>
   );
 }
 
@@ -146,37 +128,26 @@ function MaxRowSelector({
 
 function MaxBtnCard({
   btn,
-  index,
-  allButtons,
-  canDelete,
   onUpdate,
   onRemove,
 }: {
   btn: MaxBtn;
-  index: number;
-  allButtons: MaxBtn[];
-  canDelete: boolean;
   onUpdate: (id: string, patch: Partial<MaxBtn>) => void;
   onRemove: (id: string) => void;
 }) {
-  const typeCfg = MAX_BTN_TYPES.find(t => t.value === btn.type);
+  const typeCfg  = MAX_BTN_TYPES.find(t => t.value === btn.type);
+  const styleColor = MAX_BTN_STYLES.find(s => s.value === btn.style)?.color ?? '#8597a8';
 
   return (
     <div className={cardStyles.card}>
       <div className={cardStyles.cardHeader}>
-        <span className={cardStyles.cardTitle}>Кнопка {index + 1}</span>
-        <span
-          className={cardStyles.badge}
-          style={{ background: 'var(--surface-alt)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-        >
-          {typeCfg?.label ?? btn.type}
+        <span className={cardStyles.cardTitle}>Р{btn.row}К{btn.col}</span>
+        <span className={cardStyles.badge} style={{ background: styleColor }}>
+          {btn.style}
         </span>
-        <span className={`${cardStyles.badge} ${cardStyles.rowBadge}`}>
-          Строка {btn.row}
-        </span>
-        {canDelete && (
-          <button className={cardStyles.deleteBtn} onClick={() => onRemove(btn.id)}>✕</button>
-        )}
+        <button className={cardStyles.deleteBtn} onClick={() => onRemove(btn.id)} title="Деактивировать ячейку">
+          ✕
+        </button>
       </div>
 
       <div className={cardStyles.fields}>
@@ -191,7 +162,7 @@ function MaxBtnCard({
           />
         </div>
 
-        {/* type + row */}
+        {/* type + style */}
         <div className={cardStyles.fieldRow}>
           <div className={cardStyles.field}>
             <label className={cardStyles.label}>Тип кнопки</label>
@@ -208,12 +179,17 @@ function MaxBtnCard({
             )}
           </div>
 
-          <MaxRowSelector
-            buttons={allButtons}
-            currentId={btn.id}
-            currentRow={btn.row}
-            onChange={row => onUpdate(btn.id, { row })}
-          />
+          <div className={cardStyles.field}>
+            <label className={cardStyles.label}>Цвет (style)</label>
+            <select
+              value={btn.style}
+              onChange={e => onUpdate(btn.id, { style: e.target.value as MaxBtnStyle })}
+            >
+              {MAX_BTN_STYLES.map(s => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* payload */}
@@ -251,22 +227,22 @@ function MaxBtnCard({
 // ─── MaxKeyboardTab ───────────────────────────────────────────────────────────
 
 export function MaxKeyboardTab() {
-  const [buttons, setButtons] = useState<MaxBtn[]>(() => [createDefault(1)]);
+  const [buttons, setButtons] = useState<MaxBtn[]>([]);
 
-  const rowCount     = useMemo(() => new Set(buttons.map(b => b.row)).size, [buttons]);
-  const previewRows  = useMemo(() => toPreviewRows(buttons), [buttons]);
-  const jsonResult   = useMemo(() => buildJson(buttons), [buttons]);
-  const isMax        = buttons.length >= MAX_BUTTONS;
+  const previewRows = useMemo(() => toPreviewRows(buttons), [buttons]);
+  const jsonResult  = useMemo(() => buildJson(buttons), [buttons]);
 
-  const addButton = useCallback(() => {
+  const sortedButtons = useMemo(
+    () => [...buttons].sort((a, b) => a.row !== b.row ? a.row - b.row : a.col - b.col),
+    [buttons]
+  );
+
+  const toggleCell = useCallback((row: number, col: number) => {
     setButtons(prev => {
-      if (prev.length >= MAX_BUTTONS) return prev;
-      return [...prev, createDefault(getNextRow(prev))];
+      const exists = prev.find(b => b.row === row && b.col === col);
+      if (exists) return prev.filter(b => !(b.row === row && b.col === col));
+      return [...prev, createDefault(row, col)];
     });
-  }, []);
-
-  const removeButton = useCallback((id: string) => {
-    setButtons(prev => prev.length <= 1 ? prev : prev.filter(b => b.id !== id));
   }, []);
 
   const updateButton = useCallback((id: string, patch: Partial<MaxBtn>) => {
@@ -274,35 +250,54 @@ export function MaxKeyboardTab() {
   }, []);
 
   const resetAll = useCallback(() => {
-    setButtons([createDefault(1)]);
+    setButtons([]);
   }, []);
 
   return (
     <>
-      <Toolbar buttonCount={buttons.length} rowCount={rowCount} />
-
-      <div className={appStyles.section}>
-        {buttons.map((btn, index) => (
-          <MaxBtnCard
-            key={btn.id}
-            btn={btn}
-            index={index}
-            allButtons={buttons}
-            canDelete={buttons.length > 1}
-            onUpdate={updateButton}
-            onRemove={removeButton}
-          />
-        ))}
-
-        <div className={appStyles.cardActions}>
-          <button className={appStyles.addBtn} onClick={addButton} disabled={isMax}>
-            + Кнопка
-          </button>
-          <button className={appStyles.resetBtn} onClick={resetAll}>
-            Сбросить
-          </button>
-        </div>
+      {/* Header */}
+      <div className={gridStyles.headerRow}>
+        <span className={gridStyles.activeCount}>
+          {buttons.length > 0 ? `${buttons.length} кнопок` : 'Нажмите на ячейку'}
+        </span>
+        <button className={gridStyles.resetBtn} onClick={resetAll}>Сбросить</button>
       </div>
+
+      {/* Static 7×7 grid */}
+      <div
+        className={gridStyles.grid}
+        style={{ gridTemplateColumns: `repeat(${MAX_GRID_COLS}, 1fr)` }}
+      >
+        {Array.from({ length: MAX_GRID_ROWS }, (_, r) =>
+          Array.from({ length: MAX_GRID_COLS }, (_, c) => {
+            const row = r + 1, col = c + 1;
+            const btn = buttons.find(b => b.row === row && b.col === col);
+            return (
+              <GridCell
+                key={`${row}:${col}`}
+                active={Boolean(btn)}
+                label={btn?.text ?? ''}
+                row={row}
+                col={col}
+                onClick={() => toggleCell(row, col)}
+              />
+            );
+          })
+        )}
+      </div>
+
+      {/* Config cards */}
+      {sortedButtons.map(btn => (
+        <MaxBtnCard
+          key={btn.id}
+          btn={btn}
+          onUpdate={updateButton}
+          onRemove={id => toggleCell(
+            buttons.find(b => b.id === id)!.row,
+            buttons.find(b => b.id === id)!.col
+          )}
+        />
+      ))}
 
       <Preview rows={previewRows} />
 
