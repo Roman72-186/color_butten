@@ -154,8 +154,8 @@ export function FormattedTextField({
             ))}
           </div>
           <div className={styles.hint}>
-            Вставка из Telegram, Docs и редакторов с rich text автоматически переносит жирный,
-            курсив, ссылки, tg-emoji и структуру абзацев в Telegram-разметку.
+            Вставка из Word, Docs и редакторов с rich text автоматически переносит жирный,
+            курсив, ссылки и структуру абзацев в Telegram-разметку.
           </div>
         </>
       ) : (
