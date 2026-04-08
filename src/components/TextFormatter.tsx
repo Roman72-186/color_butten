@@ -139,8 +139,8 @@ export function TextFormatter() {
 
   const handleBlur = useCallback(() => {
     trackSelection();
-    if (mode === 'html' && normalizedText !== text) setText(normalizedText);
-  }, [mode, normalizedText, text, trackSelection]);
+    if (normalizedText !== text) setText(normalizedText);
+  }, [normalizedText, text, trackSelection]);
 
   return (
     <div className={styles.formatter}>

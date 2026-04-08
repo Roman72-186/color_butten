@@ -399,8 +399,20 @@ export function looksLikeTelegramMarkup(text: string): boolean {
 export function normalizeTextFormattingInput(text: string, mode: FormatMode): string {
   const normalized = normalizeClipboardText(text);
 
-  if (mode !== 'html' || !normalized.trim()) {
-    return normalized;
+  if (!normalized.trim()) return normalized;
+
+  if (mode !== 'html') {
+    const stashed: string[] = [];
+    let result = normalized;
+    result = result.replace(/```[\s\S]*?```/g, match => stashValue(stashed, match));
+    result = result.replace(/`[^`\n]+`/g, match => stashValue(stashed, match));
+    result = result.replace(/!\[[^\]]*\]\(tg:\/\/[^)]*\)/g, match => stashValue(stashed, match));
+    result = result.replace(/\[[^\]]+\]\(https?:\/\/[^)]+\)/g, match => stashValue(stashed, match));
+    result = result.replace(/\bhttps?:\/\/[^\s[\]]+/g, url => {
+      const cleanUrl = url.replace(/[.,!?;:'")\]]+$/, '');
+      return stashValue(stashed, `[${cleanUrl}](${cleanUrl})`);
+    });
+    return restoreStashedValues(result, stashed);
   }
 
   const stashed: string[] = [];
@@ -412,6 +424,10 @@ export function normalizeTextFormattingInput(text: string, mode: FormatMode): st
   result = result.replace(/<tg-spoiler>[\s\S]*?<\/tg-spoiler>/gi, match => stashValue(stashed, match));
   result = result.replace(/<tg-emoji(?:\s[^>]*)?>[\s\S]*?<\/tg-emoji>/gi, match => stashValue(stashed, match));
   result = result.replace(/<\/?[a-z][^>]*>/gi, match => stashValue(stashed, match));
+  result = result.replace(/\bhttps?:\/\/[^\s<>"[\]]+/g, url => {
+    const cleanUrl = url.replace(/[.,!?;:'")\]]+$/, '');
+    return stashValue(stashed, `<a href="${cleanUrl}">${cleanUrl}</a>`);
+  });
 
   result = result.replace(/```([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, (_, language = '', code: string) => {
     const cleanCode = code.replace(/\n$/, '');
