@@ -5,6 +5,7 @@ import {
   convertClipboardHtml,
   FORMAT_BUTTONS,
   getFormatModeFromParseMode,
+  looksLikeTelegramMarkup,
   normalizeTextFormattingInput,
   textToPreviewHtml,
   validateFormattedText,
@@ -74,11 +75,14 @@ export function FormattedTextField({
     if (!formatMode) return;
 
     const html = e.clipboardData.getData('text/html');
-    if (!html) return;
+    const plain = e.clipboardData.getData('text/plain');
+
+    const markup = html || (looksLikeTelegramMarkup(plain) ? plain : '');
+    if (!markup) return;
 
     e.preventDefault();
 
-    const converted = convertClipboardHtml(html, formatMode);
+    const converted = convertClipboardHtml(markup, formatMode);
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -150,8 +154,8 @@ export function FormattedTextField({
             ))}
           </div>
           <div className={styles.hint}>
-            Вставка из Word, Docs и редакторов с rich text автоматически переносит жирный, курсив,
-            ссылки и структуру абзацев в Telegram-разметку.
+            Вставка из Telegram, Docs и редакторов с rich text автоматически переносит жирный,
+            курсив, ссылки, tg-emoji и структуру абзацев в Telegram-разметку.
           </div>
         </>
       ) : (

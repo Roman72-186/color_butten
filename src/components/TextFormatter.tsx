@@ -4,6 +4,7 @@ import {
   convertClipboardHtml,
   FORMAT_BUTTONS,
   insertCustomEmoji,
+  looksLikeTelegramMarkup,
   normalizeTextFormattingInput,
   textToPreviewHtml,
   validateFormattedText,
@@ -90,10 +91,14 @@ export function TextFormatter() {
 
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const html = e.clipboardData.getData('text/html');
-    if (!html) return;
+    const plain = e.clipboardData.getData('text/plain');
+
+    const markup = html || (looksLikeTelegramMarkup(plain) ? plain : '');
+    if (!markup) return;
+
     e.preventDefault();
 
-    const converted = convertClipboardHtml(html, mode);
+    const converted = convertClipboardHtml(markup, mode);
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -176,8 +181,8 @@ export function TextFormatter() {
       )}
 
       <div className={styles.hint}>
-        Вставка из Word, Google Docs и других редакторов автоматически переносит жирный, курсив,
-        ссылки, переносы строк и абзацы в Telegram-разметку.
+        Вставка из Telegram, Word, Google Docs и других редакторов автоматически переносит
+        жирный, курсив, ссылки, tg-emoji и абзацы в Telegram-разметку.
       </div>
 
       <textarea

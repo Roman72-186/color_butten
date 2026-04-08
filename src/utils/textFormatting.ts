@@ -294,6 +294,14 @@ function processNode(node: Node, mode: FormatMode): string {
     return mode === 'html' ? `<a href="${href}">${children}</a>` : `[${children}](${href})`;
   }
 
+  if (tag === 'tg-emoji') {
+    const emojiId = el.getAttribute('emoji-id');
+    if (!emojiId) return children;
+    return mode === 'html'
+      ? `<tg-emoji emoji-id="${emojiId}">${children}</tg-emoji>`
+      : `![${children}](tg://emoji?id=${emojiId})`;
+  }
+
   const textDecoration = `${el.style.textDecoration} ${el.style.textDecorationLine}`.toLowerCase();
 
   const result = wrapFormattedText(children, mode, {
@@ -382,6 +390,10 @@ export function convertClipboardHtml(html: string, mode: FormatMode): string {
     .replace(/\n{3,}/g, '\n\n')
     .replace(/^\n+/, '')
     .replace(/\n+$/, '');
+}
+
+export function looksLikeTelegramMarkup(text: string): boolean {
+  return /<\/?(b|i|u|s|code|pre|tg-spoiler|tg-emoji)[\s>/]|<a\s/i.test(text);
 }
 
 export function normalizeTextFormattingInput(text: string, mode: FormatMode): string {
