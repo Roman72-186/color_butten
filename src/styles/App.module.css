@@ -17,7 +17,7 @@
 
 .tabSelectEl {
   width: 100%;
-  background: var(--surface-alt);
+  background-color: var(--surface-alt);
   border: 1px solid var(--border-neon);
   border-radius: var(--radius);
   color: var(--accent);
