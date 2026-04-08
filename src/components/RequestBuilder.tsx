@@ -10,8 +10,8 @@ import {
   REQUEST_METHODS,
 } from '../constants/requestBuilder';
 import type { ButtonConfig, ActionType, ButtonStyle } from '../types';
-import { STYLES, ACTION_TYPES, MAX_BUTTONS } from '../constants';
-import { createDefaultButton, getNextAvailableRow, groupButtonsByRow } from '../utils/helpers';
+import { STYLES, ACTION_TYPES, MAX_GRID_ROWS, MAX_GRID_COLS } from '../constants';
+import { createDefaultButton, groupButtonsByRow } from '../utils/helpers';
 import type {
   AlbumItem,
   MediaGroupItemType,
@@ -29,10 +29,10 @@ import {
 } from '../utils/requestBuilder';
 import { FormattedTextField } from './FormattedTextField';
 import { MaxRequestBuilder } from './MaxRequestBuilder';
-import { RowSelector } from './RowSelector';
 import { ActionValueInput } from './ActionValueInput';
 import { Preview } from './Preview';
 import styles from '../styles/RequestBuilder.module.css';
+import gridStyles from '../styles/GridConstructor.module.css';
 
 function getSourcePlaceholder(mode: MediaSourceMode, fieldName: string): string {
   if (mode === 'file_id') {
@@ -220,16 +220,12 @@ export function RequestBuilder() {
     setCopiedBody(false);
   }, []);
 
-  const addInlineButton = useCallback(() => {
+  const toggleInlineCell = useCallback((row: number, col: number) => {
     setForm(prev => {
-      if (prev.inlineButtons.length >= MAX_BUTTONS) return prev;
-      const row = getNextAvailableRow(prev.inlineButtons);
-      return { ...prev, inlineButtons: [...prev.inlineButtons, createDefaultButton(row)] };
+      const exists = prev.inlineButtons.find(b => b.row === row && b.col === col);
+      if (exists) return { ...prev, inlineButtons: prev.inlineButtons.filter(b => !(b.row === row && b.col === col)) };
+      return { ...prev, inlineButtons: [...prev.inlineButtons, createDefaultButton(row, col)] };
     });
-  }, []);
-
-  const removeInlineButton = useCallback((id: string) => {
-    setForm(prev => ({ ...prev, inlineButtons: prev.inlineButtons.filter(b => b.id !== id) }));
   }, []);
 
   const updateInlineButton = useCallback((id: string, patch: Partial<ButtonConfig>) => {
@@ -955,89 +951,104 @@ export function RequestBuilder() {
           <div className={styles.inlineHeader}>
             <div>
               <div className={styles.sectionTitle}>Inline-клавиатура (reply_markup)</div>
-              <div className={styles.sectionText}>
-                Кнопки прикрепятся к сообщению. Макс. {MAX_BUTTONS} кнопок, 3 в строке.
-              </div>
+              <div className={styles.sectionText}>Нажмите на ячейку чтобы добавить кнопку</div>
             </div>
-            <button
-              className={styles.secondaryBtn}
-              onClick={addInlineButton}
-              disabled={form.inlineButtons.length >= MAX_BUTTONS}
-            >
-              + Кнопка
-            </button>
+            {form.inlineButtons.length > 0 && (
+              <button
+                className={styles.secondaryBtn}
+                onClick={() => setForm(prev => ({ ...prev, inlineButtons: [] }))}
+              >
+                Очистить
+              </button>
+            )}
           </div>
 
-          {form.inlineButtons.length > 0 && (
-            <div className={styles.albumList}>
-              {form.inlineButtons.map((button, index) => (
-                <div key={button.id} className={styles.albumCard}>
-                  <div className={styles.albumHeader}>
-                    <span className={styles.albumTitle}>Кнопка {index + 1}</span>
-                    <button className={styles.linkBtn} onClick={() => removeInlineButton(button.id)}>
-                      Удалить
-                    </button>
+          {/* 7×7 grid */}
+          <div
+            className={gridStyles.grid}
+            style={{ gridTemplateColumns: `repeat(${MAX_GRID_COLS}, 1fr)` }}
+          >
+            {Array.from({ length: MAX_GRID_ROWS }, (_, r) =>
+              Array.from({ length: MAX_GRID_COLS }, (_, c) => {
+                const row = r + 1, col = c + 1;
+                const btn = form.inlineButtons.find(b => b.row === row && b.col === col);
+                return (
+                  <button
+                    key={`${row}:${col}`}
+                    type="button"
+                    className={`${gridStyles.cell} ${btn ? gridStyles.cellActive : gridStyles.cellInactive}`}
+                    onClick={() => toggleInlineCell(row, col)}
+                    title={btn
+                      ? `Р${row}К${col}${btn.text ? ': ' + btn.text : ''} — нажмите для деактивации`
+                      : `Р${row}К${col} — нажмите для активации`}
+                  >
+                    {btn ? (btn.text || '...') : ''}
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {/* Config cards */}
+          {[...form.inlineButtons]
+            .sort((a, b) => a.row !== b.row ? a.row - b.row : a.col - b.col)
+            .map(button => (
+              <div key={button.id} className={styles.albumCard}>
+                <div className={styles.albumHeader}>
+                  <span className={styles.albumTitle}>Р{button.row}К{button.col}</span>
+                  <button className={styles.linkBtn} onClick={() => toggleInlineCell(button.row, button.col)}>
+                    Удалить
+                  </button>
+                </div>
+
+                <div className={styles.grid}>
+                  <div className={styles.fieldFull}>
+                    <label className={styles.label}>text</label>
+                    <input
+                      type="text"
+                      value={button.text}
+                      placeholder="Текст кнопки"
+                      onChange={e => updateInlineButton(button.id, { text: e.target.value })}
+                    />
                   </div>
 
-                  <div className={styles.grid}>
-                    <div className={styles.fieldFull}>
-                      <label className={styles.label}>text</label>
-                      <input
-                        type="text"
-                        value={button.text}
-                        placeholder="Текст кнопки"
-                        onChange={e => updateInlineButton(button.id, { text: e.target.value })}
-                      />
-                    </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>style</label>
+                    <select
+                      value={button.style}
+                      onChange={e => updateInlineButton(button.id, { style: e.target.value as ButtonStyle })}
+                    >
+                      {STYLES.map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                    <div className={styles.field}>
-                      <label className={styles.label}>style</label>
-                      <select
-                        value={button.style}
-                        onChange={e => updateInlineButton(button.id, { style: e.target.value as ButtonStyle })}
-                      >
-                        {STYLES.map(s => (
-                          <option key={s.value} value={s.value}>{s.label}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Тип действия</label>
+                    <select
+                      value={button.actionType}
+                      onChange={e => updateInlineButton(button.id, {
+                        actionType: e.target.value as ActionType,
+                        actionValue: '',
+                      })}
+                    >
+                      {ACTION_TYPES.map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                    <div className={styles.field}>
-                      <label className={styles.label}>Тип действия</label>
-                      <select
-                        value={button.actionType}
-                        onChange={e => updateInlineButton(button.id, {
-                          actionType: e.target.value as ActionType,
-                          actionValue: '',
-                        })}
-                      >
-                        {ACTION_TYPES.map(t => (
-                          <option key={t.value} value={t.value}>{t.label}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className={styles.fieldFull}>
-                      <RowSelector
-                        buttons={form.inlineButtons}
-                        currentButtonId={button.id}
-                        currentRow={button.row}
-                        onChange={row => updateInlineButton(button.id, { row })}
-                      />
-                    </div>
-
-                    <div className={styles.fieldFull}>
-                      <ActionValueInput
-                        actionType={button.actionType}
-                        value={button.actionValue}
-                        onChange={value => updateInlineButton(button.id, { actionValue: value })}
-                      />
-                    </div>
+                  <div className={styles.fieldFull}>
+                    <ActionValueInput
+                      actionType={button.actionType}
+                      value={button.actionValue}
+                      onChange={value => updateInlineButton(button.id, { actionValue: value })}
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            ))}
 
           {form.inlineButtons.length > 0 && (
             <Preview rows={inlinePreviewRows} />
