@@ -48,15 +48,8 @@ function App() {
   }, [toggleTheme]);
 
   // ── Telegram keyboard state ──────────────────────────────────────────────
-  const [gridRows, setGridRows] = useState(3);
-  const [gridCols, setGridCols] = useState(3);
   const [buttons, setButtons] = useState<ButtonConfig[]>([]);
   const [showValidation, setShowValidation] = useState(false);
-
-  // При уменьшении сетки — удалять ячейки, вышедшие за границы
-  useEffect(() => {
-    setButtons(prev => prev.filter(b => b.row <= gridRows && b.col <= gridCols));
-  }, [gridRows, gridCols]);
 
   const errorsById = useMemo(
     () => new Map(buttons.map(b => [b.id, validateButton(b)])),
@@ -90,8 +83,6 @@ function App() {
 
   const resetAll = useCallback(() => {
     setButtons([]);
-    setGridRows(3);
-    setGridCols(3);
     setShowValidation(false);
   }, []);
 
@@ -143,13 +134,9 @@ function App() {
           {keyboardPlatform === 'telegram' && (
             <>
               <GridConstructor
-                gridRows={gridRows}
-                gridCols={gridCols}
                 buttons={buttons}
                 errorsById={errorsById}
                 showValidation={showValidation}
-                onGridRowsChange={setGridRows}
-                onGridColsChange={setGridCols}
                 onToggleCell={toggleCell}
                 onUpdateButton={updateButtonById}
                 onReset={resetAll}
