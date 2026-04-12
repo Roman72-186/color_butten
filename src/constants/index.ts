@@ -1,6 +1,3 @@
-export const MAX_BUTTONS = 12;
-export const MAX_PER_ROW = 3;
-
 export const MAX_GRID_ROWS = 7;
 export const MAX_GRID_COLS = 7;
 
@@ -27,12 +24,6 @@ export const ICON_EMOJI_OPTIONS = [
   { id: '5429571366384842791', label: '🔎 Выбрать' },
   { id: '5453900977432188793', label: '⭐️ Отзывы' },
 ] as const;
-
-// Premium emoji для вставки в текст сообщений.
-// Формат HTML:  <tg-emoji emoji-id="ID">FALLBACK</tg-emoji>
-// Формат MD V2: ![FALLBACK](tg://emoji?id=ID)
-// ID получить: @idstickerbot или 📋 ID из Telegram (скопировать текст из web.telegram.org)
-export const PREMIUM_EMOJI_OPTIONS: { id: string; fallback: string; label: string }[] = [];
 
 export const ACTION_PLACEHOLDERS: Record<string, string> = {
   callback_data:                    'Введите callback_data',
