@@ -95,22 +95,33 @@ function App() {
       <RadioactiveSnow />
       <div className={styles.content}>
 
-        {/* Theme toggle */}
-        <button className={styles.themeBtn} onClick={handleThemeClick}>
-          {theme === 'dark' ? '☀ Светлая' : '☽ Тёмная'}
-        </button>
-
-        <div className={styles.tabSelect}>
-          <select
-            className={styles.tabSelectEl}
-            value={activeTab}
-            onChange={e => setActiveTab(e.target.value as TabType)}
+        {/* Tab bar + theme toggle */}
+        <div className={styles.appHeader}>
+          <nav className={styles.tabBar} role="tablist">
+            {([
+              ['keyboard',  'Клавиши'],
+              ['requests',  'Запросы'],
+              ['formatter', 'Текст'],
+              ['json',      'JSON'],
+            ] as [TabType, string][]).map(([tab, label]) => (
+              <button
+                key={tab}
+                role="tab"
+                aria-selected={activeTab === tab}
+                className={`${styles.tabBtn}${activeTab === tab ? ' ' + styles.tabBtnActive : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          <button
+            className={styles.themeBtn}
+            onClick={handleThemeClick}
+            title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
           >
-            <option value="keyboard">Конструктор кнопок</option>
-            <option value="requests">Конструктор запросов</option>
-            <option value="formatter">Форматирование текста</option>
-            <option value="json">JSON-форматор</option>
-          </select>
+            {theme === 'dark' ? '☀' : '☽'}
+          </button>
         </div>
 
         <div style={{ display: activeTab === 'keyboard' ? undefined : 'none' }}>

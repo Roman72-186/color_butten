@@ -64,22 +64,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 0 4px;
+  padding: 0 6px;
   background: none;
   border: none;
   outline: none;
-}
-
-@keyframes cellPulse {
-  0%, 100% { border-color: var(--border); box-shadow: none; }
-  50%       { border-color: rgba(0,245,255,.6); box-shadow: 0 0 6px rgba(0,245,255,.2); }
 }
 
 .cellInactive {
   border: 1px solid var(--border);
   color: var(--text-dim);
   background-color: var(--surface);
-  animation: cellPulse 2.4s ease-in-out infinite;
 }
 
 .cellInactive:hover {
@@ -116,6 +110,7 @@
   .cell {
     height: 32px;
     font-size: 10px;
+    padding: 0 4px;
   }
 
   .sizeRow {

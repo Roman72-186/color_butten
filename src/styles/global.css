@@ -82,29 +82,6 @@ body::before {
   );
 }
 
-body::after {
-  content: '';
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: -4px;
-  height: 4px;
-  pointer-events: none;
-  z-index: 9998;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(0,245,255,.08),
-    transparent
-  );
-  animation: scan-line 8s linear infinite;
-}
-
-@keyframes scan-line {
-  from { top: -4px; }
-  to   { top: 100%; }
-}
-
 @keyframes glow-pulse {
   0%, 100% {
     box-shadow: 0 0 4px rgba(0,245,255,.2), 0 0 10px rgba(0,245,255,.1);

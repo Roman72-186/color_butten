@@ -36,7 +36,9 @@ export function JsonOutput({ json, hasErrors, onCopy, title = 'Результа�
           {copied ? '✓ Скопировано' : 'Скопировать'}
         </button>
       </div>
-      <pre className={styles.pre}>{json}</pre>
+      <div className={styles.preWrapper}>
+        <pre className={styles.pre}>{json}</pre>
+      </div>
       {hasErrors && (
         <div className={styles.warning}>
           Исправьте ошибки валидации перед копированием

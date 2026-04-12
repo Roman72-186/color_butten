@@ -25,7 +25,7 @@
   padding: 3px 8px;
   background: rgba(0,245,255,.08);
   border: 1px solid rgba(0,245,255,.25);
-  border-radius: 0;
+  border-radius: var(--radius-sm);
   font-family: 'Orbitron', monospace;
   font-size: 11px;
   font-weight: 700;

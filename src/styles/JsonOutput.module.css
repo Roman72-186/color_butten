@@ -59,6 +59,22 @@
   box-shadow: var(--glow-green);
 }
 
+.preWrapper {
+  position: relative;
+}
+
+.preWrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: linear-gradient(to bottom, transparent, var(--pre-bg));
+  pointer-events: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
 .pre {
   background: var(--pre-bg);
   border: 1px solid var(--border);

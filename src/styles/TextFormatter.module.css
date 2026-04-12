@@ -133,7 +133,7 @@
 .emojiHint {
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
-  color: var(--text-dim);
+  color: #6090ac;
   line-height: 1.4;
 }
 
