@@ -1,7 +1,7 @@
 import type { ButtonConfig, InlineKeyboardButton, SendMessageBody } from '../types';
 import { groupButtonsByRow } from './helpers';
 
-function buttonToJson(button: ButtonConfig): InlineKeyboardButton {
+export function buttonToJson(button: ButtonConfig): InlineKeyboardButton {
   const result: InlineKeyboardButton = { text: button.text };
 
   if (button.style !== 'default') {

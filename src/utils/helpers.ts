@@ -20,19 +20,23 @@ export function createDefaultButton(row: number, col = 0): ButtonConfig {
   };
 }
 
-export function groupButtonsByRow(buttons: ButtonConfig[]): ButtonConfig[][] {
-  const map = new Map<number, ButtonConfig[]>();
-
-  for (const button of buttons) {
-    const group = map.get(button.row);
-    if (group) {
-      group.push(button);
-    } else {
-      map.set(button.row, [button]);
-    }
+/**
+ * Группирует элементы с полями row/col по строкам.
+ * Возвращает массив строк, отсортированных по row; внутри строки — по col.
+ */
+export function groupByRow<T extends { row: number; col: number }>(items: T[]): T[][] {
+  const map = new Map<number, T[]>();
+  for (const item of items) {
+    const group = map.get(item.row) ?? [];
+    group.push(item);
+    map.set(item.row, group);
   }
-
   return Array.from(map.entries())
     .sort(([a], [b]) => a - b)
     .map(([, group]) => group.slice().sort((a, b) => a.col - b.col));
+}
+
+/** Обёртка для обратной совместимости. */
+export function groupButtonsByRow(buttons: ButtonConfig[]): ButtonConfig[][] {
+  return groupByRow(buttons);
 }

@@ -1,6 +1,7 @@
 import type { ButtonConfig, ButtonErrors } from '../types';
 import { MAX_GRID_ROWS, MAX_GRID_COLS } from '../constants';
 import { ButtonCard } from './ButtonCard';
+import { GridCell } from './GridCell';
 import styles from '../styles/GridConstructor.module.css';
 
 interface GridConstructorProps {
@@ -10,29 +11,6 @@ interface GridConstructorProps {
   onToggleCell: (row: number, col: number) => void;
   onUpdateButton: (id: string, field: keyof ButtonConfig, value: string | number) => void;
   onReset: () => void;
-}
-
-interface GridCellProps {
-  active: boolean;
-  label: string;
-  row: number;
-  col: number;
-  onClick: () => void;
-}
-
-function GridCell({ active, label, row, col, onClick }: GridCellProps) {
-  return (
-    <button
-      type="button"
-      className={`${styles.cell} ${active ? styles.cellActive : styles.cellInactive}`}
-      onClick={onClick}
-      title={active
-        ? `Р${row}К${col}${label ? ': ' + label : ''} — нажмите для деактивации`
-        : `Р${row}К${col} — нажмите для активации`}
-    >
-      {active ? (label || '...') : ''}
-    </button>
-  );
 }
 
 export function GridConstructor({

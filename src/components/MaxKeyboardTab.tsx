@@ -1,6 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { ButtonConfig } from '../types';
+import type { MaxButtonType, MaxButtonStyle } from '../types/max';
 import { MAX_GRID_ROWS, MAX_GRID_COLS } from '../constants';
+import { groupByRow } from '../utils/helpers';
+import { GridCell } from './GridCell';
 import { Preview } from './Preview';
 import { JsonOutput } from './JsonOutput';
 import cardStyles from '../styles/ButtonCard.module.css';
@@ -8,23 +11,20 @@ import gridStyles from '../styles/GridConstructor.module.css';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type MaxBtnType = 'callback' | 'message' | 'link' | 'request_contact' | 'request_geo_location';
-type MaxBtnStyle = 'default' | 'primary' | 'positive' | 'negative';
-
 interface MaxBtn {
   id: string;
-  type: MaxBtnType;
+  type: MaxButtonType;
   text: string;
   payload: string;
   url: string;
   row: number;
   col: number;
-  style: MaxBtnStyle;
+  style: MaxButtonStyle;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MAX_BTN_TYPES: { value: MaxBtnType; label: string; hint: string }[] = [
+const MAX_BTN_TYPES: { value: MaxButtonType; label: string; hint: string }[] = [
   { value: 'callback',             label: 'Callback',        hint: 'payload передаётся боту как callback-событие' },
   { value: 'message',              label: 'Message',         hint: 'payload отправляется как текст от пользователя' },
   { value: 'link',                 label: 'Link',            hint: 'открывает URL в браузере' },
@@ -32,7 +32,7 @@ const MAX_BTN_TYPES: { value: MaxBtnType; label: string; hint: string }[] = [
   { value: 'request_geo_location', label: 'Request Geo',     hint: 'запрашивает геолокацию пользователя' },
 ];
 
-const MAX_BTN_STYLES: { value: MaxBtnStyle; label: string; color: string }[] = [
+const MAX_BTN_STYLES: { value: MaxButtonStyle; label: string; color: string }[] = [
   { value: 'default',  label: 'Default',  color: '#8597a8' },
   { value: 'primary',  label: 'Primary',  color: '#5eb5f7' },
   { value: 'positive', label: 'Positive', color: '#50c878' },
@@ -54,74 +54,39 @@ function createDefault(row: number, col: number): MaxBtn {
 }
 
 function toPreviewRows(buttons: MaxBtn[]): ButtonConfig[][] {
-  const rowMap = new Map<number, MaxBtn[]>();
-  for (const btn of buttons) {
-    const row = rowMap.get(btn.row) ?? [];
-    row.push(btn);
-    rowMap.set(btn.row, row);
-  }
-  return Array.from(rowMap.entries())
-    .sort(([a], [b]) => a - b)
-    .map(([, row]) =>
-      row.slice().sort((a, b) => a.col - b.col).map(btn => ({
-        id: btn.id,
-        text: btn.text || '...',
-        style: (btn.style === 'positive' ? 'success'
-              : btn.style === 'negative' ? 'danger'
-              : btn.style) as 'default' | 'primary' | 'success' | 'danger',
-        actionType: 'callback_data' as const,
-        actionValue: btn.payload,
-        row: btn.row,
-        col: btn.col,
-        iconCustomEmojiId: '',
-      }))
-    );
+  return groupByRow(buttons).map(row =>
+    row.map(btn => ({
+      id: btn.id,
+      text: btn.text || '...',
+      style: (btn.style === 'positive' ? 'success'
+            : btn.style === 'negative' ? 'danger'
+            : btn.style) as 'default' | 'primary' | 'success' | 'danger',
+      actionType: 'callback_data' as const,
+      actionValue: btn.payload,
+      row: btn.row,
+      col: btn.col,
+      iconCustomEmojiId: '',
+    }))
+  );
 }
 
 function buildJson(buttons: MaxBtn[]): string {
-  const rowMap = new Map<number, MaxBtn[]>();
-  for (const btn of buttons) {
-    const row = rowMap.get(btn.row) ?? [];
-    row.push(btn);
-    rowMap.set(btn.row, row);
-  }
-  const buttonRows = Array.from(rowMap.entries())
-    .sort(([a], [b]) => a - b)
-    .map(([, row]) =>
-      row.slice().sort((a, b) => a.col - b.col).map(btn => {
-        const base: Record<string, unknown> = { type: btn.type, text: btn.text };
-        if (btn.style !== 'default') base.style = btn.style;
-        if (btn.type === 'link') { base.url = btn.url; return base; }
-        if (btn.type === 'request_contact' || btn.type === 'request_geo_location') return base;
-        base.payload = btn.payload;
-        return base;
-      })
-    );
+  const buttonRows = groupByRow(buttons).map(row =>
+    row.map(btn => {
+      const base: Record<string, unknown> = { type: btn.type, text: btn.text };
+      if (btn.style !== 'default') base.style = btn.style;
+      if (btn.type === 'link') { base.url = btn.url; return base; }
+      if (btn.type === 'request_contact' || btn.type === 'request_geo_location') return base;
+      base.payload = btn.payload;
+      return base;
+    })
+  );
 
   const body: Record<string, unknown> = { text: 'text' };
   if (buttonRows.length > 0) {
     body.attachments = [{ type: 'inline_keyboard', payload: { buttons: buttonRows } }];
   }
   return JSON.stringify(body, null, 2);
-}
-
-// ─── Grid cell ────────────────────────────────────────────────────────────────
-
-function GridCell({
-  active, label, row, col, onClick,
-}: { active: boolean; label: string; row: number; col: number; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      className={`${gridStyles.cell} ${active ? gridStyles.cellActive : gridStyles.cellInactive}`}
-      onClick={onClick}
-      title={active
-        ? `Р${row}К${col}${label ? ': ' + label : ''} — нажмите для деактивации`
-        : `Р${row}К${col} — нажмите для активации`}
-    >
-      {active ? (label || '...') : ''}
-    </button>
-  );
 }
 
 // ─── MaxBtnCard ───────────────────────────────────────────────────────────────
@@ -168,7 +133,7 @@ function MaxBtnCard({
             <label className={cardStyles.label}>Тип кнопки</label>
             <select
               value={btn.type}
-              onChange={e => onUpdate(btn.id, { type: e.target.value as MaxBtnType, payload: '', url: '' })}
+              onChange={e => onUpdate(btn.id, { type: e.target.value as MaxButtonType, payload: '', url: '' })}
             >
               {MAX_BTN_TYPES.map(t => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -183,7 +148,7 @@ function MaxBtnCard({
             <label className={cardStyles.label}>Цвет (style)</label>
             <select
               value={btn.style}
-              onChange={e => onUpdate(btn.id, { style: e.target.value as MaxBtnStyle })}
+              onChange={e => onUpdate(btn.id, { style: e.target.value as MaxButtonStyle })}
             >
               {MAX_BTN_STYLES.map(s => (
                 <option key={s.value} value={s.value}>{s.label}</option>

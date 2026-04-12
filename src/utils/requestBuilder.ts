@@ -1,5 +1,6 @@
 import { DEFAULT_CHAT_ID, DICE_EMOJI_OPTIONS, REQUEST_METHODS } from '../constants/requestBuilder';
 import { generateId, groupButtonsByRow } from './helpers';
+import { buttonToJson } from './generateJson';
 import type { ButtonConfig } from '../types';
 import { getFormatModeFromParseMode, normalizeTextFormattingInput, validateFormattedText } from './textFormatting';
 import type {
@@ -15,33 +16,7 @@ import type {
 function buildInlineKeyboard(buttons: ButtonConfig[]): Record<string, unknown> {
   const rows = groupButtonsByRow(buttons);
   return {
-    inline_keyboard: rows.map(row =>
-      row.map(btn => {
-        const result: Record<string, unknown> = { text: btn.text };
-        if (btn.style !== 'default') result.style = btn.style;
-        switch (btn.actionType) {
-          case 'callback_data':
-            result.callback_data = btn.actionValue;
-            break;
-          case 'url':
-            result.url = btn.actionValue;
-            break;
-          case 'web_app':
-            result.web_app = { url: btn.actionValue };
-            break;
-          case 'switch_inline_query':
-            result.switch_inline_query = btn.actionValue;
-            break;
-          case 'switch_inline_query_current_chat':
-            result.switch_inline_query_current_chat = btn.actionValue;
-            break;
-        }
-        if (btn.iconCustomEmojiId.trim()) {
-          result.icon_custom_emoji_id = btn.iconCustomEmojiId.trim();
-        }
-        return result;
-      })
-    ),
+    inline_keyboard: rows.map(row => row.map(buttonToJson)),
   };
 }
 

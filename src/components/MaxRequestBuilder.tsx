@@ -1,13 +1,12 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { ButtonConfig } from '../types';
+import type { MaxButtonType } from '../types/max';
 import { MAX_GRID_ROWS, MAX_GRID_COLS } from '../constants';
+import { groupByRow } from '../utils/helpers';
+import { GridCell } from './GridCell';
 import { Preview } from './Preview';
 import styles from '../styles/RequestBuilder.module.css';
 import gridStyles from '../styles/GridConstructor.module.css';
-
-// ─── Types ──────────────────────────────────────────────────────────────────
-
-type MaxButtonType = 'callback' | 'message' | 'link' | 'request_contact' | 'request_geo_location';
 
 type MaxMethod =
   | 'sendMessage'
@@ -118,26 +117,18 @@ const BASE_URL = 'https://platform-api.max.ru';
 // ─── Preview conversion ───────────────────────────────────────────────────────
 
 function maxButtonsToPreviewRows(buttons: MaxButtonItem[]): ButtonConfig[][] {
-  const rowMap = new Map<number, MaxButtonItem[]>();
-  for (const btn of buttons) {
-    const row = rowMap.get(btn.row) ?? [];
-    row.push(btn);
-    rowMap.set(btn.row, row);
-  }
-  return Array.from(rowMap.entries())
-    .sort(([a], [b]) => a - b)
-    .map(([, row]) =>
-      row.slice().sort((a, b) => a.col - b.col).map(btn => ({
-        id: btn.id,
-        text: btn.text || '...',
-        style: 'default' as const,
-        actionType: 'callback_data' as const,
-        actionValue: btn.payload,
-        row: btn.row,
-        col: btn.col,
-        iconCustomEmojiId: '',
-      }))
-    );
+  return groupByRow(buttons).map(row =>
+    row.map(btn => ({
+      id: btn.id,
+      text: btn.text || '...',
+      style: 'default' as const,
+      actionType: 'callback_data' as const,
+      actionValue: btn.payload,
+      row: btn.row,
+      col: btn.col,
+      iconCustomEmojiId: '',
+    }))
+  );
 }
 
 // ─── ID factory ──────────────────────────────────────────────────────────────
@@ -635,17 +626,14 @@ export function MaxRequestBuilder() {
                   const row = r + 1, col = c + 1;
                   const btn = form.buttons.find(b => b.row === row && b.col === col);
                   return (
-                    <button
+                    <GridCell
                       key={`${row}:${col}`}
-                      type="button"
-                      className={`${gridStyles.cell} ${btn ? gridStyles.cellActive : gridStyles.cellInactive}`}
+                      active={Boolean(btn)}
+                      label={btn?.text ?? ''}
+                      row={row}
+                      col={col}
                       onClick={() => toggleCell(row, col)}
-                      title={btn
-                        ? `Р${row}К${col}${btn.text ? ': ' + btn.text : ''} — нажмите для деактивации`
-                        : `Р${row}К${col} — нажмите для активации`}
-                    >
-                      {btn ? (btn.text || '...') : ''}
-                    </button>
+                    />
                   );
                 })
               )}

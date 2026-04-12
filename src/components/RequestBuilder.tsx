@@ -30,6 +30,7 @@ import {
 import { FormattedTextField } from './FormattedTextField';
 import { MaxRequestBuilder } from './MaxRequestBuilder';
 import { ActionValueInput } from './ActionValueInput';
+import { GridCell } from './GridCell';
 import { Preview } from './Preview';
 import styles from '../styles/RequestBuilder.module.css';
 import gridStyles from '../styles/GridConstructor.module.css';
@@ -967,17 +968,14 @@ export function RequestBuilder() {
                 const row = r + 1, col = c + 1;
                 const btn = form.inlineButtons.find(b => b.row === row && b.col === col);
                 return (
-                  <button
+                  <GridCell
                     key={`${row}:${col}`}
-                    type="button"
-                    className={`${gridStyles.cell} ${btn ? gridStyles.cellActive : gridStyles.cellInactive}`}
+                    active={Boolean(btn)}
+                    label={btn?.text ?? ''}
+                    row={row}
+                    col={col}
                     onClick={() => toggleInlineCell(row, col)}
-                    title={btn
-                      ? `Р${row}К${col}${btn.text ? ': ' + btn.text : ''} — нажмите для деактивации`
-                      : `Р${row}К${col} — нажмите для активации`}
-                  >
-                    {btn ? (btn.text || '...') : ''}
-                  </button>
+                  />
                 );
               })
             )}
