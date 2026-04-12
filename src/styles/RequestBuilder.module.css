@@ -391,6 +391,56 @@
   line-height: 1.6;
 }
 
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chip {
+  padding: 4px 10px;
+  background: transparent;
+  color: #88b8d4;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  color: var(--accent);
+  border-color: rgba(0,245,255,.4);
+  background: rgba(0,245,255,.07);
+}
+
+.chipActive {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(0,245,255,.1);
+}
+
+.collapsibleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
+.collapseArrow {
+  font-size: 11px;
+  color: #88b8d4;
+  transition: color 0.15s;
+}
+
+.collapsibleHeader:hover .collapseArrow {
+  color: var(--accent);
+}
+
 @media (max-width: 640px) {
   .grid {
     grid-template-columns: 1fr;

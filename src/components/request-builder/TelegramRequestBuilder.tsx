@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
   ALBUM_ITEM_TYPE_OPTIONS,
-  DEFAULT_CHAT_ID,
+  CATEGORY_LABELS,
   DICE_EMOJI_OPTIONS,
   MEDIA_SOURCE_OPTIONS,
   MESSAGE_EFFECT_OPTIONS,
@@ -9,9 +9,13 @@ import {
   POLL_TYPE_OPTIONS,
   REQUEST_METHODS,
 } from '../../constants/requestBuilder';
+import { LOCATION_PRESETS } from '../../constants/requestPresets';
+import { ERROR_400_EXAMPLE, ERROR_403_EXAMPLE, getSuccessResponseExample } from '../../constants/requestResponses';
 import type { ButtonConfig } from '../../types';
 import type {
   AlbumItem,
+  BotCommandItem,
+  ChatPermissions,
   MediaGroupItemType,
   MediaSourceMode,
   PollOptionItem,
@@ -22,11 +26,13 @@ import { createDefaultButton } from '../../utils/helpers';
 import {
   buildRequestPreview,
   createDefaultAlbumItem,
+  createDefaultBotCommand,
   createDefaultPollOption,
   createDefaultRequestForm,
   validateRequestForm,
 } from '../../utils/requestBuilder';
 import { FormattedTextField } from '../FormattedTextField';
+import { ChatIdSelector } from './ChatIdSelector';
 import { InlineKeyboardSection } from './InlineKeyboardSection';
 import styles from '../../styles/RequestBuilder.module.css';
 
@@ -58,21 +64,52 @@ const SEND_OPTION_DESCRIPTIONS = [
   },
 ] as const;
 
+const PERMISSION_KEYS: Array<keyof ChatPermissions> = [
+  'can_send_messages',
+  'can_send_audios',
+  'can_send_documents',
+  'can_send_photos',
+  'can_send_videos',
+  'can_send_video_notes',
+  'can_send_voice_notes',
+  'can_send_polls',
+  'can_send_other_messages',
+  'can_add_web_page_previews',
+  'can_change_info',
+  'can_invite_users',
+  'can_pin_messages',
+  'can_manage_topics',
+];
+
+const SEND_CATEGORIES = new Set(['text', 'media', 'album', 'location', 'venue', 'contact', 'poll', 'dice']);
+
 export function TelegramRequestBuilder() {
   const [form, setForm] = useState<RequestFormState>(() => createDefaultRequestForm());
   const [copiedBody, setCopiedBody] = useState(false);
+  const [showResponseExamples, setShowResponseExamples] = useState(false);
 
   const methodConfig = useMemo(
     () => REQUEST_METHODS.find(item => item.id === form.method) ?? REQUEST_METHODS[0],
     [form.method]
   );
+  const isSend = useMemo(() => SEND_CATEGORIES.has(methodConfig.category), [methodConfig.category]);
   const validationErrors = useMemo(() => validateRequestForm(form), [form]);
   const preview = useMemo(() => buildRequestPreview(form), [form]);
+
   const selectedMessageEffectPreset = useMemo(() => {
     const trimmed = form.messageEffectId.trim();
     if (!trimmed) return '';
     return MESSAGE_EFFECT_OPTIONS.some(option => option.value === trimmed) ? trimmed : 'custom';
   }, [form.messageEffectId]);
+
+  const groupedMethods = useMemo(() => {
+    const groups = new Map<string, typeof REQUEST_METHODS>();
+    for (const method of REQUEST_METHODS) {
+      if (!groups.has(method.category)) groups.set(method.category, []);
+      groups.get(method.category)!.push(method);
+    }
+    return groups;
+  }, []);
 
   const updateField = useCallback(<K extends keyof RequestFormState>(field: K, value: RequestFormState[K]) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -149,6 +186,18 @@ export function TelegramRequestBuilder() {
     }));
   }, []);
 
+  const updateBotCommand = useCallback((id: string, updater: (cmd: BotCommandItem) => BotCommandItem) => {
+    setForm(prev => ({ ...prev, botCommands: prev.botCommands.map(cmd => cmd.id === id ? updater(cmd) : cmd) }));
+  }, []);
+
+  const addBotCommand = useCallback(() => {
+    setForm(prev => ({ ...prev, botCommands: [...prev.botCommands, createDefaultBotCommand()] }));
+  }, []);
+
+  const removeBotCommand = useCallback((id: string) => {
+    setForm(prev => ({ ...prev, botCommands: prev.botCommands.filter(cmd => cmd.id !== id) }));
+  }, []);
+
   const handleCopy = useCallback((value: string) => {
     if (validationErrors.length > 0) return;
     try {
@@ -180,6 +229,36 @@ export function TelegramRequestBuilder() {
       inlineButtons: prev.inlineButtons.map(b => b.id === id ? { ...b, ...patch } : b),
     }));
   }, []);
+
+  const updatePermission = useCallback((key: keyof ChatPermissions, value: boolean) => {
+    setForm(prev => ({ ...prev, chatPermissions: { ...prev.chatPermissions, [key]: value } }));
+  }, []);
+
+  // ── Render helpers ─────────────────────────────────────────────────────
+
+  const renderChatIdField = (hint?: string) => (
+    <div className={styles.fieldFull}>
+      <label className={styles.label}>chat_id</label>
+      <ChatIdSelector
+        value={form.chatId}
+        onChange={value => updateField('chatId', value)}
+      />
+      {hint && <div className={styles.fieldHint}>{hint}</div>}
+    </div>
+  );
+
+  const renderUserIdField = (hint?: string) => (
+    <div className={styles.field}>
+      <label className={styles.label}>user_id</label>
+      <input
+        type="text"
+        value={form.userId}
+        placeholder="Telegram ID пользователя"
+        onChange={e => updateField('userId', e.target.value)}
+      />
+      {hint && <div className={styles.fieldHint}>{hint}</div>}
+    </div>
+  );
 
   const renderMediaSourceInput = () => {
     const fieldName = methodConfig.mediaField ?? 'media';
@@ -231,6 +310,7 @@ export function TelegramRequestBuilder() {
                 <option key={option.value || 'none'} value={option.value}>{option.label}</option>
               ))}
             </select>
+            <div className={styles.fieldHint}>HTML: &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;, &lt;code&gt;код&lt;/code&gt;</div>
           </div>
         )}
 
@@ -380,6 +460,447 @@ export function TelegramRequestBuilder() {
     </>
   );
 
+  const renderGetFields = () => {
+    switch (methodConfig.id) {
+      case 'getMe':
+      case 'getWebhookInfo':
+        return (
+          <div className={styles.fieldHint}>Метод не требует параметров.</div>
+        );
+      case 'getChat':
+      case 'getChatAdministrators':
+      case 'getChatMemberCount':
+        return renderChatIdField();
+      case 'getChatMember':
+        return (
+          <>
+            {renderChatIdField()}
+            {renderUserIdField()}
+          </>
+        );
+      case 'getFile':
+        return (
+          <div className={styles.fieldFull}>
+            <label className={styles.label}>file_id</label>
+            <input
+              type="text"
+              value={form.fileId}
+              placeholder="BQACAgIAAxk..."
+              onChange={e => updateField('fileId', e.target.value)}
+            />
+            <div className={styles.fieldHint}>file_id из объекта Document, Photo, Video и т.д.</div>
+          </div>
+        );
+      case 'getUserProfilePhotos':
+        return (
+          <>
+            {renderUserIdField()}
+            <div className={styles.field}>
+              <label className={styles.label}>offset</label>
+              <input
+                type="number"
+                value={form.userPhotosOffset}
+                placeholder="0"
+                onChange={e => updateField('userPhotosOffset', e.target.value)}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>limit</label>
+              <input
+                type="number"
+                value={form.userPhotosLimit}
+                placeholder="100"
+                onChange={e => updateField('userPhotosLimit', e.target.value)}
+              />
+              <div className={styles.fieldHint}>От 1 до 100. По умолчанию 100.</div>
+            </div>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderAdminFields = () => {
+    const chatIdField = renderChatIdField();
+    const userIdField = renderUserIdField('Числовой Telegram ID пользователя.');
+    const untilDateField = (
+      <div className={styles.field}>
+        <label className={styles.label}>until_date</label>
+        <input
+          type="number"
+          value={form.untilDate}
+          placeholder="Unix timestamp"
+          onChange={e => updateField('untilDate', e.target.value)}
+        />
+        <div className={styles.fieldHint}>0 или пусто = навсегда.</div>
+      </div>
+    );
+
+    switch (methodConfig.id) {
+      case 'banChatMember':
+        return (
+          <>
+            {chatIdField}
+            {userIdField}
+            {untilDateField}
+            <div className={styles.fieldFull}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={form.revokeMessages}
+                  onChange={e => updateField('revokeMessages', e.target.checked)}
+                />
+                <span>revoke_messages</span>
+              </label>
+              <div className={styles.fieldHint}>Удалить все сообщения пользователя в чате.</div>
+            </div>
+          </>
+        );
+      case 'unbanChatMember':
+        return (
+          <>
+            {chatIdField}
+            {userIdField}
+            <div className={styles.fieldFull}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={form.onlyIfBanned}
+                  onChange={e => updateField('onlyIfBanned', e.target.checked)}
+                />
+                <span>only_if_banned</span>
+              </label>
+              <div className={styles.fieldHint}>Не кикать, если пользователь ещё в чате.</div>
+            </div>
+          </>
+        );
+      case 'restrictChatMember':
+        return (
+          <>
+            {chatIdField}
+            {userIdField}
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>permissions</label>
+              <div className={styles.optionGrid}>
+                {PERMISSION_KEYS.map(key => (
+                  <label key={key} className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={form.chatPermissions[key]}
+                      onChange={e => updatePermission(key, e.target.checked)}
+                    />
+                    <span>{key}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            {untilDateField}
+          </>
+        );
+      case 'pinChatMessage':
+        return (
+          <>
+            {chatIdField}
+            <div className={styles.field}>
+              <label className={styles.label}>message_id</label>
+              <input
+                type="number"
+                value={form.targetMessageId}
+                placeholder="ID сообщения"
+                onChange={e => updateField('targetMessageId', e.target.value)}
+              />
+            </div>
+          </>
+        );
+      case 'unpinChatMessage':
+        return (
+          <>
+            {chatIdField}
+            <div className={styles.field}>
+              <label className={styles.label}>message_id</label>
+              <input
+                type="number"
+                value={form.targetMessageId}
+                placeholder="Опционально"
+                onChange={e => updateField('targetMessageId', e.target.value)}
+              />
+              <div className={styles.fieldHint}>Пусто = открепить последнее закреплённое.</div>
+            </div>
+          </>
+        );
+      case 'unpinAllChatMessages':
+        return chatIdField;
+      case 'setMyCommands':
+        return (
+          <>
+            <div className={styles.fieldFull}>
+              <div className={styles.inlineHeader}>
+                <div>
+                  <label className={styles.label}>commands</label>
+                  <div className={styles.fieldHint}>Каждая команда — имя и описание (до 3–32 символов и до 256 символов).</div>
+                </div>
+                <button className={styles.secondaryBtn} onClick={addBotCommand}>
+                  + Команда
+                </button>
+              </div>
+              {form.botCommands.length === 0 && (
+                <div className={styles.fieldHint} style={{ marginTop: 10 }}>Нажмите «+ Команда» для добавления.</div>
+              )}
+              <div className={styles.albumList}>
+                {form.botCommands.map((cmd, index) => (
+                  <div key={cmd.id} className={styles.albumCard}>
+                    <div className={styles.albumHeader}>
+                      <span className={styles.albumTitle}>Команда {index + 1}</span>
+                      <button className={styles.linkBtn} onClick={() => removeBotCommand(cmd.id)}>
+                        Удалить
+                      </button>
+                    </div>
+                    <div className={styles.grid}>
+                      <div className={styles.field}>
+                        <label className={styles.label}>command</label>
+                        <input
+                          type="text"
+                          value={cmd.command}
+                          placeholder="start"
+                          onChange={e => updateBotCommand(cmd.id, c => ({ ...c, command: e.target.value }))}
+                        />
+                      </div>
+                      <div className={styles.field}>
+                        <label className={styles.label}>description</label>
+                        <input
+                          type="text"
+                          value={cmd.description}
+                          placeholder="Запустить бота"
+                          onChange={e => updateBotCommand(cmd.id, c => ({ ...c, description: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>language_code</label>
+              <input
+                type="text"
+                value={form.languageCode}
+                placeholder="ru, en ..."
+                onChange={e => updateField('languageCode', e.target.value)}
+              />
+              <div className={styles.fieldHint}>Пусто = команды по умолчанию для всех языков.</div>
+            </div>
+          </>
+        );
+      case 'deleteMyCommands':
+        return (
+          <div className={styles.field}>
+            <label className={styles.label}>language_code</label>
+            <input
+              type="text"
+              value={form.languageCode}
+              placeholder="ru, en ..."
+              onChange={e => updateField('languageCode', e.target.value)}
+            />
+            <div className={styles.fieldHint}>Пусто = удалить команды для всех языков.</div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderWebhookFields = () => {
+    switch (methodConfig.id) {
+      case 'setWebhook':
+        return (
+          <>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>url</label>
+              <input
+                type="text"
+                value={form.webhookUrl}
+                placeholder="https://example.com/webhook"
+                onChange={e => updateField('webhookUrl', e.target.value)}
+              />
+              <div className={styles.fieldHint}>HTTPS URL для получения обновлений. Порты: 443, 80, 88, 8443.</div>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>max_connections</label>
+              <input
+                type="number"
+                value={form.webhookMaxConnections}
+                placeholder="40"
+                onChange={e => updateField('webhookMaxConnections', e.target.value)}
+              />
+              <div className={styles.fieldHint}>От 1 до 100. По умолчанию 40.</div>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>allowed_updates</label>
+              <input
+                type="text"
+                value={form.webhookAllowedUpdates}
+                placeholder='["message","callback_query"]'
+                onChange={e => updateField('webhookAllowedUpdates', e.target.value)}
+              />
+              <div className={styles.fieldHint}>JSON-массив типов обновлений. Пусто = все типы.</div>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>secret_token</label>
+              <input
+                type="text"
+                value={form.webhookSecretToken}
+                placeholder="Опционально"
+                onChange={e => updateField('webhookSecretToken', e.target.value)}
+              />
+              <div className={styles.fieldHint}>Заголовок X-Telegram-Bot-Api-Secret-Token для верификации запросов.</div>
+            </div>
+          </>
+        );
+      case 'deleteWebhook':
+        return (
+          <div className={styles.fieldFull}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={form.dropPendingUpdates}
+                onChange={e => updateField('dropPendingUpdates', e.target.checked)}
+              />
+              <span>drop_pending_updates</span>
+            </label>
+            <div className={styles.fieldHint}>Удалить все обновления, накопленные во время работы webhook.</div>
+          </div>
+        );
+      case 'getWebhookInfo':
+        return <div className={styles.fieldHint}>Метод не требует параметров.</div>;
+      case 'getUpdates':
+        return (
+          <>
+            <div className={styles.field}>
+              <label className={styles.label}>offset</label>
+              <input
+                type="number"
+                value={form.updatesOffset}
+                placeholder="Опционально"
+                onChange={e => updateField('updatesOffset', e.target.value)}
+              />
+              <div className={styles.fieldHint}>ID первого обновления. Предыдущие считаются подтверждёнными.</div>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>limit</label>
+              <input
+                type="number"
+                value={form.updatesLimit}
+                placeholder="100"
+                onChange={e => updateField('updatesLimit', e.target.value)}
+              />
+              <div className={styles.fieldHint}>От 1 до 100.</div>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>timeout</label>
+              <input
+                type="number"
+                value={form.updatesTimeout}
+                placeholder="0"
+                onChange={e => updateField('updatesTimeout', e.target.value)}
+              />
+              <div className={styles.fieldHint}>Секунды long-polling. 0 = short polling.</div>
+            </div>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderInlineFields = () => {
+    switch (methodConfig.id) {
+      case 'answerInlineQuery':
+        return (
+          <>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>inline_query_id</label>
+              <input
+                type="text"
+                value={form.inlineQueryId}
+                placeholder="Из объекта InlineQuery"
+                onChange={e => updateField('inlineQueryId', e.target.value)}
+              />
+            </div>
+            <div className={styles.fieldFull}>
+              <div className={styles.sectionTitle}>results[0] — Article</div>
+              <div className={styles.sectionText}>В конструкторе реализован один результат типа article.</div>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>id</label>
+              <input
+                type="text"
+                value={form.inlineResultId}
+                placeholder="1"
+                onChange={e => updateField('inlineResultId', e.target.value)}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>title</label>
+              <input
+                type="text"
+                value={form.inlineResultTitle}
+                placeholder="Заголовок результата"
+                onChange={e => updateField('inlineResultTitle', e.target.value)}
+              />
+            </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>message_text</label>
+              <textarea
+                className={styles.textarea}
+                value={form.inlineResultText}
+                rows={3}
+                placeholder="Текст, который будет отправлен при выборе"
+                onChange={e => updateField('inlineResultText', e.target.value)}
+              />
+            </div>
+          </>
+        );
+      case 'answerWebAppQuery':
+        return (
+          <>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>web_app_query_id</label>
+              <input
+                type="text"
+                value={form.webAppQueryId}
+                placeholder="Из объекта WebAppQuery"
+                onChange={e => updateField('webAppQueryId', e.target.value)}
+              />
+            </div>
+            <div className={styles.fieldFull}>
+              <div className={styles.sectionTitle}>result — Article</div>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>title</label>
+              <input
+                type="text"
+                value={form.webAppResultTitle}
+                placeholder="Заголовок"
+                onChange={e => updateField('webAppResultTitle', e.target.value)}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>message_text</label>
+              <input
+                type="text"
+                value={form.webAppResultUrl}
+                placeholder="Текст сообщения"
+                onChange={e => updateField('webAppResultUrl', e.target.value)}
+              />
+            </div>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   const renderMethodFields = () => {
     switch (methodConfig.category) {
       case 'text':
@@ -406,6 +927,7 @@ export function TelegramRequestBuilder() {
                   <option key={option.value || 'none'} value={option.value}>{option.label}</option>
                 ))}
               </select>
+              <div className={styles.fieldHint}>HTML: &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;, &lt;code&gt;код&lt;/code&gt;</div>
             </div>
           </>
         );
@@ -416,12 +938,30 @@ export function TelegramRequestBuilder() {
       case 'location':
         return (
           <>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>Быстрый выбор города</label>
+              <div className={styles.chipRow}>
+                {LOCATION_PRESETS.map(preset => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    className={styles.chip}
+                    onClick={() => {
+                      updateField('locationLatitude', preset.lat);
+                      updateField('locationLongitude', preset.lon);
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className={styles.field}>
               <label className={styles.label}>latitude</label>
               <input
                 type="text"
                 value={form.locationLatitude}
-                placeholder="56.8389"
+                placeholder="55.7558"
                 onChange={e => updateField('locationLatitude', e.target.value)}
               />
             </div>
@@ -430,7 +970,7 @@ export function TelegramRequestBuilder() {
               <input
                 type="text"
                 value={form.locationLongitude}
-                placeholder="60.6057"
+                placeholder="37.6176"
                 onChange={e => updateField('locationLongitude', e.target.value)}
               />
             </div>
@@ -614,7 +1154,7 @@ export function TelegramRequestBuilder() {
                 placeholder="Unix timestamp"
                 onChange={e => updateField('pollCloseDate', e.target.value)}
               />
-              <div className={styles.fieldHint}>Unix timestamp на ближайшие 5-600 секунд.</div>
+              <div className={styles.fieldHint}>Unix timestamp на ближайшие 5–600 секунд.</div>
             </div>
 
             <div className={styles.fieldFull}>
@@ -680,18 +1220,31 @@ export function TelegramRequestBuilder() {
         );
       case 'dice':
         return (
-          <div className={styles.field}>
+          <div className={styles.fieldFull}>
             <label className={styles.label}>emoji</label>
-            <select
-              value={form.diceEmoji}
-              onChange={e => updateField('diceEmoji', e.target.value)}
-            >
+            <div className={styles.chipRow}>
               {DICE_EMOJI_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>{option.label}</option>
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`${styles.chip} ${form.diceEmoji === option.value ? styles.chipActive : ''}`}
+                  style={{ fontSize: 20, padding: '4px 12px' }}
+                  onClick={() => updateField('diceEmoji', option.value)}
+                >
+                  {option.label}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
         );
+      case 'get':
+        return renderGetFields();
+      case 'admin':
+        return renderAdminFields();
+      case 'webhook':
+        return renderWebhookFields();
+      case 'inline':
+        return renderInlineFields();
       default:
         return null;
     }
@@ -702,18 +1255,15 @@ export function TelegramRequestBuilder() {
       <div className={styles.notice}>
         <div className={styles.noticeTitle}>Конструктор запросов Telegram Bot API</div>
         <div className={styles.noticeText}>
-          Сверен с актуальной документацией Bot API 9.5. В интерфейсе учтены свежие параметры
-          <code className={styles.inlineCode}>message_thread_id</code> для топиков и
-          <code className={styles.inlineCode}>direct_messages_topic_id</code> для direct messages topics.
-          Новый <code className={styles.inlineCode}>sendMessageDraft</code> появился в Bot API 9.5,
-          но этот экран сейчас фокусируется на основных send-методах для сообщений и медиа.
+          Сверен с документацией Bot API 9.5. Доступны 36 методов: отправка медиа, работа с чатами,
+          администрирование, webhook, inline-режим.
         </div>
       </div>
 
       <div className={styles.card}>
         <div className={styles.inlineHeader}>
           <div>
-            <div className={styles.sectionTitle}>Метод отправки</div>
+            <div className={styles.sectionTitle}>Метод</div>
             <div className={styles.sectionText}>{methodConfig.description}</div>
           </div>
           <button className={styles.secondaryBtn} onClick={handleReset}>
@@ -722,109 +1272,120 @@ export function TelegramRequestBuilder() {
         </div>
 
         <div className={styles.grid}>
-          <div className={styles.field}>
+          <div className={styles.fieldFull}>
             <label className={styles.label}>method</label>
             <select
               value={form.method}
               onChange={e => handleMethodChange(e.target.value as RequestMethodId)}
             >
-              {REQUEST_METHODS.map(option => (
-                <option key={option.id} value={option.id}>
-                  {option.title} · {option.description}
-                </option>
+              {Array.from(groupedMethods.entries()).map(([category, methods]) => (
+                <optgroup key={category} label={CATEGORY_LABELS[category] ?? category}>
+                  {methods.map(method => (
+                    <option key={method.id} value={method.id}>
+                      {method.title} · {method.description}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
+            {methodConfig.hint && (
+              <div className={styles.fieldHint}>{methodConfig.hint}</div>
+            )}
           </div>
 
-          <div className={styles.field}>
-            <label className={styles.label}>chat_id</label>
-            <input
-              type="text"
-              value={form.chatId}
-              placeholder={DEFAULT_CHAT_ID}
-              onChange={e => updateField('chatId', e.target.value)}
-            />
-          </div>
+          {isSend && (
+            <>
+              <div className={styles.fieldFull}>
+                <label className={styles.label}>chat_id</label>
+                <ChatIdSelector
+                  value={form.chatId}
+                  onChange={value => updateField('chatId', value)}
+                />
+                <div className={styles.fieldHint}>ID чата, группы, супергруппы или @username канала.</div>
+              </div>
 
-          <div className={styles.field}>
-            <label className={styles.label}>business_connection_id</label>
-            <input
-              type="text"
-              value={form.businessConnectionId}
-              placeholder="Опционально"
-              onChange={e => updateField('businessConnectionId', e.target.value)}
-            />
-          </div>
+              <div className={styles.field}>
+                <label className={styles.label}>business_connection_id</label>
+                <input
+                  type="text"
+                  value={form.businessConnectionId}
+                  placeholder="Опционально"
+                  onChange={e => updateField('businessConnectionId', e.target.value)}
+                />
+              </div>
 
-          <div className={styles.field}>
-            <label className={styles.label}>message_thread_id</label>
-            <input
-              type="text"
-              value={form.messageThreadId}
-              placeholder="Топик / thread id"
-              onChange={e => updateField('messageThreadId', e.target.value)}
-            />
-          </div>
+              <div className={styles.field}>
+                <label className={styles.label}>message_thread_id</label>
+                <input
+                  type="text"
+                  value={form.messageThreadId}
+                  placeholder="Топик / thread id"
+                  onChange={e => updateField('messageThreadId', e.target.value)}
+                />
+                <div className={styles.fieldHint}>ID топика в форуме или супергруппе.</div>
+              </div>
 
-          {methodConfig.supportsDirectMessagesTopic && (
-            <div className={styles.field}>
-              <label className={styles.label}>direct_messages_topic_id</label>
-              <input
-                type="text"
-                value={form.directMessagesTopicId}
-                placeholder="Для direct messages chats"
-                onChange={e => updateField('directMessagesTopicId', e.target.value)}
-              />
-            </div>
+              {methodConfig.supportsDirectMessagesTopic && (
+                <div className={styles.field}>
+                  <label className={styles.label}>direct_messages_topic_id</label>
+                  <input
+                    type="text"
+                    value={form.directMessagesTopicId}
+                    placeholder="Для direct messages chats"
+                    onChange={e => updateField('directMessagesTopicId', e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div className={styles.field}>
+                <label className={styles.label}>Эффект сообщения</label>
+                <select
+                  value={selectedMessageEffectPreset}
+                  onChange={e => handleMessageEffectPresetChange(e.target.value)}
+                >
+                  <option value="">Без эффекта</option>
+                  {MESSAGE_EFFECT_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                  <option value="custom">Свой ID</option>
+                </select>
+                <div className={styles.fieldHint}>
+                  Выберите эффект по эмодзи, и его ID подставится в поле ниже.
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>message_effect_id</label>
+                <input
+                  type="text"
+                  value={form.messageEffectId}
+                  placeholder="Выберите эффект выше или вставьте свой ID"
+                  onChange={e => updateField('messageEffectId', e.target.value)}
+                />
+                <div className={styles.fieldHint}>
+                  Подходит для private chats. Если нужного эффекта нет в списке, вставьте ID вручную.
+                </div>
+              </div>
+
+              <div className={styles.fieldFull}>
+                <div className={styles.optionGrid}>
+                  {SEND_OPTION_DESCRIPTIONS.map(option => (
+                    <label key={option.apiName} className={styles.optionCard}>
+                      <span className={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={form[option.key]}
+                          onChange={e => updateField(option.key, e.target.checked)}
+                        />
+                        <span>{option.apiName}</span>
+                      </span>
+                      <span className={styles.optionHint}>{option.description}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
-
-          <div className={styles.field}>
-            <label className={styles.label}>Эффект сообщения</label>
-            <select
-              value={selectedMessageEffectPreset}
-              onChange={e => handleMessageEffectPresetChange(e.target.value)}
-            >
-              <option value="">Без эффекта</option>
-              {MESSAGE_EFFECT_OPTIONS.map(option => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-              <option value="custom">Свой ID</option>
-            </select>
-            <div className={styles.fieldHint}>
-              Выберите эффект по эмодзи, и его ID подставится в поле ниже.
-            </div>
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label}>message_effect_id</label>
-            <input
-              type="text"
-              value={form.messageEffectId}
-              placeholder="Выберите эффект выше или вставьте свой ID"
-              onChange={e => updateField('messageEffectId', e.target.value)}
-            />
-            <div className={styles.fieldHint}>
-              Подходит для private chats. Если нужного эффекта нет в списке, вставьте ID вручную.
-            </div>
-          </div>
-
-          <div className={styles.fieldFull}>
-            <div className={styles.optionGrid}>
-              {SEND_OPTION_DESCRIPTIONS.map(option => (
-                <label key={option.apiName} className={styles.optionCard}>
-                  <span className={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      checked={form[option.key]}
-                      onChange={e => updateField(option.key, e.target.checked)}
-                    />
-                    <span>{option.apiName}</span>
-                  </span>
-                  <span className={styles.optionHint}>{option.description}</span>
-                </label>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -834,7 +1395,7 @@ export function TelegramRequestBuilder() {
         <div className={styles.grid}>{renderMethodFields()}</div>
       </div>
 
-      {form.method !== 'sendMediaGroup' && (
+      {methodConfig.supportsInlineKeyboard && (
         <InlineKeyboardSection
           buttons={form.inlineButtons}
           onToggleCell={toggleInlineCell}
@@ -891,6 +1452,33 @@ export function TelegramRequestBuilder() {
           </div>
           <pre className={styles.pre}>{preview.bodyPreview}</pre>
         </div>
+      </div>
+
+      <div className={styles.card}>
+        <div
+          className={styles.collapsibleHeader}
+          onClick={() => setShowResponseExamples(prev => !prev)}
+        >
+          <div className={styles.sectionTitle}>Примеры ответов API</div>
+          <span className={styles.collapseArrow}>{showResponseExamples ? '▲' : '▼'}</span>
+        </div>
+
+        {showResponseExamples && (
+          <>
+            <div className={styles.outputBlock}>
+              <div className={styles.outputTitle}>Успешный ответ</div>
+              <pre className={styles.pre}>{getSuccessResponseExample(form.method)}</pre>
+            </div>
+            <div className={styles.outputBlock}>
+              <div className={styles.outputTitle}>Ошибка 400 Bad Request</div>
+              <pre className={styles.pre}>{ERROR_400_EXAMPLE}</pre>
+            </div>
+            <div className={styles.outputBlock}>
+              <div className={styles.outputTitle}>Ошибка 403 Forbidden</div>
+              <pre className={styles.pre}>{ERROR_403_EXAMPLE}</pre>
+            </div>
+          </>
+        )}
       </div>
     </>
   );

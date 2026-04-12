@@ -17,7 +17,32 @@ export type RequestMethodId =
   | 'sendVenue'
   | 'sendContact'
   | 'sendPoll'
-  | 'sendDice';
+  | 'sendDice'
+  // get
+  | 'getMe'
+  | 'getChat'
+  | 'getChatMember'
+  | 'getChatAdministrators'
+  | 'getChatMemberCount'
+  | 'getFile'
+  | 'getUserProfilePhotos'
+  // admin
+  | 'banChatMember'
+  | 'unbanChatMember'
+  | 'restrictChatMember'
+  | 'pinChatMessage'
+  | 'unpinChatMessage'
+  | 'unpinAllChatMessages'
+  | 'setMyCommands'
+  | 'deleteMyCommands'
+  // webhook / updates
+  | 'setWebhook'
+  | 'deleteWebhook'
+  | 'getWebhookInfo'
+  | 'getUpdates'
+  // inline
+  | 'answerInlineQuery'
+  | 'answerWebAppQuery';
 
 export type RequestMethodCategory =
   | 'text'
@@ -27,7 +52,11 @@ export type RequestMethodCategory =
   | 'venue'
   | 'contact'
   | 'poll'
-  | 'dice';
+  | 'dice'
+  | 'get'
+  | 'admin'
+  | 'webhook'
+  | 'inline';
 
 export type RequestParseMode = '' | 'HTML' | 'Markdown' | 'MarkdownV2';
 
@@ -48,7 +77,9 @@ export interface RequestMethodConfig {
   supportsSpoiler?: boolean;
   supportsShowCaptionAboveMedia?: boolean;
   supportsDirectMessagesTopic?: boolean;
+  supportsInlineKeyboard?: boolean;
   note?: string;
+  hint?: string;
 }
 
 export interface AlbumItem {
@@ -63,8 +94,32 @@ export interface PollOptionItem {
   text: string;
 }
 
+export interface BotCommandItem {
+  id: string;
+  command: string;
+  description: string;
+}
+
+export interface ChatPermissions {
+  can_send_messages: boolean;
+  can_send_audios: boolean;
+  can_send_documents: boolean;
+  can_send_photos: boolean;
+  can_send_videos: boolean;
+  can_send_video_notes: boolean;
+  can_send_voice_notes: boolean;
+  can_send_polls: boolean;
+  can_send_other_messages: boolean;
+  can_add_web_page_previews: boolean;
+  can_change_info: boolean;
+  can_invite_users: boolean;
+  can_pin_messages: boolean;
+  can_manage_topics: boolean;
+}
+
 export interface RequestFormState {
   method: RequestMethodId;
+  // common send fields
   chatId: string;
   businessConnectionId: string;
   messageThreadId: string;
@@ -102,6 +157,37 @@ export interface RequestFormState {
   pollIsClosed: boolean;
   diceEmoji: string;
   inlineButtons: ButtonConfig[];
+  // get methods
+  userId: string;
+  fileId: string;
+  userPhotosOffset: string;
+  userPhotosLimit: string;
+  // admin methods
+  targetMessageId: string;
+  untilDate: string;
+  revokeMessages: boolean;
+  onlyIfBanned: boolean;
+  chatPermissions: ChatPermissions;
+  botCommands: BotCommandItem[];
+  botCommandScope: string;
+  languageCode: string;
+  // webhook
+  webhookUrl: string;
+  webhookMaxConnections: string;
+  webhookAllowedUpdates: string;
+  webhookSecretToken: string;
+  dropPendingUpdates: boolean;
+  updatesOffset: string;
+  updatesLimit: string;
+  updatesTimeout: string;
+  // inline
+  inlineQueryId: string;
+  inlineResultId: string;
+  inlineResultTitle: string;
+  inlineResultText: string;
+  webAppQueryId: string;
+  webAppResultTitle: string;
+  webAppResultUrl: string;
 }
 
 export interface RequestPreview {

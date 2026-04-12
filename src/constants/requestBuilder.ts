@@ -9,6 +9,7 @@ import type {
 export const DEFAULT_CHAT_ID = '{{ telegram_id}}';
 
 export const REQUEST_METHODS: RequestMethodConfig[] = [
+  // ── ТЕКСТ ────────────────────────────────────────────────────────────────
   {
     id: 'sendMessage',
     title: 'sendMessage',
@@ -16,8 +17,10 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     category: 'text',
     supportsParseMode: true,
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
     note: 'Подходит для обычного текста, HTML и MarkdownV2.',
   },
+  // ── МЕДИА ────────────────────────────────────────────────────────────────
   {
     id: 'sendPhoto',
     title: 'sendPhoto',
@@ -29,6 +32,7 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     supportsSpoiler: true,
     supportsShowCaptionAboveMedia: true,
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
   },
   {
     id: 'sendVideo',
@@ -41,6 +45,7 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     supportsSpoiler: true,
     supportsShowCaptionAboveMedia: true,
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
   },
   {
     id: 'sendAnimation',
@@ -52,6 +57,7 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     supportsParseMode: true,
     supportsShowCaptionAboveMedia: true,
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
   },
   {
     id: 'sendAudio',
@@ -62,6 +68,7 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     supportsCaption: true,
     supportsParseMode: true,
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
   },
   {
     id: 'sendDocument',
@@ -72,6 +79,7 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     supportsCaption: true,
     supportsParseMode: true,
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
   },
   {
     id: 'sendSticker',
@@ -80,6 +88,7 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     category: 'media',
     mediaField: 'sticker',
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
     note: 'HTTP URL подходит только для статических WEBP-стикеров.',
   },
   {
@@ -91,6 +100,7 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     supportsCaption: true,
     supportsParseMode: true,
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
   },
   {
     id: 'sendVideoNote',
@@ -99,6 +109,7 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     category: 'media',
     mediaField: 'video_note',
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
   },
   {
     id: 'sendMediaGroup',
@@ -109,12 +120,14 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     supportsDirectMessagesTopic: true,
     note: 'Можно смешивать фото и видео. Документы и аудио нужно отправлять отдельным альбомом одного типа.',
   },
+  // ── ГЕОЛОКАЦИЯ / МЕСТО / КОНТАКТ ─────────────────────────────────────────
   {
     id: 'sendLocation',
     title: 'sendLocation',
     description: 'Геолокация',
     category: 'location',
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
   },
   {
     id: 'sendVenue',
@@ -122,6 +135,7 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     description: 'Место / venue',
     category: 'venue',
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
   },
   {
     id: 'sendContact',
@@ -129,12 +143,15 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     description: 'Контакт',
     category: 'contact',
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
   },
+  // ── ИНТЕРАКТИВ ───────────────────────────────────────────────────────────
   {
     id: 'sendPoll',
     title: 'sendPoll',
     description: 'Опрос',
     category: 'poll',
+    supportsInlineKeyboard: true,
     note: 'Для опроса нужно минимум 2 варианта ответа.',
   },
   {
@@ -143,8 +160,175 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     description: 'Dice / emoji game',
     category: 'dice',
     supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
+  },
+  // ── ПОЛУЧЕНИЕ ДАННЫХ ─────────────────────────────────────────────────────
+  {
+    id: 'getMe',
+    title: 'getMe',
+    description: 'Информация о боте',
+    category: 'get',
+    hint: 'Не требует параметров. Возвращает объект User с данными бота.',
+  },
+  {
+    id: 'getChat',
+    title: 'getChat',
+    description: 'Информация о чате',
+    category: 'get',
+    hint: 'Возвращает актуальную информацию о чате, группе или канале.',
+  },
+  {
+    id: 'getChatMember',
+    title: 'getChatMember',
+    description: 'Участник чата',
+    category: 'get',
+    hint: 'Статус пользователя в чате: member, administrator, kicked и т.д.',
+  },
+  {
+    id: 'getChatAdministrators',
+    title: 'getChatAdministrators',
+    description: 'Список администраторов',
+    category: 'get',
+    hint: 'Возвращает массив ChatMember со всеми администраторами чата.',
+  },
+  {
+    id: 'getChatMemberCount',
+    title: 'getChatMemberCount',
+    description: 'Число участников',
+    category: 'get',
+    hint: 'Возвращает целое число — количество участников чата.',
+  },
+  {
+    id: 'getFile',
+    title: 'getFile',
+    description: 'Информация о файле',
+    category: 'get',
+    hint: 'Возвращает объект File с file_path для скачивания через Bot API.',
+  },
+  {
+    id: 'getUserProfilePhotos',
+    title: 'getUserProfilePhotos',
+    description: 'Фото профиля',
+    category: 'get',
+    hint: 'Возвращает список фотографий профиля пользователя.',
+  },
+  // ── АДМИНИСТРИРОВАНИЕ ────────────────────────────────────────────────────
+  {
+    id: 'banChatMember',
+    title: 'banChatMember',
+    description: 'Заблокировать участника',
+    category: 'admin',
+    hint: 'Блокирует пользователя в группе/супергруппе/канале.',
+  },
+  {
+    id: 'unbanChatMember',
+    title: 'unbanChatMember',
+    description: 'Разблокировать участника',
+    category: 'admin',
+    hint: 'Снимает бан. only_if_banned = не кикать, если ещё в чате.',
+  },
+  {
+    id: 'restrictChatMember',
+    title: 'restrictChatMember',
+    description: 'Ограничить права участника',
+    category: 'admin',
+    hint: 'Управляет permissions отдельного пользователя в супергруппе.',
+  },
+  {
+    id: 'pinChatMessage',
+    title: 'pinChatMessage',
+    description: 'Закрепить сообщение',
+    category: 'admin',
+    hint: 'Закрепляет сообщение в чате. Бот должен быть администратором.',
+  },
+  {
+    id: 'unpinChatMessage',
+    title: 'unpinChatMessage',
+    description: 'Открепить сообщение',
+    category: 'admin',
+    hint: 'Без message_id открепляет последнее закреплённое сообщение.',
+  },
+  {
+    id: 'unpinAllChatMessages',
+    title: 'unpinAllChatMessages',
+    description: 'Открепить все сообщения',
+    category: 'admin',
+    hint: 'Удаляет все закреплённые сообщения в чате.',
+  },
+  {
+    id: 'setMyCommands',
+    title: 'setMyCommands',
+    description: 'Установить команды бота',
+    category: 'admin',
+    hint: 'Задаёт список команд для меню бота. Видны при вводе /.',
+  },
+  {
+    id: 'deleteMyCommands',
+    title: 'deleteMyCommands',
+    description: 'Удалить команды бота',
+    category: 'admin',
+    hint: 'Сбрасывает список команд бота для указанного языка.',
+  },
+  // ── WEBHOOK / UPDATES ────────────────────────────────────────────────────
+  {
+    id: 'setWebhook',
+    title: 'setWebhook',
+    description: 'Установить webhook',
+    category: 'webhook',
+    hint: 'Telegram будет отправлять обновления POST-запросами на ваш URL.',
+  },
+  {
+    id: 'deleteWebhook',
+    title: 'deleteWebhook',
+    description: 'Удалить webhook',
+    category: 'webhook',
+    hint: 'После удаления webhook можно использовать getUpdates.',
+  },
+  {
+    id: 'getWebhookInfo',
+    title: 'getWebhookInfo',
+    description: 'Информация о webhook',
+    category: 'webhook',
+    hint: 'Не требует параметров. Возвращает текущий WebhookInfo.',
+  },
+  {
+    id: 'getUpdates',
+    title: 'getUpdates',
+    description: 'Получить обновления (polling)',
+    category: 'webhook',
+    hint: 'Long-polling: задайте timeout > 0, чтобы держать соединение открытым.',
+  },
+  // ── INLINE РЕЖИМ ─────────────────────────────────────────────────────────
+  {
+    id: 'answerInlineQuery',
+    title: 'answerInlineQuery',
+    description: 'Ответ на inline-запрос',
+    category: 'inline',
+    hint: 'Отправляет результаты в ответ на InlineQuery. В конструкторе — один article.',
+  },
+  {
+    id: 'answerWebAppQuery',
+    title: 'answerWebAppQuery',
+    description: 'Ответ на Web App запрос',
+    category: 'inline',
+    hint: 'Отправляет результат в ответ на WebAppQuery из Telegram Mini App.',
   },
 ];
+
+export const CATEGORY_LABELS: Record<string, string> = {
+  text: 'Текст',
+  media: 'Медиа',
+  album: 'Альбом',
+  location: 'Геолокация',
+  venue: 'Место',
+  contact: 'Контакт',
+  poll: 'Опрос',
+  dice: 'Dice',
+  get: 'Получение данных',
+  admin: 'Администрирование',
+  webhook: 'Webhook / Updates',
+  inline: 'Inline режим',
+};
 
 export const MEDIA_SOURCE_OPTIONS: Array<{ value: MediaSourceMode; label: string }> = [
   { value: 'file_id', label: 'file_id' },
@@ -217,10 +401,10 @@ export const POLL_TYPE_OPTIONS: Array<{ value: PollType; label: string }> = [
 ];
 
 export const DICE_EMOJI_OPTIONS = [
-  { value: '🎲', label: '🎲 Кубик' },
-  { value: '🎯', label: '🎯 Дартс' },
-  { value: '🏀', label: '🏀 Баскетбол' },
-  { value: '⚽', label: '⚽ Футбол' },
-  { value: '🎳', label: '🎳 Боулинг' },
-  { value: '🎰', label: '🎰 Слот' },
+  { value: '🎲', label: '🎲' },
+  { value: '🎯', label: '🎯' },
+  { value: '🏀', label: '🏀' },
+  { value: '⚽', label: '⚽' },
+  { value: '🎳', label: '🎳' },
+  { value: '🎰', label: '🎰' },
 ] as const;
