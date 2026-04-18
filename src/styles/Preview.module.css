@@ -42,14 +42,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
-  transition: transform 0.2s, filter 0.2s;
+  cursor: default;
   filter: drop-shadow(0 0 4px currentColor);
   text-shadow: 0 0 4px rgba(0,0,0,.8);
-}
-
-.button:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.2) drop-shadow(0 0 6px currentColor);
 }
 
 .empty {

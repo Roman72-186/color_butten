@@ -28,6 +28,7 @@
 
 .tabBtn {
   padding: 8px 10px;
+  min-height: 44px;
   background: transparent;
   color: #88b8d4;
   border: 1px solid var(--border);
@@ -142,6 +143,8 @@
 .themeBtn {
   flex-shrink: 0;
   padding: 8px 12px;
+  min-height: 44px;
+  min-width: 44px;
   background: transparent;
   color: #88b8d4;
   border: 1px solid var(--border);

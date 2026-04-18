@@ -106,8 +106,10 @@ function App() {
             ] as [TabType, string][]).map(([tab, label]) => (
               <button
                 key={tab}
+                id={`tab-${tab}`}
                 role="tab"
                 aria-selected={activeTab === tab}
+                aria-controls={`panel-${tab}`}
                 className={`${styles.tabBtn}${activeTab === tab ? ' ' + styles.tabBtnActive : ''}`}
                 onClick={() => setActiveTab(tab)}
               >
@@ -118,13 +120,18 @@ function App() {
           <button
             className={styles.themeBtn}
             onClick={handleThemeClick}
-            title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+            aria-label={theme === 'dark' ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
           >
             {theme === 'dark' ? '☀' : '☽'}
           </button>
         </div>
 
-        <div style={{ display: activeTab === 'keyboard' ? undefined : 'none' }}>
+        <div
+          role="tabpanel"
+          id="panel-keyboard"
+          aria-labelledby="tab-keyboard"
+          hidden={activeTab !== 'keyboard'}
+        >
           {/* Platform switcher */}
           <div className={styles.tabSelect}>
             <select
@@ -161,15 +168,30 @@ function App() {
           {keyboardPlatform === 'max' && <MaxKeyboardTab />}
         </div>
 
-        <div style={{ display: activeTab === 'formatter' ? undefined : 'none' }}>
+        <div
+          role="tabpanel"
+          id="panel-formatter"
+          aria-labelledby="tab-formatter"
+          hidden={activeTab !== 'formatter'}
+        >
           <TextFormatter />
         </div>
 
-        <div style={{ display: activeTab === 'requests' ? undefined : 'none' }}>
+        <div
+          role="tabpanel"
+          id="panel-requests"
+          aria-labelledby="tab-requests"
+          hidden={activeTab !== 'requests'}
+        >
           <RequestBuilder />
         </div>
 
-        <div style={{ display: activeTab === 'json' ? undefined : 'none' }}>
+        <div
+          role="tabpanel"
+          id="panel-json"
+          aria-labelledby="tab-json"
+          hidden={activeTab !== 'json'}
+        >
           <JsonFormatter />
         </div>
       </div>

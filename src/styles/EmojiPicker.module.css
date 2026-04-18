@@ -44,6 +44,8 @@
 .clearBtn {
   flex-shrink: 0;
   padding: 6px 10px;
+  min-height: 36px;
+  min-width: 36px;
   background: transparent;
   color: var(--text-dim);
   border: 1px solid var(--border);

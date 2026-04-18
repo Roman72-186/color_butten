@@ -32,8 +32,10 @@ const SPARK_PALETTE: [number, number, number][] = [
 // ─── Component ────────────────────────────────────────────────────────────────
 export function BulletAnimation() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
+    if (prefersReduced) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -261,6 +263,8 @@ export function BulletAnimation() {
       window.removeEventListener('resize', onResize);
     };
   }, []);
+
+  if (prefersReduced) return null;
 
   return (
     <canvas
