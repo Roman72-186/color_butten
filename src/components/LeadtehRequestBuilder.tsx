@@ -155,7 +155,7 @@ function tryParseJson(raw: string): unknown {
 function buildRequest(form: LeadtehFormState): LeadtehBuildResult {
   const method = form.method;
   const httpMethod = LT_METHODS.find(m => m.id === method)!.httpMethod;
-  const contactId = form.contactId.trim() || '{{contact_id}}';
+  const contactId = form.contactId.trim() || '{{id}}';
   const botId = form.botId.trim() || '{{bot_id}}';
 
   let endpoint = `${BASE_URL}/${method}?api_token={{token_LT}}`;
@@ -327,7 +327,15 @@ export function LeadtehRequestBuilder() {
       <div className={styles.notice}>
         <div className={styles.noticeTitle}>LEADTEH API</div>
         <div className={styles.noticeText}>
-          <code className={styles.inlineCode}>{'{{token_LT}}'}</code> и <code className={styles.inlineCode}>{'{{bot_id}}'}</code> — глобальные переменные в личном кабинете Leadteh (Настройки → API).
+          <code className={styles.inlineCode}>{'{{token_LT}}'}</code> и <code className={styles.inlineCode}>{'{{bot_id}}'}</code> — глобальные переменные в личном кабинете Leadteh.
+          <br />
+          <br />
+          Обязательные заголовки для всех запросов:<br />
+          <code className={styles.inlineCode}>X-Requested-With: XMLHttpRequest</code>
+          {'  '}(все методы)
+          <br />
+          <code className={styles.inlineCode}>Content-Type: application/json</code>
+          {'  '}(только POST)
         </div>
       </div>
 
@@ -375,7 +383,7 @@ export function LeadtehRequestBuilder() {
               <input
                 type="text"
                 value={form.contactId}
-                placeholder="{{contact_id}}"
+                placeholder="{{id}}"
                 onChange={e => updateField('contactId', e.target.value)}
               />
             </div>
@@ -764,13 +772,6 @@ export function LeadtehRequestBuilder() {
             </button>
           </div>
           <pre className={styles.pre}>{request.endpoint}</pre>
-        </div>
-
-        <div className={styles.outputBlock}>
-          <div className={styles.outputHeader}>
-            <div className={styles.outputTitle}>Headers</div>
-          </div>
-          <pre className={styles.pre}>{JSON.stringify(request.headers, null, 2)}</pre>
         </div>
 
         {bodyText && (
