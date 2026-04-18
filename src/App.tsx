@@ -4,6 +4,7 @@ import { TextFormatter } from './components/TextFormatter';
 import { JsonFormatter } from './components/JsonFormatter';
 import { RequestBuilder } from './components/RequestBuilder';
 import { MaxKeyboardTab } from './components/MaxKeyboardTab';
+import { LeadtehRequestBuilder } from './components/LeadtehRequestBuilder';
 import { GridConstructor } from './components/GridConstructor';
 import { Preview } from './components/Preview';
 import { JsonOutput } from './components/JsonOutput';
@@ -13,7 +14,7 @@ import { generateJson } from './utils/generateJson';
 import { createDefaultButton, groupButtonsByRow } from './utils/helpers';
 import styles from './styles/App.module.css';
 
-type TabType = 'keyboard' | 'requests' | 'formatter' | 'json';
+type TabType = 'keyboard' | 'requests' | 'formatter' | 'json' | 'leadteh';
 type KeyboardPlatform = 'telegram' | 'max';
 
 function App() {
@@ -103,6 +104,7 @@ function App() {
               ['requests',  'Запросы'],
               ['formatter', 'Текст'],
               ['json',      'JSON'],
+              ['leadteh',   'API LEADTEH'],
             ] as [TabType, string][]).map(([tab, label]) => (
               <button
                 key={tab}
@@ -193,6 +195,15 @@ function App() {
           hidden={activeTab !== 'json'}
         >
           <JsonFormatter />
+        </div>
+
+        <div
+          role="tabpanel"
+          id="panel-leadteh"
+          aria-labelledby="tab-leadteh"
+          hidden={activeTab !== 'leadteh'}
+        >
+          <LeadtehRequestBuilder />
         </div>
       </div>
     </div>
