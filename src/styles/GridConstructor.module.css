@@ -78,23 +78,23 @@
 .cellInactive:hover {
   animation: none;
   border-color: var(--accent);
-  background-color: rgba(0,245,255,.06);
+  background-color: rgba(100, 148, 255, 0.08);
   color: var(--accent);
 }
 
 .cellActive {
   border: 1px solid var(--accent);
-  background-color: rgba(0,245,255,.1);
+  background-color: rgba(100, 148, 255, 0.12);
   color: var(--accent);
-  box-shadow: 0 0 6px rgba(0,245,255,.2);
+  box-shadow: 0 0 6px rgba(100, 148, 255, 0.2);
   font-weight: 700;
 }
 
 .cellActive:hover {
-  background-color: rgba(255,34,85,.12);
+  background-color: rgba(224, 96, 110, 0.12);
   border-color: var(--danger);
   color: var(--danger);
-  box-shadow: 0 0 6px rgba(255,34,85,.2);
+  box-shadow: 0 0 6px rgba(224, 96, 110, 0.2);
 }
 
 /* ── Hint ────────────────────────────────────────────────────────────────── */
@@ -107,7 +107,7 @@
 
 @media (max-width: 480px) {
   .cell {
-    min-height: 36px;
+    min-height: 44px;
     font-size: 11px;
     padding: 0 4px;
   }

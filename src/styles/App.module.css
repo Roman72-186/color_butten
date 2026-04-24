@@ -43,14 +43,14 @@
 
 .tabBtn:hover {
   color: var(--accent);
-  border-color: rgba(0,245,255,.4);
-  background: rgba(0,245,255,.05);
+  border-color: rgba(100, 148, 255, 0.45);
+  background: rgba(100, 148, 255, 0.06);
 }
 
 .tabBtnActive {
   color: var(--accent);
   border-color: var(--accent);
-  background: rgba(0,245,255,.1);
+  background: rgba(100, 148, 255, 0.12);
   font-weight: 700;
 }
 
@@ -134,7 +134,6 @@
   color: var(--danger);
   border-color: var(--danger);
   box-shadow: var(--glow-red);
-  text-shadow: 0 0 8px var(--danger);
 }
 
 /* ── Theme toggle button ──────────────────────────────────────────────────── */
