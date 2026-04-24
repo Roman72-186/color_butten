@@ -23,35 +23,41 @@
   flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  align-items: center;
 }
 
 .tabBtn {
-  padding: 8px 12px;
-  min-height: 44px;
-  background: var(--surface);
+  padding: 8px 13px;
+  min-height: 38px;
+  background: transparent;
   color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border: none;
+  border-radius: 6px;
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
   font-weight: 400;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  transition: color 0.15s, background 0.15s;
 }
 
 .tabBtn:hover {
-  color: var(--accent);
-  border-color: rgba(100, 148, 255, 0.45);
-  background: rgba(100, 148, 255, 0.06);
+  color: var(--text);
+  background: rgba(100, 148, 255, 0.07);
 }
 
 .tabBtnActive {
   color: var(--accent);
-  border-color: var(--accent);
-  background: rgba(100, 148, 255, 0.12);
   font-weight: 700;
+  background: rgba(100, 148, 255, 0.14);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(100, 148, 255, 0.22);
 }
 
 /* ── Platform sub-select (inside keyboard tab) ──────────────────────────── */
