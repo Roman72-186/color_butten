@@ -15,43 +15,57 @@
 .appHeader {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .tabBar {
   flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  /* Неоморфная рамка-поверхность */
+  box-shadow:
+    5px 5px 14px rgba(0, 0, 0, 0.5),
+    -3px -3px 9px rgba(100, 148, 255, 0.04);
 }
 
 .tabBtn {
-  padding: 8px 10px;
+  padding: 9px 13px;
   min-height: 44px;
-  background: transparent;
+  background: var(--surface);
   color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border: none;
+  border-radius: calc(var(--radius) - 1px);
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
   font-weight: 400;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
   white-space: nowrap;
+  /* Поднятый неоморфный эффект */
+  box-shadow:
+    3px 3px 8px rgba(0, 0, 0, 0.45),
+    -2px -2px 6px rgba(100, 148, 255, 0.05);
+  transition: box-shadow 0.2s, color 0.2s;
 }
 
 .tabBtn:hover {
   color: var(--accent);
-  border-color: rgba(100, 148, 255, 0.45);
-  background: rgba(100, 148, 255, 0.06);
+  box-shadow:
+    3px 3px 8px rgba(0, 0, 0, 0.45),
+    -2px -2px 6px rgba(100, 148, 255, 0.1);
 }
 
+/* Активная вкладка — вдавленный неоморфизм */
 .tabBtnActive {
   color: var(--accent);
-  border-color: var(--accent);
-  background: rgba(100, 148, 255, 0.12);
   font-weight: 700;
+  box-shadow:
+    inset 3px 3px 8px rgba(0, 0, 0, 0.55),
+    inset -2px -2px 6px rgba(100, 148, 255, 0.07);
 }
 
 /* ── Platform sub-select (inside keyboard tab) ──────────────────────────── */
@@ -143,21 +157,26 @@
   padding: 8px 12px;
   min-height: 44px;
   min-width: 44px;
-  background: transparent;
+  background: var(--surface);
   color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border: none;
+  border-radius: var(--radius);
   font-family: 'Orbitron', monospace;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  /* Такой же неоморфный стиль, как у tabBar */
+  box-shadow:
+    5px 5px 14px rgba(0, 0, 0, 0.5),
+    -3px -3px 9px rgba(100, 148, 255, 0.04);
+  transition: box-shadow 0.2s, color 0.2s;
 }
 
 .themeBtn:hover {
   color: var(--accent);
-  border-color: var(--accent);
-  box-shadow: 0 0 12px rgba(0,245,255,.15);
+  box-shadow:
+    5px 5px 14px rgba(0, 0, 0, 0.5),
+    -3px -3px 9px rgba(100, 148, 255, 0.1);
 }
 
 @media (max-width: 480px) {

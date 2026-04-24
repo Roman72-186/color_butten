@@ -100,10 +100,10 @@ function App() {
         <div className={styles.appHeader}>
           <nav className={styles.tabBar} role="tablist">
             {([
-              ['keyboard',  'Клавиши'],
+              ['keyboard',  'Кнопки'],
               ['requests',  'Запросы'],
               ['formatter', 'Текст'],
-              ['json',      'JSON'],
+              ['json',      'JSON-форматор'],
               ['leadteh',   'API LEADTEH'],
             ] as [TabType, string][]).map(([tab, label]) => (
               <button
