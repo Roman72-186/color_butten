@@ -133,7 +133,7 @@
 .emojiHint {
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
-  color: #6090ac;
+  color: var(--text-dim);
   line-height: 1.4;
 }
 
@@ -404,14 +404,14 @@
 .outputContent {
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
-  color: #88b8d4;
+  color: var(--text-muted);
   line-height: 1.7;
   word-break: break-word;
   white-space: pre-wrap;
 }
 
 .lineBreak {
-  color: #ff00cc;
+  color: var(--accent2);
   font-weight: 700;
 }
 

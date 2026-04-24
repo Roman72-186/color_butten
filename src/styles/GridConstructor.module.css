@@ -18,7 +18,7 @@
 .activeCount {
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
-  color: #88b8d4;
+  color: var(--text-muted);
 }
 
 .resetBtn {

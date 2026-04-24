@@ -91,7 +91,7 @@
   display: block;
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
-  color: #88b8d4;
+  color: var(--text-muted);
   margin-bottom: 5px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
