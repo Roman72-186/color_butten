@@ -58,7 +58,7 @@
 }
 
 body {
-  font-family: 'Orbitron', 'Share Tech Mono', monospace;
+  font-family: 'Share Tech Mono', monospace;
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;

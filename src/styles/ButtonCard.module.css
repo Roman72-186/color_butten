@@ -32,7 +32,7 @@
   display: inline-block;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #000;
   text-transform: uppercase;
@@ -89,7 +89,7 @@
 .label {
   display: block;
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
   margin-bottom: 5px;
   text-transform: uppercase;

@@ -132,7 +132,7 @@
   display: block;
   margin-bottom: 6px;
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -142,7 +142,7 @@
 .fieldHint {
   margin-top: 5px;
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-dim);
   line-height: 1.5;
 }
@@ -233,7 +233,7 @@
 }
 
 .optionHint {
-  font-size: 11px;
+  font-size: 12px;
   font-family: 'Share Tech Mono', monospace;
   color: var(--text-muted);
 }
@@ -243,7 +243,7 @@
 .linkBtn {
   border-radius: var(--radius-sm);
   font-family: 'Orbitron', monospace;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -348,7 +348,7 @@
   background: rgba(0,245,255,.08);
   border: 1px solid rgba(0,245,255,.25);
   border-radius: var(--radius-sm);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--accent);
   font-family: 'Orbitron', monospace;
@@ -399,7 +399,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
   white-space: nowrap;
@@ -426,7 +426,7 @@
 }
 
 .collapseArrow {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
   transition: color 0.15s;
 }
