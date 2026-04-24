@@ -69,19 +69,6 @@ body {
   position: relative;
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9998;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent, transparent 2px,
-    rgba(0,245,255,.018) 2px, rgba(0,245,255,.018) 4px
-  );
-}
-
 @keyframes glow-pulse {
   0%, 100% {
     box-shadow: 0 0 0 1px rgba(100, 148, 255, 0.1), 0 0 6px rgba(100, 148, 255, 0.05);
@@ -89,11 +76,6 @@ body::before {
   50% {
     box-shadow: 0 0 0 2px rgba(100, 148, 255, 0.18), 0 0 12px rgba(100, 148, 255, 0.08);
   }
-}
-
-@keyframes neon-flicker {
-  0%,92%,94%,96%,100% { opacity: 1; }
-  93%,95%              { opacity: .85; }
 }
 
 @keyframes cyber-slide {
@@ -158,11 +140,6 @@ select {
 
 html[data-theme="light"] select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%233d6fd9'/%3E%3C/svg%3E");
-}
-
-html[data-theme="light"] body::before,
-html[data-theme="light"] body::after {
-  display: none;
 }
 
 select option {

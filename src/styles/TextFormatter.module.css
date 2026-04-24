@@ -52,23 +52,20 @@
 }
 
 .fmtBtn:hover {
-  background: rgba(0,245,255,.15);
+  background: rgba(100, 148, 255, 0.15);
   color: var(--accent);
   border-color: var(--accent);
-  box-shadow: 0 0 8px rgba(0,245,255,.2);
-  text-shadow: 0 0 6px rgba(0,245,255,.6);
+  box-shadow: var(--glow-cyan);
 }
 
 .fmtBtnActive {
-  background: rgba(255,0,204,.15);
+  background: rgba(167, 139, 250, 0.15);
   color: var(--accent2);
   border-color: var(--accent2);
-  box-shadow: 0 0 8px rgba(255,0,204,.3);
-  text-shadow: 0 0 6px rgba(255,0,204,.6);
 }
 
 .fmtBtnActive:hover {
-  background: rgba(255,0,204,.25);
+  background: rgba(167, 139, 250, 0.25);
   color: var(--accent2);
   border-color: var(--accent2);
 }
@@ -79,9 +76,9 @@
   gap: 8px;
   padding: 12px;
   background: var(--surface);
-  border: 1px solid rgba(255,0,204,.3);
+  border: 1px solid rgba(167, 139, 250, 0.3);
   border-radius: var(--radius);
-  box-shadow: 0 0 16px rgba(255,0,204,.1);
+  box-shadow: var(--glow-pink);
   animation: cyber-slide 0.15s ease;
 }
 
@@ -98,9 +95,9 @@
 .emojiInsertBtn {
   flex-shrink: 0;
   padding: 8px 14px;
-  background: rgba(255,0,204,.12);
+  background: rgba(167, 139, 250, 0.12);
   color: var(--accent2);
-  border: 1px solid rgba(255,0,204,.4);
+  border: 1px solid rgba(167, 139, 250, 0.4);
   border-radius: var(--radius-sm);
   font-family: 'Orbitron', monospace;
   font-size: 12px;
@@ -112,7 +109,7 @@
 }
 
 .emojiInsertBtn:hover:not(:disabled) {
-  background: rgba(255,0,204,.25);
+  background: rgba(167, 139, 250, 0.25);
   box-shadow: var(--glow-pink);
 }
 
@@ -160,7 +157,7 @@
 .extractorTextarea:focus {
   border-color: var(--accent2);
   outline: none;
-  box-shadow: 0 0 0 1px rgba(255,0,204,.2);
+  box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.2);
 }
 
 .extractedList {
@@ -174,8 +171,8 @@
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: rgba(255,0,204,.06);
-  border: 1px solid rgba(255,0,204,.2);
+  background: rgba(167, 139, 250, 0.06);
+  border: 1px solid rgba(167, 139, 250, 0.2);
   border-radius: var(--radius-sm);
 }
 
@@ -259,15 +256,14 @@
 }
 
 .botCodeTabActive {
-  background: rgba(255,0,204,.1);
+  background: rgba(167, 139, 250, 0.1);
   color: var(--accent2);
-  border-color: rgba(255,0,204,.4);
+  border-color: rgba(167, 139, 250, 0.4);
 }
 
 .botCodeBlock {
   background: var(--input-bg);
-  border: 1px solid var(--border);
-  border-left: 3px solid rgba(255,0,204,.4);
+  border: 1px solid rgba(167, 139, 250, 0.25);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   font-family: 'Share Tech Mono', monospace;
@@ -281,9 +277,8 @@
 
 .hint {
   padding: 10px 12px;
-  background: rgba(0,245,255,.05);
-  border: 1px solid rgba(0,245,255,.15);
-  border-left: 3px solid rgba(0,245,255,.5);
+  background: rgba(100, 148, 255, 0.05);
+  border: 1px solid rgba(100, 148, 255, 0.2);
   border-radius: var(--radius);
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
@@ -354,7 +349,8 @@
 .previewContent pre {
   background: var(--input-bg);
   padding: 10px;
-  border-left: 2px solid rgba(0,245,255,.3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
   overflow-x: auto;
@@ -368,8 +364,8 @@
 
 .previewContent :global(.tg-emoji) {
   display: inline-block;
-  background: rgba(255,0,204,.1);
-  border: 1px solid rgba(255,0,204,.3);
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.3);
   border-radius: 2px;
   padding: 0 2px;
   font-size: 1.1em;
@@ -395,8 +391,7 @@
 
 .output {
   background: var(--input-bg);
-  border: 1px solid var(--border);
-  border-left: 3px solid rgba(0,245,255,.3);
+  border: 1px solid rgba(100, 148, 255, 0.25);
   border-radius: var(--radius);
   padding: 12px 14px;
 }
@@ -426,14 +421,14 @@
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
   padding: 6px 10px;
-  background: rgba(255,34,85,.08);
+  background: rgba(224, 96, 110, 0.07);
+  border: 1px solid rgba(224, 96, 110, 0.3);
   border-radius: var(--radius-sm);
-  border-left: 3px solid var(--danger);
 }
 
 .copyBtn {
   padding: 12px 24px;
-  background: linear-gradient(135deg, rgba(0,245,255,.15), rgba(0,245,255,.05));
+  background: rgba(100, 148, 255, 0.1);
   color: var(--accent);
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
@@ -443,13 +438,12 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
 .copyBtn:hover:not(:disabled) {
-  background: rgba(0,245,255,.25);
+  background: rgba(100, 148, 255, 0.22);
   box-shadow: var(--glow-cyan);
-  transform: translateY(-1px);
 }
 
 .copyBtn:disabled {
@@ -473,7 +467,7 @@
 
 .shareBtn {
   padding: 12px 24px;
-  background: linear-gradient(135deg, rgba(255,0,204,.15), rgba(255,0,204,.05));
+  background: rgba(167, 139, 250, 0.1);
   color: var(--accent2);
   border: 1px solid var(--accent2);
   border-radius: var(--radius-sm);
@@ -483,13 +477,12 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
 .shareBtn:hover:not(:disabled) {
-  background: rgba(255,0,204,.25);
+  background: rgba(167, 139, 250, 0.22);
   box-shadow: var(--glow-pink);
-  transform: translateY(-1px);
 }
 
 .shareBtn:disabled {

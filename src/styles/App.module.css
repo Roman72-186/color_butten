@@ -92,7 +92,7 @@
 .addBtn {
   flex: 1;
   padding: 10px 16px;
-  background: linear-gradient(135deg, rgba(0,245,255,.12), rgba(0,245,255,.04));
+  background: rgba(100, 148, 255, 0.1);
   color: var(--accent);
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
@@ -102,13 +102,12 @@
   letter-spacing: 0.5px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
 .addBtn:hover:not(:disabled) {
-  background: rgba(0,245,255,.2);
+  background: rgba(100, 148, 255, 0.2);
   box-shadow: var(--glow-cyan);
-  transform: translateY(-1px);
 }
 
 .addBtn:disabled {
