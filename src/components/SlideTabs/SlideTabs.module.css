@@ -1,6 +1,7 @@
 .tabBar {
   position: relative;
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-wrap: nowrap;
   gap: 2px;
