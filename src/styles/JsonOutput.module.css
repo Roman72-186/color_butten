@@ -13,46 +13,39 @@
 }
 
 .title {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 13px;
   font-weight: 700;
   color: var(--accent);
-  letter-spacing: 1px;
-  text-transform: uppercase;
 }
 
 .copyBtn {
   padding: 7px 16px;
-  background: rgba(100, 148, 255, 0.1);
+  background: var(--accent-soft);
   color: var(--accent);
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s;
 }
 
 .copyBtn:hover {
-  background: rgba(100, 148, 255, 0.22);
-  box-shadow: var(--glow-cyan);
+  background: var(--accent-soft-hover);
 }
 
 .copied {
-  background: rgba(0,255,136,.15);
+  background: rgba(61, 174, 122, 0.15);
   color: var(--success);
   border-color: var(--success);
-  box-shadow: var(--glow-green);
 }
 
 .copied:hover {
-  background: rgba(0,255,136,.15);
+  background: rgba(61, 174, 122, 0.15);
   color: var(--success);
   border-color: var(--success);
-  box-shadow: var(--glow-green);
 }
 
 .preWrapper {

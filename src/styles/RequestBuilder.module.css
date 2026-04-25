@@ -15,12 +15,11 @@
   font-weight: 400;
   padding: 13px 36px 13px 16px;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 
 .platformSelect:focus {
   border-color: var(--accent);
-  box-shadow: var(--glow-cyan);
 }
 
 .notice,
@@ -33,18 +32,17 @@
 }
 
 .notice {
-  background: rgba(100, 148, 255, 0.07);
-  border-color: rgba(100, 148, 255, 0.25);
+  background: var(--accent-soft);
+  border-color: var(--accent-ring);
 }
 
 .card {
   background: var(--surface);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 
 .card:hover {
-  border-color: rgba(0,245,255,.3);
-  box-shadow: 0 0 20px rgba(0,245,255,.05);
+  border-color: var(--border-neon);
 }
 
 .errorBox {
@@ -61,12 +59,10 @@
 .sectionTitle,
 .boxTitle,
 .outputTitle {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--accent);
-  letter-spacing: 1px;
-  text-transform: uppercase;
 }
 
 .noticeText,
@@ -83,7 +79,6 @@
   padding: 10px 12px;
   background: var(--input-bg);
   border: 1px solid var(--border);
-  border-left: 1px solid rgba(100, 148, 255, 0.4);
   border-radius: var(--radius-sm);
   color: var(--accent);
   font-family: 'Share Tech Mono', monospace;
@@ -94,12 +89,12 @@
 .inlineCode {
   margin: 0 4px;
   padding: 1px 6px;
-  background: rgba(0,245,255,.1);
-  border-radius: 0;
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm);
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
   color: var(--accent);
-  border: 1px solid rgba(0,245,255,.2);
+  border: 1px solid var(--accent-ring);
 }
 
 .inlineHeader,
@@ -135,8 +130,6 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
 }
 
 .fieldHint {
@@ -159,12 +152,11 @@
   font-size: 13px;
   resize: vertical;
   line-height: 1.5;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 
 .textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(0,245,255,.2), 0 0 10px rgba(0,245,255,.12);
 }
 
 .fileInput {
@@ -180,8 +172,8 @@
 .fileMeta {
   margin-top: 8px;
   padding: 8px 10px;
-  background: rgba(0,255,136,.07);
-  border: 1px solid rgba(0,255,136,.25);
+  background: rgba(61, 174, 122, 0.07);
+  border: 1px solid rgba(61, 174, 122, 0.25);
   border-radius: var(--radius-sm);
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
@@ -212,7 +204,7 @@
 }
 
 .optionCard:hover {
-  border-color: rgba(0,245,255,.3);
+  border-color: var(--border-neon);
 }
 
 .checkboxLabel {
@@ -242,11 +234,9 @@
 .primaryBtn,
 .linkBtn {
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
 }
 
 .secondaryBtn {
@@ -254,27 +244,25 @@
   background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border);
-  transition: color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition: color 0.2s, border-color 0.2s;
 }
 
 .secondaryBtn:hover {
   color: var(--text);
-  border-color: rgba(0,245,255,.4);
-  box-shadow: 0 0 10px rgba(0,245,255,.12);
+  border-color: var(--border-neon);
 }
 
 .primaryBtn {
   padding: 7px 12px;
-  background: rgba(100, 148, 255, 0.1);
+  background: var(--accent-soft);
   color: var(--accent);
   border: 1px solid var(--accent);
   font-weight: 700;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s;
 }
 
 .primaryBtn:hover:not(:disabled) {
-  background: rgba(100, 148, 255, 0.22);
-  box-shadow: var(--glow-cyan);
+  background: var(--accent-soft-hover);
 }
 
 .primaryBtn:disabled {
@@ -284,10 +272,9 @@
 
 .copiedBtn,
 .copiedBtn:hover {
-  background: rgba(0,255,136,.15);
+  background: rgba(61, 174, 122, 0.15);
   color: var(--success);
   border-color: var(--success);
-  box-shadow: var(--glow-green);
 }
 
 .linkBtn {
@@ -297,15 +284,12 @@
   font-size: 12px;
   font-family: 'Share Tech Mono', monospace;
   font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
   border: none;
-  transition: color 0.15s, text-shadow 0.15s;
+  transition: color 0.15s;
 }
 
 .linkBtn:hover:not(:disabled) {
   color: var(--danger);
-  text-shadow: 0 0 8px var(--danger);
 }
 
 .albumList {
@@ -326,15 +310,14 @@
 
 .albumCard:hover,
 .outputBlock:hover {
-  border-color: rgba(0,245,255,.25);
+  border-color: var(--border-neon);
 }
 
 .albumTitle {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text);
-  letter-spacing: 0.5px;
 }
 
 .badges {
@@ -345,15 +328,13 @@
 
 .badge {
   padding: 3px 8px;
-  background: rgba(0,245,255,.08);
-  border: 1px solid rgba(0,245,255,.25);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-ring);
   border-radius: var(--radius-sm);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--accent);
-  font-family: 'Orbitron', monospace;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  font-family: 'Geist', sans-serif;
 }
 
 .outputBlock {
@@ -407,14 +388,14 @@
 
 .chip:hover {
   color: var(--accent);
-  border-color: rgba(0,245,255,.4);
-  background: rgba(0,245,255,.07);
+  border-color: var(--border-neon);
+  background: var(--accent-soft);
 }
 
 .chipActive {
   color: var(--accent);
   border-color: var(--accent);
-  background: rgba(0,245,255,.1);
+  background: var(--accent-soft);
 }
 
 .collapsibleHeader {

@@ -19,12 +19,11 @@
   font-weight: 400;
   padding: 11px 36px 11px 14px;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 
 .modeSelectEl:focus {
   border-color: var(--accent);
-  box-shadow: var(--glow-cyan);
 }
 
 .toolbar {
@@ -39,33 +38,32 @@
 
 .fmtBtn {
   padding: 6px 12px;
-  background: rgba(0,245,255,.05);
+  background: var(--surface-hover);
   color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, text-shadow 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
   min-width: 36px;
   text-align: center;
 }
 
 .fmtBtn:hover {
-  background: rgba(100, 148, 255, 0.15);
+  background: var(--accent-soft);
   color: var(--accent);
   border-color: var(--accent);
-  box-shadow: var(--glow-cyan);
 }
 
 .fmtBtnActive {
-  background: rgba(167, 139, 250, 0.15);
+  background: var(--accent-soft);
   color: var(--accent2);
   border-color: var(--accent2);
 }
 
 .fmtBtnActive:hover {
-  background: rgba(167, 139, 250, 0.25);
+  background: var(--accent-soft-hover);
   color: var(--accent2);
   border-color: var(--accent2);
 }
@@ -76,9 +74,8 @@
   gap: 8px;
   padding: 12px;
   background: var(--surface);
-  border: 1px solid rgba(167, 139, 250, 0.3);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--glow-pink);
   animation: cyber-slide 0.15s ease;
 }
 
@@ -95,22 +92,20 @@
 .emojiInsertBtn {
   flex-shrink: 0;
   padding: 8px 14px;
-  background: rgba(167, 139, 250, 0.12);
+  background: var(--accent-soft);
   color: var(--accent2);
-  border: 1px solid rgba(167, 139, 250, 0.4);
+  border: 1px solid var(--accent-ring);
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s;
   white-space: nowrap;
 }
 
 .emojiInsertBtn:hover:not(:disabled) {
-  background: rgba(167, 139, 250, 0.25);
-  box-shadow: var(--glow-pink);
+  background: var(--accent-soft-hover);
 }
 
 .emojiInsertBtn:disabled {
@@ -157,7 +152,6 @@
 .extractorTextarea:focus {
   border-color: var(--accent2);
   outline: none;
-  box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.2);
 }
 
 .extractedList {
@@ -171,8 +165,8 @@
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: rgba(167, 139, 250, 0.06);
-  border: 1px solid rgba(167, 139, 250, 0.2);
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
 
@@ -194,9 +188,9 @@
 .extractedCopyBtn {
   flex-shrink: 0;
   padding: 4px 8px;
-  background: rgba(0,245,255,.08);
+  background: var(--accent-soft);
   color: var(--accent);
-  border: 1px solid rgba(0,245,255,.3);
+  border: 1px solid var(--accent-ring);
   border-radius: var(--radius-sm);
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
@@ -205,11 +199,11 @@
 }
 
 .extractedCopyBtn:hover {
-  background: rgba(0,245,255,.2);
+  background: var(--accent-soft-hover);
 }
 
 .emojiInsertedOk {
-  background: rgba(0,255,136,.15) !important;
+  background: rgba(61, 174, 122, 0.15) !important;
   color: var(--success) !important;
   border-color: var(--success) !important;
 }
@@ -252,18 +246,18 @@
 
 .botCodeTab:hover {
   color: var(--text-muted);
-  border-color: var(--text-dim);
+  border-color: var(--border-neon);
 }
 
 .botCodeTabActive {
-  background: rgba(167, 139, 250, 0.1);
+  background: var(--accent-soft);
   color: var(--accent2);
-  border-color: rgba(167, 139, 250, 0.4);
+  border-color: var(--accent-ring);
 }
 
 .botCodeBlock {
   background: var(--input-bg);
-  border: 1px solid rgba(167, 139, 250, 0.25);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   font-family: 'Share Tech Mono', monospace;
@@ -277,8 +271,8 @@
 
 .hint {
   padding: 10px 12px;
-  background: rgba(100, 148, 255, 0.05);
-  border: 1px solid rgba(100, 148, 255, 0.2);
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
@@ -298,12 +292,11 @@
   font-size: 14px;
   line-height: 1.5;
   resize: vertical;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 
 .textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(0,245,255,.25), 0 0 10px rgba(0,245,255,.15);
 }
 
 .textarea::placeholder {
@@ -319,13 +312,11 @@
 }
 
 .previewTitle {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
 }
 
 .previewContent {
@@ -337,13 +328,13 @@
 }
 
 .previewContent code {
-  background: rgba(0,245,255,.08);
+  background: var(--accent-soft);
   padding: 2px 6px;
-  border-radius: 0;
+  border-radius: var(--radius-sm);
   font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
   color: var(--accent);
-  border: 1px solid rgba(0,245,255,.2);
+  border: 1px solid var(--accent-ring);
 }
 
 .previewContent pre {
@@ -364,8 +355,8 @@
 
 .previewContent :global(.tg-emoji) {
   display: inline-block;
-  background: rgba(167, 139, 250, 0.1);
-  border: 1px solid rgba(167, 139, 250, 0.3);
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
   border-radius: 2px;
   padding: 0 2px;
   font-size: 1.1em;
@@ -391,7 +382,7 @@
 
 .output {
   background: var(--input-bg);
-  border: 1px solid rgba(100, 148, 255, 0.25);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 12px 14px;
 }
@@ -428,22 +419,19 @@
 
 .copyBtn {
   padding: 12px 24px;
-  background: rgba(100, 148, 255, 0.1);
+  background: var(--accent-soft);
   color: var(--accent);
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 13px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s;
 }
 
 .copyBtn:hover:not(:disabled) {
-  background: rgba(100, 148, 255, 0.22);
-  box-shadow: var(--glow-cyan);
+  background: var(--accent-soft-hover);
 }
 
 .copyBtn:disabled {
@@ -453,10 +441,9 @@
 
 .copied,
 .copied:hover {
-  background: rgba(0,255,136,.15);
+  background: rgba(61, 174, 122, 0.15);
   color: var(--success);
   border-color: var(--success);
-  box-shadow: var(--glow-green);
 }
 
 .actions {
@@ -467,22 +454,19 @@
 
 .shareBtn {
   padding: 12px 24px;
-  background: rgba(167, 139, 250, 0.1);
+  background: var(--accent-soft);
   color: var(--accent2);
   border: 1px solid var(--accent2);
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 13px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s;
 }
 
 .shareBtn:hover:not(:disabled) {
-  background: rgba(167, 139, 250, 0.22);
-  box-shadow: var(--glow-pink);
+  background: var(--accent-soft-hover);
 }
 
 .shareBtn:disabled {

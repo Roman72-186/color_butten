@@ -7,13 +7,11 @@
 }
 
 .title {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
 }
 
 .container {

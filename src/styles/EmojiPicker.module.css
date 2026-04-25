@@ -4,9 +4,8 @@
   gap: 10px;
   padding: 12px;
   background: var(--surface);
-  border: 1px solid var(--border-neon);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--glow-pink);
   animation: cyber-slide 0.15s ease;
 }
 
@@ -26,13 +25,12 @@
   color: var(--text);
   font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
   width: 100% !important;
 }
 
 .searchInput:focus {
   border-color: var(--accent2);
-  box-shadow: var(--glow-pink);
   outline: none;
 }
 
@@ -99,7 +97,7 @@
 }
 
 .grid::-webkit-scrollbar-thumb {
-  background: rgba(167, 139, 250, 0.35);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 2px;
 }
 
@@ -109,8 +107,8 @@
   align-items: center;
   gap: 3px;
   padding: 8px 4px 6px;
-  background: rgba(167, 139, 250, 0.05);
-  border: 1px solid rgba(167, 139, 250, 0.15);
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -119,17 +117,17 @@
 }
 
 .item:hover {
-  background: rgba(167, 139, 250, 0.18);
-  border-color: rgba(167, 139, 250, 0.45);
+  background: var(--accent-soft);
+  border-color: var(--accent-ring);
 }
 
 .itemInserted {
-  background: rgba(0,255,136,.15) !important;
+  background: rgba(61, 174, 122, 0.15) !important;
   border-color: var(--success) !important;
 }
 
 .itemPremium {
-  border-color: rgba(167, 139, 250, 0.3);
+  border-color: var(--border-neon);
 }
 
 .itemEmoji {
@@ -208,21 +206,20 @@
 .customBtn {
   flex-shrink: 0;
   padding: 6px 12px;
-  background: rgba(167, 139, 250, 0.1);
+  background: var(--accent-soft);
   color: var(--accent2);
-  border: 1px solid rgba(167, 139, 250, 0.4);
+  border: 1px solid var(--accent-ring);
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s;
 }
 
 .customBtn:hover:not(:disabled) {
-  background: rgba(167, 139, 250, 0.22);
-  box-shadow: var(--glow-pink);
+  background: var(--accent-soft-hover);
 }
 
 .customBtn:disabled {

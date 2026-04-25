@@ -17,21 +17,17 @@
   font-size: 12px;
   font-weight: 700;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
 }
 
 .modeBadge {
   padding: 3px 8px;
-  background: rgba(0,245,255,.08);
-  border: 1px solid rgba(0,245,255,.25);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-ring);
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .toolbar {
@@ -46,7 +42,7 @@
 
 .fmtBtn {
   padding: 6px 12px;
-  background: rgba(0,245,255,.05);
+  background: var(--surface-hover);
   color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -55,14 +51,13 @@
   min-width: 36px;
   text-align: center;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .fmtBtn:hover {
-  background: rgba(0,245,255,.15);
+  background: var(--accent-soft);
   color: var(--accent);
   border-color: var(--accent);
-  box-shadow: 0 0 8px rgba(0,245,255,.2);
 }
 
 .hint {
@@ -88,12 +83,11 @@
   font-size: 14px;
   line-height: 1.5;
   resize: vertical;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 
 .textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(0,245,255,.25), 0 0 10px rgba(0,245,255,.15);
 }
 
 .errors {
@@ -120,13 +114,11 @@
 }
 
 .previewTitle {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
 }
 
 .previewContent {
@@ -138,13 +130,13 @@
 }
 
 .previewContent code {
-  background: rgba(0,245,255,.08);
+  background: var(--accent-soft);
   padding: 2px 6px;
-  border-radius: 0;
+  border-radius: var(--radius-sm);
   font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
   color: var(--accent);
-  border: 1px solid rgba(0,245,255,.2);
+  border: 1px solid var(--accent-ring);
 }
 
 .previewContent pre {

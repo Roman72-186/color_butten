@@ -16,17 +16,15 @@
   font-size: 14px;
   line-height: 1.6;
   resize: vertical;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 
 .textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(0,245,255,.25), 0 0 10px rgba(0,245,255,.15);
 }
 
 .textareaError {
   border-color: var(--danger);
-  box-shadow: 0 0 8px rgba(255,34,85,.2);
 }
 
 .textarea::placeholder {
@@ -52,22 +50,19 @@
 .formatBtn {
   flex: 1;
   padding: 11px 16px;
-  background: rgba(100, 148, 255, 0.08);
+  background: var(--accent-soft);
   color: var(--accent);
-  border: 1px solid rgba(100, 148, 255, 0.35);
+  border: 1px solid var(--accent-ring);
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 13px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s;
 }
 
 .formatBtn:hover:not(:disabled) {
-  background: rgba(100, 148, 255, 0.18);
-  box-shadow: var(--glow-cyan);
+  background: var(--accent-soft-hover);
 }
 
 .formatBtn:disabled {
@@ -82,19 +77,16 @@
   color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 13px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition: color 0.2s, border-color 0.2s;
 }
 
 .cleanBtn:hover:not(:disabled) {
   color: var(--danger);
   border-color: var(--danger);
-  box-shadow: var(--glow-red);
 }
 
 .cleanBtn:disabled {
@@ -110,13 +102,11 @@
 }
 
 .pathsTitle {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   padding: 12px 16px 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
 }
 
 .pathsList {
@@ -135,12 +125,12 @@
 }
 
 .pathRow:hover {
-  background: rgba(0,245,255,.05);
+  background: var(--surface-hover);
 }
 
 .pathCopied {
-  background: rgba(0,255,136,.08);
-  border-color: rgba(0,255,136,.3);
+  background: rgba(61, 174, 122, 0.08);
+  border-color: rgba(61, 174, 122, 0.3);
 }
 
 .pathCopied .pathKey,
