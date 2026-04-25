@@ -1,0 +1,85 @@
+.tabBar {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 4px;
+  background: #141416;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tabBar::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  padding: 8px 13px;
+  min-height: 38px;
+  background: transparent;
+  color: #8A8A9A;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.tab:hover,
+.tab:focus-visible {
+  color: #E2E2E5;
+  outline: none;
+}
+
+.tab[aria-selected='true'] {
+  color: #5E6AD2;
+  font-weight: 700;
+}
+
+.pill {
+  position: absolute;
+  z-index: 0;
+  top: 4px;
+  bottom: 4px;
+  background: rgba(94, 106, 210, 0.18);
+  border-radius: 6px;
+  transition:
+    left 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.15s;
+  pointer-events: none;
+}
+
+/* Светлая тема */
+:global([data-theme='light']) .tabBar {
+  background: #FFFFFF;
+  border-color: rgba(0, 0, 0, 0.10);
+}
+
+:global([data-theme='light']) .tab {
+  color: #55556A;
+}
+
+:global([data-theme='light']) .tab:hover,
+:global([data-theme='light']) .tab:focus-visible {
+  color: #111117;
+}
+
+:global([data-theme='light']) .tab[aria-selected='true'] {
+  color: #4D57C0;
+}
+
+:global([data-theme='light']) .pill {
+  background: rgba(77, 87, 192, 0.16);
+}

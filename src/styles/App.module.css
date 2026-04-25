@@ -19,47 +19,6 @@
   margin-bottom: 16px;
 }
 
-.tabBar {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  padding: 3px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  align-items: center;
-}
-
-.tabBtn {
-  padding: 8px 13px;
-  min-height: 38px;
-  background: transparent;
-  color: var(--text-muted);
-  border: none;
-  border-radius: 6px;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 12px;
-  font-weight: 400;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.15s, background 0.15s;
-}
-
-.tabBtn:hover {
-  color: var(--text);
-  background: rgba(100, 148, 255, 0.07);
-}
-
-.tabBtnActive {
-  color: var(--accent);
-  font-weight: 700;
-  background: rgba(100, 148, 255, 0.14);
-  box-shadow:
-    0 1px 4px rgba(0, 0, 0, 0.3),
-    inset 0 0 0 1px rgba(100, 148, 255, 0.22);
-}
-
 /* ── Platform sub-select (inside keyboard tab) ──────────────────────────── */
 .tabSelect {
   margin-bottom: 16px;
@@ -98,22 +57,19 @@
 .addBtn {
   flex: 1;
   padding: 10px 16px;
-  background: rgba(100, 148, 255, 0.1);
+  background: var(--accent-soft);
   color: var(--accent);
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s;
 }
 
 .addBtn:hover:not(:disabled) {
-  background: rgba(100, 148, 255, 0.2);
-  box-shadow: var(--glow-cyan);
+  background: var(--accent-soft-hover);
 }
 
 .addBtn:disabled {
@@ -127,19 +83,16 @@
   color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, text-shadow 0.2s;
+  transition: color 0.2s, border-color 0.2s;
 }
 
 .resetBtn:hover {
   color: var(--danger);
   border-color: var(--danger);
-  box-shadow: var(--glow-red);
 }
 
 /* ── Theme toggle button ──────────────────────────────────────────────────── */
@@ -153,17 +106,16 @@
   color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition: color 0.2s, border-color 0.2s;
 }
 
 .themeBtn:hover {
   color: var(--accent);
-  border-color: rgba(100, 148, 255, 0.45);
-  box-shadow: var(--glow-cyan);
+  border-color: var(--accent);
 }
 
 @media (max-width: 480px) {

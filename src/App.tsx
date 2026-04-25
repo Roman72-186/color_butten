@@ -9,6 +9,7 @@ import { GridConstructor } from './components/GridConstructor';
 import { Preview } from './components/Preview';
 import { JsonOutput } from './components/JsonOutput';
 import { RadioactiveSnow } from './components/RadioactiveSnow';
+import { SlideTabs } from './components/SlideTabs';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
 import { createDefaultButton, groupButtonsByRow } from './utils/helpers';
@@ -16,6 +17,14 @@ import styles from './styles/App.module.css';
 
 type TabType = 'keyboard' | 'requests' | 'formatter' | 'json' | 'leadteh';
 type KeyboardPlatform = 'telegram' | 'max';
+
+const TABS = [
+  { id: 'keyboard',  label: 'Кнопки' },
+  { id: 'requests',  label: 'Запросы' },
+  { id: 'formatter', label: 'Текст' },
+  { id: 'json',      label: 'JSON-форматор' },
+  { id: 'leadteh',   label: 'API LEADTEH' },
+] as const satisfies readonly { id: TabType; label: string }[];
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('keyboard');
@@ -98,27 +107,12 @@ function App() {
 
         {/* Tab bar + theme toggle */}
         <div className={styles.appHeader}>
-          <nav className={styles.tabBar} role="tablist">
-            {([
-              ['keyboard',  'Кнопки'],
-              ['requests',  'Запросы'],
-              ['formatter', 'Текст'],
-              ['json',      'JSON-форматор'],
-              ['leadteh',   'API LEADTEH'],
-            ] as [TabType, string][]).map(([tab, label]) => (
-              <button
-                key={tab}
-                id={`tab-${tab}`}
-                role="tab"
-                aria-selected={activeTab === tab}
-                aria-controls={`panel-${tab}`}
-                className={`${styles.tabBtn}${activeTab === tab ? ' ' + styles.tabBtnActive : ''}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {label}
-              </button>
-            ))}
-          </nav>
+          <SlideTabs
+            tabs={TABS}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            ariaLabel="Вкладки конструктора"
+          />
           <button
             className={styles.themeBtn}
             onClick={handleThemeClick}

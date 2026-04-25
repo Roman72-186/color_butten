@@ -1,0 +1,1 @@
+export { SlideTabs } from './SlideTabs';
