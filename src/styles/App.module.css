@@ -11,13 +11,6 @@
   padding: 20px 16px 40px;
 }
 
-/* ── Tab bar + theme toggle header ──────────────────────────────────────── */
-.appHeader {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 16px;
-}
 
 /* ── Platform sub-select (inside keyboard tab) ──────────────────────────── */
 .tabSelect {
@@ -95,28 +88,6 @@
   border-color: var(--danger);
 }
 
-/* ── Theme toggle button ──────────────────────────────────────────────────── */
-
-.themeBtn {
-  flex-shrink: 0;
-  padding: 8px 12px;
-  min-height: 44px;
-  min-width: 44px;
-  background: var(--surface);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-family: 'Geist', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
-}
-
-.themeBtn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
 
 @media (max-width: 480px) {
   .content {

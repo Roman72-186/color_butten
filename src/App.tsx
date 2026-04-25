@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { ButtonConfig } from './types';
 import { TextFormatter } from './components/TextFormatter';
 import { JsonFormatter } from './components/JsonFormatter';
@@ -29,33 +29,6 @@ const TABS = [
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('keyboard');
   const [keyboardPlatform, setKeyboardPlatform] = useState<KeyboardPlatform>('telegram');
-
-  // ── Theme state ──────────────────────────────────────────────────────────
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem('theme') as 'dark' | 'light') || 'dark';
-  });
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const applyTheme = useCallback((next: 'dark' | 'light') => {
-    setTheme(prev => {
-      if (prev === next) return prev;
-      document.documentElement.classList.add('theme-switching');
-      setTimeout(() => document.documentElement.classList.remove('theme-switching'), 450);
-      return next;
-    });
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    applyTheme(theme === 'dark' ? 'light' : 'dark');
-  }, [theme, applyTheme]);
-
-  const handleThemeClick = useCallback(() => {
-    toggleTheme();
-  }, [toggleTheme]);
 
   // ── Telegram keyboard state ──────────────────────────────────────────────
   const [buttons, setButtons] = useState<ButtonConfig[]>([]);
@@ -105,22 +78,12 @@ function App() {
       <RadioactiveSnow />
       <div className={styles.content}>
 
-        {/* Tab bar + theme toggle */}
-        <div className={styles.appHeader}>
-          <SlideTabs
-            tabs={TABS}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            ariaLabel="Вкладки конструктора"
-          />
-          <button
-            className={styles.themeBtn}
-            onClick={handleThemeClick}
-            aria-label={theme === 'dark' ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
-          >
-            {theme === 'dark' ? '☀' : '☽'}
-          </button>
-        </div>
+        <SlideTabs
+          tabs={TABS}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          ariaLabel="Вкладки конструктора"
+        />
 
         <div
           role="tabpanel"

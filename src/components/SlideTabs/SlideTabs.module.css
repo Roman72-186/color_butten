@@ -1,22 +1,13 @@
 .tabBar {
   position: relative;
-  flex: 1;
-  min-width: 0;
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 2px;
   padding: 4px;
+  margin-bottom: 16px;
   background: #141416;
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 10px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.tabBar::-webkit-scrollbar {
-  display: none;
 }
 
 .tab {
@@ -60,27 +51,4 @@
     width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.15s;
   pointer-events: none;
-}
-
-/* Светлая тема */
-:global([data-theme='light']) .tabBar {
-  background: #FFFFFF;
-  border-color: rgba(0, 0, 0, 0.10);
-}
-
-:global([data-theme='light']) .tab {
-  color: #55556A;
-}
-
-:global([data-theme='light']) .tab:hover,
-:global([data-theme='light']) .tab:focus-visible {
-  color: #111117;
-}
-
-:global([data-theme='light']) .tab[aria-selected='true'] {
-  color: #4D57C0;
-}
-
-:global([data-theme='light']) .pill {
-  background: rgba(77, 87, 192, 0.16);
 }
