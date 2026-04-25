@@ -9,7 +9,7 @@ import { GridConstructor } from './components/GridConstructor';
 import { Preview } from './components/Preview';
 import { JsonOutput } from './components/JsonOutput';
 import { RadioactiveSnow } from './components/RadioactiveSnow';
-import { SlideTabs } from './components/SlideTabs';
+import { BurgerMenu } from './components/BurgerMenu';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
 import { createDefaultButton, groupButtonsByRow } from './utils/helpers';
@@ -78,11 +78,10 @@ function App() {
       <RadioactiveSnow />
       <div className={styles.content}>
 
-        <SlideTabs
+        <BurgerMenu
           tabs={TABS}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          ariaLabel="Вкладки конструктора"
         />
 
         <div
