@@ -18,6 +18,11 @@ export type RequestMethodId =
   | 'sendContact'
   | 'sendPoll'
   | 'sendDice'
+  // forward / copy
+  | 'forwardMessage'
+  | 'forwardMessages'
+  | 'copyMessage'
+  | 'copyMessages'
   // get
   | 'getMe'
   | 'getChat'
@@ -42,7 +47,20 @@ export type RequestMethodId =
   | 'getUpdates'
   // inline
   | 'answerInlineQuery'
-  | 'answerWebAppQuery';
+  | 'answerWebAppQuery'
+  // updating messages
+  | 'editMessageText'
+  | 'editMessageCaption'
+  | 'editMessageMedia'
+  | 'editMessageLiveLocation'
+  | 'stopMessageLiveLocation'
+  | 'editMessageChecklist'
+  | 'editMessageReplyMarkup'
+  | 'stopPoll'
+  | 'approveSuggestedPost'
+  | 'declineSuggestedPost'
+  | 'deleteMessage'
+  | 'deleteMessages';
 
 export type RequestMethodCategory =
   | 'text'
@@ -53,10 +71,13 @@ export type RequestMethodCategory =
   | 'contact'
   | 'poll'
   | 'dice'
+  | 'forward'
+  | 'copy'
   | 'get'
   | 'admin'
   | 'webhook'
-  | 'inline';
+  | 'inline'
+  | 'updating';
 
 export type RequestParseMode = '' | 'HTML' | 'Markdown' | 'MarkdownV2';
 
@@ -65,6 +86,8 @@ export type MediaSourceMode = 'file_id' | 'url';
 export type MediaGroupItemType = 'photo' | 'video' | 'document' | 'audio';
 
 export type PollType = 'regular' | 'quiz';
+
+export type EditMediaType = 'photo' | 'video' | 'animation' | 'audio' | 'document';
 
 export interface RequestMethodConfig {
   id: RequestMethodId;
@@ -157,6 +180,16 @@ export interface RequestFormState {
   pollIsClosed: boolean;
   diceEmoji: string;
   inlineButtons: ButtonConfig[];
+  // forward / copy
+  fromChatId: string;
+  messageIds: string;
+  removeCaption: boolean;
+  // updating messages
+  inlineMessageId: string;
+  editMediaType: EditMediaType;
+  checklistJson: string;
+  suggestedPostSendDate: string;
+  suggestedPostComment: string;
   // get methods
   userId: string;
   fileId: string;

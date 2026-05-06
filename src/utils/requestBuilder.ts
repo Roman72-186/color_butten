@@ -60,6 +60,49 @@ function pushIfValue(
   }
 }
 
+function parseNumberList(value: string): number[] {
+  return value
+    .split(/[\s,]+/)
+    .map(item => item.trim())
+    .filter(Boolean)
+    .map(Number);
+}
+
+function isNumberList(value: string): boolean {
+  const items = value
+    .split(/[\s,]+/)
+    .map(item => item.trim())
+    .filter(Boolean);
+
+  return items.length > 0 && items.every(item => /^\d+$/.test(item));
+}
+
+function parseJsonPreview(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value.trim();
+  }
+}
+
+function addSendOptions(payload: Record<string, unknown>, form: RequestFormState) {
+  pushIfValue(payload, 'disable_notification', form.disableNotification);
+  pushIfValue(payload, 'protect_content', form.protectContent);
+  pushIfValue(payload, 'allow_paid_broadcast', form.allowPaidBroadcast);
+}
+
+function addEditableMessageTarget(payload: Record<string, unknown>, form: RequestFormState) {
+  if (form.inlineMessageId.trim()) {
+    payload.inline_message_id = form.inlineMessageId.trim();
+    return;
+  }
+
+  payload.chat_id = maybeNumber(form.chatId.trim() || DEFAULT_CHAT_ID);
+  if (form.targetMessageId.trim()) {
+    payload.message_id = Number(form.targetMessageId);
+  }
+}
+
 function getMethodConfig(method: RequestMethodId): RequestMethodConfig {
   return REQUEST_METHODS.find(item => item.id === method) ?? REQUEST_METHODS[0];
 }
@@ -263,8 +306,61 @@ function buildSpecialPayload(
   const payload: Record<string, unknown> = {};
 
   const chatId = () => maybeNumber(form.chatId.trim() || DEFAULT_CHAT_ID);
+  const normalizedText = normalizeFormattedValue(form.text, form.parseMode);
+  const normalizedCaption = normalizeFormattedValue(form.caption, form.parseMode);
 
   switch (config.id) {
+    case 'forwardMessage':
+      payload.chat_id = chatId();
+      payload.from_chat_id = maybeNumber(form.fromChatId.trim());
+      payload.message_id = Number(form.targetMessageId);
+      if (form.messageThreadId.trim()) payload.message_thread_id = maybeNumber(form.messageThreadId);
+      if (config.supportsDirectMessagesTopic && form.directMessagesTopicId.trim()) {
+        payload.direct_messages_topic_id = maybeNumber(form.directMessagesTopicId);
+      }
+      addSendOptions(payload, form);
+      break;
+
+    case 'forwardMessages':
+      payload.chat_id = chatId();
+      payload.from_chat_id = maybeNumber(form.fromChatId.trim());
+      payload.message_ids = parseNumberList(form.messageIds);
+      if (form.messageThreadId.trim()) payload.message_thread_id = maybeNumber(form.messageThreadId);
+      if (config.supportsDirectMessagesTopic && form.directMessagesTopicId.trim()) {
+        payload.direct_messages_topic_id = maybeNumber(form.directMessagesTopicId);
+      }
+      pushIfValue(payload, 'disable_notification', form.disableNotification);
+      pushIfValue(payload, 'protect_content', form.protectContent);
+      break;
+
+    case 'copyMessage':
+      payload.chat_id = chatId();
+      payload.from_chat_id = maybeNumber(form.fromChatId.trim());
+      payload.message_id = Number(form.targetMessageId);
+      if (form.messageThreadId.trim()) payload.message_thread_id = maybeNumber(form.messageThreadId);
+      if (config.supportsDirectMessagesTopic && form.directMessagesTopicId.trim()) {
+        payload.direct_messages_topic_id = maybeNumber(form.directMessagesTopicId);
+      }
+      if (normalizedCaption) payload.caption = normalizedCaption;
+      if (normalizedCaption && form.parseMode) payload.parse_mode = form.parseMode;
+      if (form.showCaptionAboveMedia) payload.show_caption_above_media = true;
+      if (form.inlineButtons.length > 0) payload.reply_markup = buildInlineKeyboard(form.inlineButtons);
+      addSendOptions(payload, form);
+      break;
+
+    case 'copyMessages':
+      payload.chat_id = chatId();
+      payload.from_chat_id = maybeNumber(form.fromChatId.trim());
+      payload.message_ids = parseNumberList(form.messageIds);
+      if (form.messageThreadId.trim()) payload.message_thread_id = maybeNumber(form.messageThreadId);
+      if (config.supportsDirectMessagesTopic && form.directMessagesTopicId.trim()) {
+        payload.direct_messages_topic_id = maybeNumber(form.directMessagesTopicId);
+      }
+      if (form.removeCaption) payload.remove_caption = true;
+      pushIfValue(payload, 'disable_notification', form.disableNotification);
+      pushIfValue(payload, 'protect_content', form.protectContent);
+      break;
+
     // ── GET ──────────────────────────────────────────────────────────────
     case 'getMe':
     case 'getWebhookInfo':
@@ -384,6 +480,82 @@ function buildSpecialPayload(
         input_message_content: { message_text: form.webAppResultUrl.trim() },
       };
       break;
+
+    case 'editMessageText':
+      addEditableMessageTarget(payload, form);
+      payload.text = normalizedText;
+      if (form.parseMode) payload.parse_mode = form.parseMode;
+      if (form.inlineButtons.length > 0) payload.reply_markup = buildInlineKeyboard(form.inlineButtons);
+      break;
+
+    case 'editMessageCaption':
+      addEditableMessageTarget(payload, form);
+      payload.caption = normalizedCaption;
+      if (form.parseMode) payload.parse_mode = form.parseMode;
+      if (form.showCaptionAboveMedia) payload.show_caption_above_media = true;
+      if (form.inlineButtons.length > 0) payload.reply_markup = buildInlineKeyboard(form.inlineButtons);
+      break;
+
+    case 'editMessageMedia':
+      addEditableMessageTarget(payload, form);
+      payload.media = {
+        type: form.editMediaType,
+        media: form.mediaValue.trim(),
+        ...(normalizedCaption ? { caption: normalizedCaption } : {}),
+        ...(normalizedCaption && form.parseMode ? { parse_mode: form.parseMode } : {}),
+        ...(form.showCaptionAboveMedia ? { show_caption_above_media: true } : {}),
+      };
+      if (form.inlineButtons.length > 0) payload.reply_markup = buildInlineKeyboard(form.inlineButtons);
+      break;
+
+    case 'editMessageLiveLocation':
+      addEditableMessageTarget(payload, form);
+      payload.latitude = Number(form.locationLatitude);
+      payload.longitude = Number(form.locationLongitude);
+      if (form.inlineButtons.length > 0) payload.reply_markup = buildInlineKeyboard(form.inlineButtons);
+      break;
+
+    case 'stopMessageLiveLocation':
+    case 'editMessageReplyMarkup':
+      addEditableMessageTarget(payload, form);
+      if (form.inlineButtons.length > 0) payload.reply_markup = buildInlineKeyboard(form.inlineButtons);
+      break;
+
+    case 'editMessageChecklist':
+      payload.business_connection_id = form.businessConnectionId.trim();
+      payload.chat_id = chatId();
+      payload.message_id = Number(form.targetMessageId);
+      payload.checklist = parseJsonPreview(form.checklistJson);
+      if (form.inlineButtons.length > 0) payload.reply_markup = buildInlineKeyboard(form.inlineButtons);
+      break;
+
+    case 'stopPoll':
+      payload.chat_id = chatId();
+      payload.message_id = Number(form.targetMessageId);
+      if (form.inlineButtons.length > 0) payload.reply_markup = buildInlineKeyboard(form.inlineButtons);
+      break;
+
+    case 'approveSuggestedPost':
+      payload.chat_id = chatId();
+      payload.message_id = Number(form.targetMessageId);
+      if (form.suggestedPostSendDate.trim()) payload.send_date = Number(form.suggestedPostSendDate);
+      break;
+
+    case 'declineSuggestedPost':
+      payload.chat_id = chatId();
+      payload.message_id = Number(form.targetMessageId);
+      if (form.suggestedPostComment.trim()) payload.comment = form.suggestedPostComment.trim();
+      break;
+
+    case 'deleteMessage':
+      payload.chat_id = chatId();
+      payload.message_id = Number(form.targetMessageId);
+      break;
+
+    case 'deleteMessages':
+      payload.chat_id = chatId();
+      payload.message_ids = parseNumberList(form.messageIds);
+      break;
   }
 
   return payload;
@@ -492,6 +664,14 @@ export function createDefaultRequestForm(): RequestFormState {
     pollIsClosed: false,
     diceEmoji: DICE_EMOJI_OPTIONS[0].value,
     inlineButtons: [],
+    fromChatId: '',
+    messageIds: '',
+    removeCaption: false,
+    inlineMessageId: '',
+    editMediaType: 'photo',
+    checklistJson: '{\n  "title": "Checklist",\n  "tasks": []\n}',
+    suggestedPostSendDate: '',
+    suggestedPostComment: '',
     // get
     userId: '',
     fileId: '',
@@ -561,6 +741,49 @@ export function validateRequestForm(form: RequestFormState): string[] {
       !/^-?\d+$/.test(form.directMessagesTopicId.trim())
     ) {
       errors.push('direct_messages_topic_id должен быть числом.');
+    }
+  }
+
+  if (config.category === 'forward' || config.category === 'copy') {
+    if (!form.chatId.trim()) errors.push('Поле chat_id обязательно.');
+    if (!form.fromChatId.trim()) errors.push('Поле from_chat_id обязательно.');
+    if (config.id === 'forwardMessage' || config.id === 'copyMessage') {
+      if (!form.targetMessageId.trim()) errors.push('Поле message_id обязательно.');
+    } else if (!isNumberList(form.messageIds)) {
+      errors.push('Поле message_ids должно содержать ID сообщений через запятую или пробел.');
+    }
+
+    if (form.messageThreadId.trim() && !/^-?\d+$/.test(form.messageThreadId.trim())) {
+      errors.push('message_thread_id должен быть числом.');
+    }
+
+    if (
+      config.supportsDirectMessagesTopic &&
+      form.directMessagesTopicId.trim() &&
+      !/^-?\d+$/.test(form.directMessagesTopicId.trim())
+    ) {
+      errors.push('direct_messages_topic_id должен быть числом.');
+    }
+  }
+
+  if (config.category === 'updating') {
+    const canUseInlineTarget = [
+      'editMessageText',
+      'editMessageCaption',
+      'editMessageMedia',
+      'editMessageLiveLocation',
+      'stopMessageLiveLocation',
+      'editMessageReplyMarkup',
+    ].includes(config.id);
+    const hasInlineTarget = canUseInlineTarget && form.inlineMessageId.trim();
+
+    if (!hasInlineTarget && config.id !== 'deleteMessages') {
+      if (!form.chatId.trim()) errors.push('Поле chat_id обязательно.');
+      if (!form.targetMessageId.trim()) errors.push('Поле message_id обязательно.');
+    }
+
+    if (config.id === 'deleteMessages' && !isNumberList(form.messageIds)) {
+      errors.push('Поле message_ids должно содержать ID сообщений через запятую или пробел.');
     }
   }
 
@@ -734,6 +957,22 @@ export function validateRequestForm(form: RequestFormState): string[] {
       }
       break;
     }
+    case 'forward':
+      if ((config.id === 'forwardMessages') && parseNumberList(form.messageIds).length > 100) {
+        errors.push('forwardMessages принимает не больше 100 message_ids.');
+      }
+      break;
+    case 'copy':
+      if (config.id === 'copyMessages' && parseNumberList(form.messageIds).length > 100) {
+        errors.push('copyMessages принимает не больше 100 message_ids.');
+      }
+      if (config.id === 'copyMessage' && formatMode && form.caption.trim()) {
+        errors.push(
+          ...validateFormattedText(normalizedCaption, formatMode, { validatePercentEncoding: false })
+            .map(error => `caption: ${error}`)
+        );
+      }
+      break;
     case 'get':
       switch (config.id) {
         case 'getChat':
@@ -790,6 +1029,57 @@ export function validateRequestForm(form: RequestFormState): string[] {
       }
       if (config.id === 'answerWebAppQuery') {
         if (!form.webAppQueryId.trim()) errors.push('Поле web_app_query_id обязательно.');
+      }
+      break;
+    case 'updating':
+      switch (config.id) {
+        case 'editMessageText':
+          if (!form.text.trim()) errors.push('Поле text обязательно.');
+          if (formatMode) {
+            errors.push(
+              ...validateFormattedText(normalizedText, formatMode, { validatePercentEncoding: false })
+                .map(error => `text: ${error}`)
+            );
+          }
+          break;
+        case 'editMessageCaption':
+          if (formatMode && form.caption.trim()) {
+            errors.push(
+              ...validateFormattedText(normalizedCaption, formatMode, { validatePercentEncoding: false })
+                .map(error => `caption: ${error}`)
+            );
+          }
+          break;
+        case 'editMessageMedia':
+          if (!form.mediaValue.trim()) errors.push('Поле media обязательно.');
+          if (formatMode && form.caption.trim()) {
+            errors.push(
+              ...validateFormattedText(normalizedCaption, formatMode, { validatePercentEncoding: false })
+                .map(error => `caption: ${error}`)
+            );
+          }
+          break;
+        case 'editMessageLiveLocation':
+          if (!form.locationLatitude.trim() || Number.isNaN(Number(form.locationLatitude))) {
+            errors.push('Введите корректную latitude.');
+          }
+          if (!form.locationLongitude.trim() || Number.isNaN(Number(form.locationLongitude))) {
+            errors.push('Введите корректную longitude.');
+          }
+          break;
+        case 'editMessageChecklist':
+          if (!form.businessConnectionId.trim()) errors.push('Поле business_connection_id обязательно.');
+          try {
+            JSON.parse(form.checklistJson);
+          } catch {
+            errors.push('Поле checklist должно быть валидным JSON-объектом.');
+          }
+          break;
+        case 'deleteMessages':
+          if (parseNumberList(form.messageIds).length > 100) {
+            errors.push('deleteMessages принимает не больше 100 message_ids.');
+          }
+          break;
       }
       break;
   }

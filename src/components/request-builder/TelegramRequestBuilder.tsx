@@ -16,6 +16,7 @@ import type {
   AlbumItem,
   BotCommandItem,
   ChatPermissions,
+  EditMediaType,
   MediaGroupItemType,
   MediaSourceMode,
   PollOptionItem,
@@ -260,6 +261,42 @@ export function TelegramRequestBuilder() {
     </div>
   );
 
+  const renderSourceChatField = () => (
+    <div className={styles.fieldFull}>
+      <label className={styles.label}>from_chat_id</label>
+      <ChatIdSelector
+        value={form.fromChatId}
+        onChange={value => updateField('fromChatId', value)}
+      />
+      <div className={styles.fieldHint}>ID или @username чата, откуда берется исходное сообщение.</div>
+    </div>
+  );
+
+  const renderTargetMessageIdField = (optional = false) => (
+    <div className={styles.field}>
+      <label className={styles.label}>message_id</label>
+      <input
+        type="number"
+        value={form.targetMessageId}
+        placeholder={optional ? 'Опционально' : 'ID сообщения'}
+        onChange={e => updateField('targetMessageId', e.target.value)}
+      />
+    </div>
+  );
+
+  const renderMessageIdsField = () => (
+    <div className={styles.fieldFull}>
+      <label className={styles.label}>message_ids</label>
+      <input
+        type="text"
+        value={form.messageIds}
+        placeholder="123, 124, 125"
+        onChange={e => updateField('messageIds', e.target.value)}
+      />
+      <div className={styles.fieldHint}>До 100 ID сообщений через запятую или пробел.</div>
+    </div>
+  );
+
   const renderMediaSourceInput = () => {
     const fieldName = methodConfig.mediaField ?? 'media';
     return (
@@ -459,6 +496,131 @@ export function TelegramRequestBuilder() {
       </div>
     </>
   );
+
+  const renderForwardCopyFields = () => {
+    const isMultiple = methodConfig.id === 'forwardMessages' || methodConfig.id === 'copyMessages';
+    const isCopyMessage = methodConfig.id === 'copyMessage';
+    const isCopyMessages = methodConfig.id === 'copyMessages';
+
+    return (
+      <>
+        {renderChatIdField('Куда отправить пересланное или скопированное сообщение.')}
+        {renderSourceChatField()}
+        {isMultiple ? renderMessageIdsField() : renderTargetMessageIdField()}
+
+        <div className={styles.field}>
+          <label className={styles.label}>message_thread_id</label>
+          <input
+            type="text"
+            value={form.messageThreadId}
+            placeholder="Топик / thread id"
+            onChange={e => updateField('messageThreadId', e.target.value)}
+          />
+        </div>
+
+        {methodConfig.supportsDirectMessagesTopic && (
+          <div className={styles.field}>
+            <label className={styles.label}>direct_messages_topic_id</label>
+            <input
+              type="text"
+              value={form.directMessagesTopicId}
+              placeholder="Для direct messages chats"
+              onChange={e => updateField('directMessagesTopicId', e.target.value)}
+            />
+          </div>
+        )}
+
+        {isCopyMessage && (
+          <>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>caption</label>
+              <FormattedTextField
+                value={form.caption}
+                parseMode={form.parseMode}
+                rows={4}
+                placeholder="Новая подпись. Пусто = оставить исходную"
+                onChange={value => updateField('caption', value)}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>parse_mode</label>
+              <select
+                value={form.parseMode}
+                onChange={e => updateField('parseMode', e.target.value as RequestFormState['parseMode'])}
+              >
+                {PARSE_MODE_OPTIONS.map(option => (
+                  <option key={option.value || 'none'} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={form.showCaptionAboveMedia}
+                  onChange={e => updateField('showCaptionAboveMedia', e.target.checked)}
+                />
+                <span>show_caption_above_media</span>
+              </label>
+            </div>
+          </>
+        )}
+
+        {isCopyMessages && (
+          <div className={styles.fieldFull}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={form.removeCaption}
+                onChange={e => updateField('removeCaption', e.target.checked)}
+              />
+              <span>remove_caption</span>
+            </label>
+          </div>
+        )}
+
+        <div className={styles.fieldFull}>
+          <div className={styles.optionGrid}>
+            <label className={styles.optionCard}>
+              <span className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={form.disableNotification}
+                  onChange={e => updateField('disableNotification', e.target.checked)}
+                />
+                <span>disable_notification</span>
+              </span>
+              <span className={styles.optionHint}>Отправить без звука.</span>
+            </label>
+            <label className={styles.optionCard}>
+              <span className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={form.protectContent}
+                  onChange={e => updateField('protectContent', e.target.checked)}
+                />
+                <span>protect_content</span>
+              </span>
+              <span className={styles.optionHint}>Защитить содержимое от пересылки и сохранения.</span>
+            </label>
+            {isCopyMessage && (
+              <label className={styles.optionCard}>
+                <span className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.allowPaidBroadcast}
+                    onChange={e => updateField('allowPaidBroadcast', e.target.checked)}
+                  />
+                  <span>allow_paid_broadcast</span>
+                </span>
+                <span className={styles.optionHint}>Массовая отправка за Stars.</span>
+              </label>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  };
 
   const renderGetFields = () => {
     switch (methodConfig.id) {
@@ -704,6 +866,239 @@ export function TelegramRequestBuilder() {
             />
             <div className={styles.fieldHint}>Пусто = удалить команды для всех языков.</div>
           </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderEditableTargetFields = () => (
+    <>
+      <div className={styles.field}>
+        <label className={styles.label}>inline_message_id</label>
+        <input
+          type="text"
+          value={form.inlineMessageId}
+          placeholder="Пусто = использовать chat_id + message_id"
+          onChange={e => updateField('inlineMessageId', e.target.value)}
+        />
+      </div>
+      {!form.inlineMessageId.trim() && (
+        <>
+          {renderChatIdField()}
+          {renderTargetMessageIdField()}
+        </>
+      )}
+    </>
+  );
+
+  const renderUpdatingFields = () => {
+    switch (methodConfig.id) {
+      case 'editMessageText':
+        return (
+          <>
+            {renderEditableTargetFields()}
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>text</label>
+              <FormattedTextField
+                value={form.text}
+                parseMode={form.parseMode}
+                rows={6}
+                placeholder="Новый текст сообщения"
+                onChange={value => updateField('text', value)}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>parse_mode</label>
+              <select
+                value={form.parseMode}
+                onChange={e => updateField('parseMode', e.target.value as RequestFormState['parseMode'])}
+              >
+                {PARSE_MODE_OPTIONS.map(option => (
+                  <option key={option.value || 'none'} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </>
+        );
+      case 'editMessageCaption':
+        return (
+          <>
+            {renderEditableTargetFields()}
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>caption</label>
+              <FormattedTextField
+                value={form.caption}
+                parseMode={form.parseMode}
+                rows={4}
+                placeholder="Новая подпись"
+                onChange={value => updateField('caption', value)}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>parse_mode</label>
+              <select
+                value={form.parseMode}
+                onChange={e => updateField('parseMode', e.target.value as RequestFormState['parseMode'])}
+              >
+                {PARSE_MODE_OPTIONS.map(option => (
+                  <option key={option.value || 'none'} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={form.showCaptionAboveMedia}
+                  onChange={e => updateField('showCaptionAboveMedia', e.target.checked)}
+                />
+                <span>show_caption_above_media</span>
+              </label>
+            </div>
+          </>
+        );
+      case 'editMessageMedia':
+        return (
+          <>
+            {renderEditableTargetFields()}
+            <div className={styles.field}>
+              <label className={styles.label}>media.type</label>
+              <select
+                value={form.editMediaType}
+                onChange={e => updateField('editMediaType', e.target.value as EditMediaType)}
+              >
+                <option value="photo">photo</option>
+                <option value="video">video</option>
+                <option value="animation">animation</option>
+                <option value="audio">audio</option>
+                <option value="document">document</option>
+              </select>
+            </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>media.media</label>
+              <input
+                type="text"
+                value={form.mediaValue}
+                placeholder="file_id или HTTP URL"
+                onChange={e => updateField('mediaValue', e.target.value)}
+              />
+            </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>caption</label>
+              <FormattedTextField
+                value={form.caption}
+                parseMode={form.parseMode}
+                rows={4}
+                placeholder="Опциональная подпись"
+                onChange={value => updateField('caption', value)}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>parse_mode</label>
+              <select
+                value={form.parseMode}
+                onChange={e => updateField('parseMode', e.target.value as RequestFormState['parseMode'])}
+              >
+                {PARSE_MODE_OPTIONS.map(option => (
+                  <option key={option.value || 'none'} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </>
+        );
+      case 'editMessageLiveLocation':
+        return (
+          <>
+            {renderEditableTargetFields()}
+            <div className={styles.field}>
+              <label className={styles.label}>latitude</label>
+              <input
+                type="text"
+                value={form.locationLatitude}
+                placeholder="55.7558"
+                onChange={e => updateField('locationLatitude', e.target.value)}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>longitude</label>
+              <input
+                type="text"
+                value={form.locationLongitude}
+                placeholder="37.6176"
+                onChange={e => updateField('locationLongitude', e.target.value)}
+              />
+            </div>
+          </>
+        );
+      case 'stopMessageLiveLocation':
+      case 'editMessageReplyMarkup':
+        return renderEditableTargetFields();
+      case 'editMessageChecklist':
+        return (
+          <>
+            <div className={styles.field}>
+              <label className={styles.label}>business_connection_id</label>
+              <input
+                type="text"
+                value={form.businessConnectionId}
+                placeholder="Business connection ID"
+                onChange={e => updateField('businessConnectionId', e.target.value)}
+              />
+            </div>
+            {renderChatIdField()}
+            {renderTargetMessageIdField()}
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>checklist</label>
+              <textarea
+                className={styles.textarea}
+                value={form.checklistJson}
+                rows={8}
+                placeholder='{"title":"Checklist","tasks":[]}'
+                onChange={e => updateField('checklistJson', e.target.value)}
+              />
+            </div>
+          </>
+        );
+      case 'stopPoll':
+      case 'approveSuggestedPost':
+      case 'declineSuggestedPost':
+      case 'deleteMessage':
+        return (
+          <>
+            {renderChatIdField()}
+            {renderTargetMessageIdField()}
+            {methodConfig.id === 'approveSuggestedPost' && (
+              <div className={styles.field}>
+                <label className={styles.label}>send_date</label>
+                <input
+                  type="number"
+                  value={form.suggestedPostSendDate}
+                  placeholder="Unix timestamp или пусто"
+                  onChange={e => updateField('suggestedPostSendDate', e.target.value)}
+                />
+              </div>
+            )}
+            {methodConfig.id === 'declineSuggestedPost' && (
+              <div className={styles.fieldFull}>
+                <label className={styles.label}>comment</label>
+                <textarea
+                  className={styles.textarea}
+                  value={form.suggestedPostComment}
+                  rows={3}
+                  placeholder="Опциональный комментарий"
+                  onChange={e => updateField('suggestedPostComment', e.target.value)}
+                />
+              </div>
+            )}
+          </>
+        );
+      case 'deleteMessages':
+        return (
+          <>
+            {renderChatIdField()}
+            {renderMessageIdsField()}
+          </>
         );
       default:
         return null;
@@ -1237,6 +1632,9 @@ export function TelegramRequestBuilder() {
             </div>
           </div>
         );
+      case 'forward':
+      case 'copy':
+        return renderForwardCopyFields();
       case 'get':
         return renderGetFields();
       case 'admin':
@@ -1245,6 +1643,8 @@ export function TelegramRequestBuilder() {
         return renderWebhookFields();
       case 'inline':
         return renderInlineFields();
+      case 'updating':
+        return renderUpdatingFields();
       default:
         return null;
     }
@@ -1255,8 +1655,8 @@ export function TelegramRequestBuilder() {
       <div className={styles.notice}>
         <div className={styles.noticeTitle}>Конструктор запросов Telegram Bot API</div>
         <div className={styles.noticeText}>
-          Сверен с документацией Bot API 9.5. Доступны 36 методов: отправка медиа, работа с чатами,
-          администрирование, webhook, inline-режим.
+          Сверен с документацией Bot API 9.6. Доступны 52 метода: отправка, пересылка и копирование сообщений,
+          редактирование, удаление, работа с чатами, администрирование, webhook, inline-режим.
         </div>
       </div>
 

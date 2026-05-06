@@ -141,6 +141,16 @@ const RESPONSE_MAP: Partial<Record<RequestMethodId, string>> = {
   sendContact: MESSAGE_RESPONSE,
   sendPoll: MESSAGE_RESPONSE,
   sendDice: MESSAGE_RESPONSE,
+  forwardMessage: MESSAGE_RESPONSE,
+  forwardMessages: JSON.stringify({
+    ok: true,
+    result: [
+      { message_id: 123, chat: { id: 87654321, type: 'private' }, date: 1700000000 },
+      { message_id: 124, chat: { id: 87654321, type: 'private' }, date: 1700000000 },
+    ],
+  }, null, 2),
+  copyMessage: JSON.stringify({ ok: true, result: { message_id: 123 } }, null, 2),
+  copyMessages: TRUE_RESPONSE,
   getMe: ME_RESPONSE,
   getChat: CHAT_RESPONSE,
   getChatMember: CHAT_MEMBER_RESPONSE,
@@ -162,6 +172,18 @@ const RESPONSE_MAP: Partial<Record<RequestMethodId, string>> = {
   getUpdates: UPDATES_RESPONSE,
   answerInlineQuery: INLINE_QUERY_RESPONSE,
   answerWebAppQuery: INLINE_QUERY_RESPONSE,
+  editMessageText: MESSAGE_RESPONSE,
+  editMessageCaption: MESSAGE_RESPONSE,
+  editMessageMedia: MESSAGE_RESPONSE,
+  editMessageLiveLocation: MESSAGE_RESPONSE,
+  stopMessageLiveLocation: MESSAGE_RESPONSE,
+  editMessageChecklist: MESSAGE_RESPONSE,
+  editMessageReplyMarkup: MESSAGE_RESPONSE,
+  stopPoll: MESSAGE_RESPONSE,
+  approveSuggestedPost: TRUE_RESPONSE,
+  declineSuggestedPost: TRUE_RESPONSE,
+  deleteMessage: TRUE_RESPONSE,
+  deleteMessages: TRUE_RESPONSE,
 };
 
 export function getSuccessResponseExample(methodId: RequestMethodId): string {
