@@ -59,11 +59,6 @@ const SEND_OPTION_DESCRIPTIONS = [
     apiName: 'protect_content',
     description: 'Защитить контент от пересылки и сохранения внутри Telegram.',
   },
-  {
-    key: 'allowPaidBroadcast' as const,
-    apiName: 'allow_paid_broadcast',
-    description: 'Разрешить массовую отправку до 1000 сообщений в секунду за Stars.',
-  },
 ] as const;
 
 const PERMISSION_KEYS: Array<keyof ChatPermissions> = [
@@ -527,18 +522,6 @@ export function TelegramRequestBuilder() {
           />
         </div>
 
-        {methodConfig.supportsDirectMessagesTopic && (
-          <div className={styles.field}>
-            <label className={styles.label}>direct_messages_topic_id</label>
-            <input
-              type="text"
-              value={form.directMessagesTopicId}
-              placeholder="Для direct messages chats"
-              onChange={e => updateField('directMessagesTopicId', e.target.value)}
-            />
-          </div>
-        )}
-
         {isCopyMessage && (
           <>
             <div className={styles.fieldFull}>
@@ -615,19 +598,6 @@ export function TelegramRequestBuilder() {
               </span>
               <span className={styles.optionHint}>Защитить содержимое от пересылки и сохранения.</span>
             </label>
-            {isCopyMessage && (
-              <label className={styles.optionCard}>
-                <span className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={form.allowPaidBroadcast}
-                    onChange={e => updateField('allowPaidBroadcast', e.target.checked)}
-                  />
-                  <span>allow_paid_broadcast</span>
-                </span>
-                <span className={styles.optionHint}>Массовая отправка за Stars.</span>
-              </label>
-            )}
           </div>
         </div>
       </>
@@ -1055,15 +1025,6 @@ export function TelegramRequestBuilder() {
       case 'editMessageChecklist':
         return (
           <>
-            <div className={styles.field}>
-              <label className={styles.label}>business_connection_id</label>
-              <input
-                type="text"
-                value={form.businessConnectionId}
-                placeholder="Business connection ID"
-                onChange={e => updateField('businessConnectionId', e.target.value)}
-              />
-            </div>
             {renderChatIdField()}
             {renderTargetMessageIdField()}
             <div className={styles.fieldFull}>
@@ -1725,16 +1686,6 @@ export function TelegramRequestBuilder() {
               </div>
 
               <div className={styles.field}>
-                <label className={styles.label}>business_connection_id</label>
-                <input
-                  type="text"
-                  value={form.businessConnectionId}
-                  placeholder="Опционально"
-                  onChange={e => updateField('businessConnectionId', e.target.value)}
-                />
-              </div>
-
-              <div className={styles.field}>
                 <label className={styles.label}>message_thread_id</label>
                 <input
                   type="text"
@@ -1744,18 +1695,6 @@ export function TelegramRequestBuilder() {
                 />
                 <div className={styles.fieldHint}>ID топика в форуме или супергруппе.</div>
               </div>
-
-              {methodConfig.supportsDirectMessagesTopic && (
-                <div className={styles.field}>
-                  <label className={styles.label}>direct_messages_topic_id</label>
-                  <input
-                    type="text"
-                    value={form.directMessagesTopicId}
-                    placeholder="Для direct messages chats"
-                    onChange={e => updateField('directMessagesTopicId', e.target.value)}
-                  />
-                </div>
-              )}
 
               <div className={styles.field}>
                 <label className={styles.label}>Эффект сообщения</label>

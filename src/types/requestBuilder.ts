@@ -144,12 +144,9 @@ export interface RequestFormState {
   method: RequestMethodId;
   // common send fields
   chatId: string;
-  businessConnectionId: string;
   messageThreadId: string;
-  directMessagesTopicId: string;
   disableNotification: boolean;
   protectContent: boolean;
-  allowPaidBroadcast: boolean;
   messageEffectId: string;
   parseMode: RequestParseMode;
   text: string;

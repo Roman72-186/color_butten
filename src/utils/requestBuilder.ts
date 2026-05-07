@@ -88,7 +88,6 @@ function parseJsonPreview(value: string): unknown {
 function addSendOptions(payload: Record<string, unknown>, form: RequestFormState) {
   pushIfValue(payload, 'disable_notification', form.disableNotification);
   pushIfValue(payload, 'protect_content', form.protectContent);
-  pushIfValue(payload, 'allow_paid_broadcast', form.allowPaidBroadcast);
 }
 
 function addEditableMessageTarget(payload: Record<string, unknown>, form: RequestFormState) {
@@ -108,26 +107,18 @@ function getMethodConfig(method: RequestMethodId): RequestMethodConfig {
 }
 
 function createCommonPayload(
-  form: RequestFormState,
-  config: RequestMethodConfig
+  form: RequestFormState
 ): Record<string, unknown> {
   const payload: Record<string, unknown> = {
     chat_id: form.chatId.trim() || DEFAULT_CHAT_ID,
   };
 
-  pushIfValue(payload, 'business_connection_id', form.businessConnectionId);
-
   if (form.messageThreadId.trim()) {
     payload.message_thread_id = maybeNumber(form.messageThreadId);
   }
 
-  if (config.supportsDirectMessagesTopic && form.directMessagesTopicId.trim()) {
-    payload.direct_messages_topic_id = maybeNumber(form.directMessagesTopicId);
-  }
-
   pushIfValue(payload, 'disable_notification', form.disableNotification);
   pushIfValue(payload, 'protect_content', form.protectContent);
-  pushIfValue(payload, 'allow_paid_broadcast', form.allowPaidBroadcast);
   pushIfValue(payload, 'message_effect_id', form.messageEffectId);
 
   return payload;
@@ -188,7 +179,7 @@ function buildSendPayload(
   form: RequestFormState,
   config: RequestMethodConfig
 ): Record<string, unknown> {
-  const payload = createCommonPayload(form, config);
+  const payload = createCommonPayload(form);
   const normalizedText = normalizeFormattedValue(form.text, form.parseMode);
   const normalizedCaption = normalizeFormattedValue(form.caption, form.parseMode);
   const normalizedPollExplanation = normalizeFormattedValue(
@@ -315,9 +306,6 @@ function buildSpecialPayload(
       payload.from_chat_id = maybeNumber(form.fromChatId.trim());
       payload.message_id = Number(form.targetMessageId);
       if (form.messageThreadId.trim()) payload.message_thread_id = maybeNumber(form.messageThreadId);
-      if (config.supportsDirectMessagesTopic && form.directMessagesTopicId.trim()) {
-        payload.direct_messages_topic_id = maybeNumber(form.directMessagesTopicId);
-      }
       addSendOptions(payload, form);
       break;
 
@@ -326,9 +314,6 @@ function buildSpecialPayload(
       payload.from_chat_id = maybeNumber(form.fromChatId.trim());
       payload.message_ids = parseNumberList(form.messageIds);
       if (form.messageThreadId.trim()) payload.message_thread_id = maybeNumber(form.messageThreadId);
-      if (config.supportsDirectMessagesTopic && form.directMessagesTopicId.trim()) {
-        payload.direct_messages_topic_id = maybeNumber(form.directMessagesTopicId);
-      }
       pushIfValue(payload, 'disable_notification', form.disableNotification);
       pushIfValue(payload, 'protect_content', form.protectContent);
       break;
@@ -338,9 +323,6 @@ function buildSpecialPayload(
       payload.from_chat_id = maybeNumber(form.fromChatId.trim());
       payload.message_id = Number(form.targetMessageId);
       if (form.messageThreadId.trim()) payload.message_thread_id = maybeNumber(form.messageThreadId);
-      if (config.supportsDirectMessagesTopic && form.directMessagesTopicId.trim()) {
-        payload.direct_messages_topic_id = maybeNumber(form.directMessagesTopicId);
-      }
       if (normalizedCaption) payload.caption = normalizedCaption;
       if (normalizedCaption && form.parseMode) payload.parse_mode = form.parseMode;
       if (form.showCaptionAboveMedia) payload.show_caption_above_media = true;
@@ -353,9 +335,6 @@ function buildSpecialPayload(
       payload.from_chat_id = maybeNumber(form.fromChatId.trim());
       payload.message_ids = parseNumberList(form.messageIds);
       if (form.messageThreadId.trim()) payload.message_thread_id = maybeNumber(form.messageThreadId);
-      if (config.supportsDirectMessagesTopic && form.directMessagesTopicId.trim()) {
-        payload.direct_messages_topic_id = maybeNumber(form.directMessagesTopicId);
-      }
       if (form.removeCaption) payload.remove_caption = true;
       pushIfValue(payload, 'disable_notification', form.disableNotification);
       pushIfValue(payload, 'protect_content', form.protectContent);
@@ -522,7 +501,6 @@ function buildSpecialPayload(
       break;
 
     case 'editMessageChecklist':
-      payload.business_connection_id = form.businessConnectionId.trim();
       payload.chat_id = chatId();
       payload.message_id = Number(form.targetMessageId);
       payload.checklist = parseJsonPreview(form.checklistJson);
@@ -628,12 +606,9 @@ export function createDefaultRequestForm(): RequestFormState {
   return {
     method: 'sendMessage',
     chatId: DEFAULT_CHAT_ID,
-    businessConnectionId: '',
     messageThreadId: '',
-    directMessagesTopicId: '',
     disableNotification: false,
     protectContent: false,
-    allowPaidBroadcast: false,
     messageEffectId: '',
     parseMode: 'HTML',
     text: '',
@@ -735,13 +710,6 @@ export function validateRequestForm(form: RequestFormState): string[] {
       errors.push('message_thread_id должен быть числом.');
     }
 
-    if (
-      config.supportsDirectMessagesTopic &&
-      form.directMessagesTopicId.trim() &&
-      !/^-?\d+$/.test(form.directMessagesTopicId.trim())
-    ) {
-      errors.push('direct_messages_topic_id должен быть числом.');
-    }
   }
 
   if (config.category === 'forward' || config.category === 'copy') {
@@ -757,13 +725,6 @@ export function validateRequestForm(form: RequestFormState): string[] {
       errors.push('message_thread_id должен быть числом.');
     }
 
-    if (
-      config.supportsDirectMessagesTopic &&
-      form.directMessagesTopicId.trim() &&
-      !/^-?\d+$/.test(form.directMessagesTopicId.trim())
-    ) {
-      errors.push('direct_messages_topic_id должен быть числом.');
-    }
   }
 
   if (config.category === 'updating') {
@@ -1068,7 +1029,6 @@ export function validateRequestForm(form: RequestFormState): string[] {
           }
           break;
         case 'editMessageChecklist':
-          if (!form.businessConnectionId.trim()) errors.push('Поле business_connection_id обязательно.');
           try {
             JSON.parse(form.checklistJson);
           } catch {
