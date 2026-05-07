@@ -5,8 +5,6 @@ export type MaxButtonType =
   | 'request_contact'
   | 'request_geo_location';
 
-export type MaxButtonStyle = 'default' | 'primary' | 'positive' | 'negative';
-
 export interface MaxButtonItem {
   id: string;
   type: MaxButtonType;

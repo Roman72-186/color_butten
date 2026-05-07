@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { ButtonConfig } from '../types';
-import type { MaxButtonType, MaxButtonStyle } from '../types/max';
+import type { MaxButtonType } from '../types/max';
 import { MAX_GRID_ROWS, MAX_GRID_COLS } from '../constants';
 import { groupByRow } from '../utils/helpers';
 import { GridCell } from './GridCell';
@@ -19,7 +19,6 @@ interface MaxBtn {
   url: string;
   row: number;
   col: number;
-  style: MaxButtonStyle;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -30,13 +29,6 @@ const MAX_BTN_TYPES: { value: MaxButtonType; label: string; hint: string }[] = [
   { value: 'link',                 label: 'Link',            hint: 'открывает URL в браузере' },
   { value: 'request_contact',      label: 'Request Contact', hint: 'запрашивает номер телефона пользователя' },
   { value: 'request_geo_location', label: 'Request Geo',     hint: 'запрашивает геолокацию пользователя' },
-];
-
-const MAX_BTN_STYLES: { value: MaxButtonStyle; label: string; color: string }[] = [
-  { value: 'default',  label: 'Default',  color: '#8597a8' },
-  { value: 'primary',  label: 'Primary',  color: '#5eb5f7' },
-  { value: 'positive', label: 'Positive', color: '#50c878' },
-  { value: 'negative', label: 'Negative', color: '#e05555' },
 ];
 
 // ─── ID factory ───────────────────────────────────────────────────────────────
@@ -50,7 +42,7 @@ function nextId(): string {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function createDefault(row: number, col: number): MaxBtn {
-  return { id: nextId(), type: 'callback', text: '', payload: '', url: '', row, col, style: 'default' };
+  return { id: nextId(), type: 'callback', text: '', payload: '', url: '', row, col };
 }
 
 function toPreviewRows(buttons: MaxBtn[]): ButtonConfig[][] {
@@ -58,9 +50,7 @@ function toPreviewRows(buttons: MaxBtn[]): ButtonConfig[][] {
     row.map(btn => ({
       id: btn.id,
       text: btn.text || '...',
-      style: (btn.style === 'positive' ? 'success'
-            : btn.style === 'negative' ? 'danger'
-            : btn.style) as 'default' | 'primary' | 'success' | 'danger',
+      style: 'default',
       actionType: 'callback_data' as const,
       actionValue: btn.payload,
       row: btn.row,
@@ -74,7 +64,6 @@ function buildJson(buttons: MaxBtn[]): string {
   const buttonRows = groupByRow(buttons).map(row =>
     row.map(btn => {
       const base: Record<string, unknown> = { type: btn.type, text: btn.text };
-      if (btn.style !== 'default') base.style = btn.style;
       if (btn.type === 'link') { base.url = btn.url; return base; }
       if (btn.type === 'request_contact' || btn.type === 'request_geo_location') return base;
       base.payload = btn.payload;
@@ -101,15 +90,11 @@ function MaxBtnCard({
   onRemove: (id: string) => void;
 }) {
   const typeCfg  = MAX_BTN_TYPES.find(t => t.value === btn.type);
-  const styleColor = MAX_BTN_STYLES.find(s => s.value === btn.style)?.color ?? '#8597a8';
 
   return (
     <div className={cardStyles.card}>
       <div className={cardStyles.cardHeader}>
         <span className={cardStyles.cardTitle}>Р{btn.row}К{btn.col}</span>
-        <span className={cardStyles.badge} style={{ background: styleColor }}>
-          {btn.style}
-        </span>
         <button className={cardStyles.deleteBtn} onClick={() => onRemove(btn.id)} title="Деактивировать ячейку">
           ✕
         </button>
@@ -127,34 +112,20 @@ function MaxBtnCard({
           />
         </div>
 
-        {/* type + style */}
-        <div className={cardStyles.fieldRow}>
-          <div className={cardStyles.field}>
-            <label className={cardStyles.label}>Тип кнопки</label>
-            <select
-              value={btn.type}
-              onChange={e => onUpdate(btn.id, { type: e.target.value as MaxButtonType, payload: '', url: '' })}
-            >
-              {MAX_BTN_TYPES.map(t => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
-            {typeCfg && (
-              <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text-dim)' }}>{typeCfg.hint}</div>
-            )}
-          </div>
-
-          <div className={cardStyles.field}>
-            <label className={cardStyles.label}>Цвет (style)</label>
-            <select
-              value={btn.style}
-              onChange={e => onUpdate(btn.id, { style: e.target.value as MaxButtonStyle })}
-            >
-              {MAX_BTN_STYLES.map(s => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
-          </div>
+        {/* type */}
+        <div className={cardStyles.fieldFull}>
+          <label className={cardStyles.label}>Тип кнопки</label>
+          <select
+            value={btn.type}
+            onChange={e => onUpdate(btn.id, { type: e.target.value as MaxButtonType, payload: '', url: '' })}
+          >
+            {MAX_BTN_TYPES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          {typeCfg && (
+            <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text-dim)' }}>{typeCfg.hint}</div>
+          )}
         </div>
 
         {/* payload */}
@@ -220,6 +191,12 @@ export function MaxKeyboardTab() {
 
   return (
     <>
+      <div className={gridStyles.headerRow} style={{ marginBottom: 12 }}>
+        <span className={gridStyles.activeCount}>
+          MAX API не поддерживает цветовые стили inline-кнопок в raw JSON
+        </span>
+      </div>
+
       {/* Header */}
       <div className={gridStyles.headerRow}>
         <span className={gridStyles.activeCount}>
