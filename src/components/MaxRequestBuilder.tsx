@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { MaxButtonItem } from '../types/max';
 import { MaxKeyboardSection } from './max-request-builder/MaxKeyboardSection';
+import { TextMarkupHelp } from './request-builder/TextMarkupHelp';
 import styles from '../styles/RequestBuilder.module.css';
 
 type MaxMethod =
@@ -31,7 +32,7 @@ interface MaxFormState {
   targetId: string;
   // message content
   text: string;
-  format: '' | 'markdown';
+  format: '' | 'markdown' | 'html';
   images: MaxImageItem[];
   buttons: MaxButtonItem[];
   // message_id (editMessage / deleteMessage / pinMessage)
@@ -509,15 +510,20 @@ export function MaxRequestBuilder() {
                   onChange={e => updateField('text', e.target.value)}
                 />
               </div>
+              <div className={styles.field}>
+                <label className={styles.label}>format</label>
+                <select
+                  value={form.format}
+                  onChange={e => updateField('format', e.target.value as MaxFormState['format'])}
+                >
+                  <option value="">Без format</option>
+                  <option value="markdown">markdown</option>
+                  <option value="html">html</option>
+                </select>
+                <div className={styles.fieldHint}>MAX поддерживает оба режима: markdown и html.</div>
+              </div>
               <div className={styles.fieldFull}>
-                <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={form.format === 'markdown'}
-                    onChange={e => updateField('format', e.target.checked ? 'markdown' : '')}
-                  />
-                  <span>format: markdown</span>
-                </label>
+                <TextMarkupHelp platform="max" mode={form.format} />
               </div>
             </div>
           </div>

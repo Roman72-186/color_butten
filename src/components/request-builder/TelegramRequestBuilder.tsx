@@ -35,6 +35,7 @@ import {
 import { FormattedTextField } from '../FormattedTextField';
 import { ChatIdSelector } from './ChatIdSelector';
 import { InlineKeyboardSection } from './InlineKeyboardSection';
+import { TextMarkupHelp } from './TextMarkupHelp';
 import styles from '../../styles/RequestBuilder.module.css';
 
 function getSourcePlaceholder(mode: MediaSourceMode, fieldName: string): string {
@@ -337,18 +338,23 @@ export function TelegramRequestBuilder() {
         )}
 
         {methodConfig.supportsParseMode && (
-          <div className={styles.field}>
-            <label className={styles.label}>parse_mode</label>
-            <select
-              value={form.parseMode}
-              onChange={e => updateField('parseMode', e.target.value as RequestFormState['parseMode'])}
-            >
-              {PARSE_MODE_OPTIONS.map(option => (
-                <option key={option.value || 'none'} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-            <div className={styles.fieldHint}>HTML: &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;, &lt;code&gt;код&lt;/code&gt;</div>
-          </div>
+          <>
+            <div className={styles.field}>
+              <label className={styles.label}>parse_mode</label>
+              <select
+                value={form.parseMode}
+                onChange={e => updateField('parseMode', e.target.value as RequestFormState['parseMode'])}
+              >
+                {PARSE_MODE_OPTIONS.map(option => (
+                  <option key={option.value || 'none'} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <div className={styles.fieldHint}>HTML: &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;, &lt;code&gt;код&lt;/code&gt;</div>
+            </div>
+            <div className={styles.fieldFull}>
+              <TextMarkupHelp platform="telegram" mode={form.parseMode} />
+            </div>
+          </>
         )}
 
         {methodConfig.id === 'sendSticker' && (
@@ -416,6 +422,9 @@ export function TelegramRequestBuilder() {
             <option key={option.value || 'none'} value={option.value}>{option.label}</option>
           ))}
         </select>
+      </div>
+      <div className={styles.fieldFull}>
+        <TextMarkupHelp platform="telegram" mode={form.parseMode} />
       </div>
 
       <div className={styles.fieldFull}>
@@ -552,6 +561,9 @@ export function TelegramRequestBuilder() {
                   <option key={option.value || 'none'} value={option.value}>{option.label}</option>
                 ))}
               </select>
+            </div>
+            <div className={styles.fieldFull}>
+              <TextMarkupHelp platform="telegram" mode={form.parseMode} />
             </div>
             <div className={styles.fieldFull}>
               <label className={styles.checkboxLabel}>
@@ -947,6 +959,9 @@ export function TelegramRequestBuilder() {
               </select>
             </div>
             <div className={styles.fieldFull}>
+              <TextMarkupHelp platform="telegram" mode={form.parseMode} />
+            </div>
+            <div className={styles.fieldFull}>
               <label className={styles.checkboxLabel}>
                 <input
                   type="checkbox"
@@ -1004,6 +1019,9 @@ export function TelegramRequestBuilder() {
                   <option key={option.value || 'none'} value={option.value}>{option.label}</option>
                 ))}
               </select>
+            </div>
+            <div className={styles.fieldFull}>
+              <TextMarkupHelp platform="telegram" mode={form.parseMode} />
             </div>
           </>
         );
@@ -1322,7 +1340,9 @@ export function TelegramRequestBuilder() {
                   <option key={option.value || 'none'} value={option.value}>{option.label}</option>
                 ))}
               </select>
-              <div className={styles.fieldHint}>HTML: &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;, &lt;code&gt;код&lt;/code&gt;</div>
+            </div>
+            <div className={styles.fieldFull}>
+              <TextMarkupHelp platform="telegram" mode={form.parseMode} />
             </div>
           </>
         );
