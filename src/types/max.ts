@@ -2,6 +2,8 @@ export type MaxButtonType =
   | 'callback'
   | 'message'
   | 'link'
+  | 'open_app'
+  | 'clipboard'
   | 'request_contact'
   | 'request_geo_location';
 

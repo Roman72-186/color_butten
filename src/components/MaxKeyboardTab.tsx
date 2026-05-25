@@ -27,6 +27,8 @@ const MAX_BTN_TYPES: { value: MaxButtonType; label: string; hint: string }[] = [
   { value: 'callback',             label: 'Callback',        hint: 'payload передаётся боту как callback-событие' },
   { value: 'message',              label: 'Message',         hint: 'payload отправляется как текст от пользователя' },
   { value: 'link',                 label: 'Link',            hint: 'открывает URL в браузере' },
+  { value: 'open_app',             label: 'Open App',        hint: 'открывает Mini App, web_app указывает приложение' },
+  { value: 'clipboard',            label: 'Clipboard',       hint: 'копирует payload в буфер обмена' },
   { value: 'request_contact',      label: 'Request Contact', hint: 'запрашивает номер телефона пользователя' },
   { value: 'request_geo_location', label: 'Request Geo',     hint: 'запрашивает геолокацию пользователя' },
 ];
@@ -65,6 +67,11 @@ function buildJson(buttons: MaxBtn[]): string {
     row.map(btn => {
       const base: Record<string, unknown> = { type: btn.type, text: btn.text };
       if (btn.type === 'link') { base.url = btn.url; return base; }
+      if (btn.type === 'open_app') {
+        base.web_app = btn.url;
+        if (btn.payload.trim()) base.payload = btn.payload;
+        return base;
+      }
       if (btn.type === 'request_contact' || btn.type === 'request_geo_location') return base;
       base.payload = btn.payload;
       return base;
@@ -129,28 +136,34 @@ function MaxBtnCard({
         </div>
 
         {/* payload */}
-        {(btn.type === 'callback' || btn.type === 'message') && (
+        {(btn.type === 'callback' || btn.type === 'message' || btn.type === 'open_app' || btn.type === 'clipboard') && (
           <div className={cardStyles.fieldFull}>
             <label className={cardStyles.label}>
-              {btn.type === 'callback' ? 'payload (callback_data)' : 'payload (команда/текст)'}
+              {btn.type === 'callback'
+                ? 'payload (callback_data)'
+                : btn.type === 'clipboard'
+                  ? 'payload (текст для копирования)'
+                  : btn.type === 'open_app'
+                    ? 'payload (startapp, опционально)'
+                    : 'payload (команда/текст)'}
             </label>
             <input
               type="text"
               value={btn.payload}
-              placeholder={btn.type === 'callback' ? 'my_action' : '/menu'}
+              placeholder={btn.type === 'callback' ? 'my_action' : btn.type === 'clipboard' ? 'PROMO123' : btn.type === 'open_app' ? 'start_payload' : '/menu'}
               onChange={e => onUpdate(btn.id, { payload: e.target.value })}
             />
           </div>
         )}
 
         {/* url */}
-        {btn.type === 'link' && (
+        {(btn.type === 'link' || btn.type === 'open_app') && (
           <div className={cardStyles.fieldFull}>
-            <label className={cardStyles.label}>url</label>
+            <label className={cardStyles.label}>{btn.type === 'open_app' ? 'web_app' : 'url'}</label>
             <input
               type="text"
               value={btn.url}
-              placeholder="https://example.com"
+              placeholder={btn.type === 'open_app' ? 'bot_username или URL Mini App' : 'https://example.com'}
               onChange={e => onUpdate(btn.id, { url: e.target.value })}
             />
           </div>

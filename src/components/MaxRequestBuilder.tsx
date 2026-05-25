@@ -7,7 +7,7 @@ import styles from '../styles/RequestBuilder.module.css';
 type MaxMethod =
   | 'sendMessage'
   | 'editMessage'
-  | 'deleteMessage'
+  | 'getMessage'
   | 'getMe'
   | 'getChats'
   | 'getChat'
@@ -35,12 +35,14 @@ interface MaxFormState {
   format: '' | 'markdown' | 'html';
   images: MaxImageItem[];
   buttons: MaxButtonItem[];
-  // message_id (editMessage / deleteMessage / pinMessage)
+  // message_id (editMessage / getMessage / pinMessage)
   messageId: string;
   // chat_id (most chat methods)
   chatId: string;
   // user_id (addChatMember / kickChatMember)
   userId: string;
+  // kickChatMember
+  blockUser: boolean;
   // editChat
   chatTitle: string;
   // pagination (getChats / getChatMembers)
@@ -62,7 +64,7 @@ interface MaxMethodConfig {
 const MAX_METHODS: MaxMethodConfig[] = [
   { id: 'sendMessage',    label: 'Отправить сообщение',    description: 'Отправить сообщение пользователю или в чат/канал', category: 'messages', httpMethod: 'POST'   },
   { id: 'editMessage',    label: 'Редактировать сообщение', description: 'Редактировать отправленное сообщение',            category: 'messages', httpMethod: 'PUT'    },
-  { id: 'deleteMessage',  label: 'Удалить сообщение',      description: 'Удалить сообщение',                               category: 'messages', httpMethod: 'DELETE' },
+  { id: 'getMessage',     label: 'Получить сообщение',      description: 'Получить сообщение по ID',                        category: 'messages', httpMethod: 'GET'    },
   { id: 'getMe',          label: 'Информация о боте',      description: 'Информация о боте и его настройки',               category: 'bot',      httpMethod: 'GET'    },
   { id: 'getChats',       label: 'Список чатов',           description: 'Список чатов и каналов, где состоит бот',         category: 'chats',    httpMethod: 'GET'    },
   { id: 'getChat',        label: 'Информация о чате',      description: 'Информация о конкретном чате или канале',         category: 'chats',    httpMethod: 'GET'    },
@@ -72,7 +74,7 @@ const MAX_METHODS: MaxMethodConfig[] = [
   { id: 'addChatMember',  label: 'Добавить участника',     description: 'Добавить пользователя в чат',                    category: 'chats',    httpMethod: 'POST'   },
   { id: 'kickChatMember', label: 'Удалить из чата',        description: 'Удалить участника из чата',                      category: 'chats',    httpMethod: 'DELETE' },
   { id: 'leaveChat',      label: 'Покинуть чат',           description: 'Бот покидает чат',                               category: 'chats',    httpMethod: 'DELETE' },
-  { id: 'pinMessage',     label: 'Закрепить сообщение',    description: 'Закрепить сообщение в чате или канале',          category: 'chats',    httpMethod: 'POST'   },
+  { id: 'pinMessage',     label: 'Закрепить сообщение',    description: 'Закрепить сообщение в чате или канале',          category: 'chats',    httpMethod: 'PUT'    },
   { id: 'unpinMessage',   label: 'Открепить сообщение',    description: 'Открепить закреплённое сообщение',               category: 'chats',    httpMethod: 'DELETE' },
 ];
 
@@ -122,6 +124,7 @@ function createDefaultForm(): MaxFormState {
     messageId: '{{message_id}}',
     chatId: '{{max_chat_id}}',
     userId: '{{max_id}}',
+    blockUser: false,
     chatTitle: '',
     count: '50',
     pinNotify: true,
@@ -142,6 +145,11 @@ function buildButtonRows(buttons: MaxButtonItem[]): object[][] {
     .map(([, row]) =>
       row.slice().sort((a, b) => a.col - b.col).map(btn => {
         if (btn.type === 'link') return { type: btn.type, text: btn.text, url: btn.url };
+        if (btn.type === 'open_app') {
+          const button: Record<string, string> = { type: btn.type, text: btn.text, web_app: btn.url };
+          if (btn.payload.trim()) button.payload = btn.payload;
+          return button;
+        }
         if (btn.type === 'request_contact' || btn.type === 'request_geo_location') return { type: btn.type, text: btn.text };
         return { type: btn.type, text: btn.text, payload: btn.payload };
       })
@@ -188,8 +196,8 @@ function buildRequest(form: MaxFormState): BuildResult {
       if (att.length > 0) body.attachments = att;
       return { httpMethod: 'PUT', endpoint: `${BASE_URL}/messages?message_id=${messageId}`, body };
     }
-    case 'deleteMessage':
-      return { httpMethod: 'DELETE', endpoint: `${BASE_URL}/messages?message_id=${messageId}`, body: null };
+    case 'getMessage':
+      return { httpMethod: 'GET', endpoint: `${BASE_URL}/messages/${messageId}`, body: null };
     case 'getMe':
       return { httpMethod: 'GET', endpoint: `${BASE_URL}/me`, body: null };
     case 'getChats':
@@ -205,13 +213,17 @@ function buildRequest(form: MaxFormState): BuildResult {
     case 'addChatMember':
       return { httpMethod: 'POST', endpoint: `${BASE_URL}/chats/${chatId}/members`, body: { user_ids: [userId] } };
     case 'kickChatMember':
-      return { httpMethod: 'DELETE', endpoint: `${BASE_URL}/chats/${chatId}/members/${userId}`, body: null };
+      return {
+        httpMethod: 'DELETE',
+        endpoint: `${BASE_URL}/chats/${chatId}/members?user_id=${userId}${form.blockUser ? '&block=true' : ''}`,
+        body: null,
+      };
     case 'leaveChat':
       return { httpMethod: 'DELETE', endpoint: `${BASE_URL}/chats/${chatId}/members/me`, body: null };
     case 'pinMessage': {
       const body: Record<string, unknown> = { message_id: messageId };
       if (form.pinNotify) body.notify = true;
-      return { httpMethod: 'POST', endpoint: `${BASE_URL}/chats/${chatId}/pin`, body };
+      return { httpMethod: 'PUT', endpoint: `${BASE_URL}/chats/${chatId}/pin`, body };
     }
     case 'unpinMessage':
       return { httpMethod: 'DELETE', endpoint: `${BASE_URL}/chats/${chatId}/pin`, body: null };
@@ -222,12 +234,13 @@ function buildRequest(form: MaxFormState): BuildResult {
 
 const NEEDS_TARGET   = new Set<MaxMethod>(['sendMessage']);
 const NEEDS_MSG_BODY = new Set<MaxMethod>(['sendMessage', 'editMessage']);
-const NEEDS_MSG_ID   = new Set<MaxMethod>(['editMessage', 'deleteMessage', 'pinMessage']);
+const NEEDS_MSG_ID   = new Set<MaxMethod>(['editMessage', 'getMessage', 'pinMessage']);
 const NEEDS_CHAT_ID  = new Set<MaxMethod>(['getChat', 'editChat', 'getChatMembers', 'getChatMember', 'addChatMember', 'kickChatMember', 'leaveChat', 'pinMessage', 'unpinMessage']);
 const NEEDS_USER_ID  = new Set<MaxMethod>(['getChatMember', 'addChatMember', 'kickChatMember']);
 const NEEDS_COUNT    = new Set<MaxMethod>(['getChats', 'getChatMembers']);
 const NEEDS_TITLE    = new Set<MaxMethod>(['editChat']);
 const NEEDS_PIN_OPT  = new Set<MaxMethod>(['pinMessage']);
+const NEEDS_BLOCK_OPT = new Set<MaxMethod>(['kickChatMember']);
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -476,20 +489,34 @@ export function MaxRequestBuilder() {
       )}
 
       {/* pinMessage: notify */}
-      {NEEDS_PIN_OPT.has(form.method) && (
+      {(NEEDS_PIN_OPT.has(form.method) || NEEDS_BLOCK_OPT.has(form.method)) && (
         <div className={styles.card}>
           <div className={styles.sectionTitle}>Параметры</div>
           <div className={styles.grid}>
-            <div className={styles.fieldFull}>
-              <label className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={form.pinNotify}
-                  onChange={e => updateField('pinNotify', e.target.checked)}
-                />
-                <span>notify — уведомить участников о закреплении</span>
-              </label>
-            </div>
+            {NEEDS_PIN_OPT.has(form.method) && (
+              <div className={styles.fieldFull}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.pinNotify}
+                    onChange={e => updateField('pinNotify', e.target.checked)}
+                  />
+                  <span>notify — уведомить участников о закреплении</span>
+                </label>
+              </div>
+            )}
+            {NEEDS_BLOCK_OPT.has(form.method) && (
+              <div className={styles.fieldFull}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.blockUser}
+                    onChange={e => updateField('blockUser', e.target.checked)}
+                  />
+                  <span>block — заблокировать пользователя в чате, если чат с публичной или приватной ссылкой</span>
+                </label>
+              </div>
+            )}
           </div>
         </div>
       )}

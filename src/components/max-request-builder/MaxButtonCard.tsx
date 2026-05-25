@@ -5,6 +5,8 @@ const MAX_BUTTON_TYPES: { value: MaxButtonType; label: string }[] = [
   { value: 'callback',             label: 'Callback (событие)' },
   { value: 'message',              label: 'Команда (message)' },
   { value: 'link',                 label: 'Ссылка (link)' },
+  { value: 'open_app',             label: 'Mini App (open_app)' },
+  { value: 'clipboard',            label: 'Копировать (clipboard)' },
   { value: 'request_contact',      label: 'Запрос контакта' },
   { value: 'request_geo_location', label: 'Запрос геолокации' },
 ];
@@ -43,24 +45,24 @@ export function MaxButtonCard({ btn, onUpdate, onRemove }: MaxButtonCardProps) {
             onChange={e => onUpdate(btn.id, { text: e.target.value })}
           />
         </div>
-        {btn.type === 'link' && (
+        {(btn.type === 'link' || btn.type === 'open_app') && (
           <div className={styles.fieldFull}>
-            <label className={styles.label}>url</label>
+            <label className={styles.label}>{btn.type === 'open_app' ? 'web_app' : 'url'}</label>
             <input
               type="text"
               value={btn.url}
-              placeholder="https://example.com"
+              placeholder={btn.type === 'open_app' ? 'bot_username или URL Mini App' : 'https://example.com'}
               onChange={e => onUpdate(btn.id, { url: e.target.value })}
             />
           </div>
         )}
-        {(btn.type === 'callback' || btn.type === 'message') && (
+        {(btn.type === 'callback' || btn.type === 'message' || btn.type === 'open_app' || btn.type === 'clipboard') && (
           <div className={styles.fieldFull}>
             <label className={styles.label}>payload</label>
             <input
               type="text"
               value={btn.payload}
-              placeholder={btn.type === 'message' ? '/menu' : 'my_callback'}
+              placeholder={btn.type === 'message' ? '/menu' : btn.type === 'clipboard' ? 'Текст для буфера обмена' : 'my_callback'}
               onChange={e => onUpdate(btn.id, { payload: e.target.value })}
             />
           </div>
