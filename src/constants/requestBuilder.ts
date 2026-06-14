@@ -20,6 +20,21 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     supportsInlineKeyboard: true,
     note: 'Подходит для обычного текста, HTML и MarkdownV2.',
   },
+  {
+    id: 'sendRichMessage',
+    title: 'sendRichMessage',
+    description: 'Rich message',
+    category: 'rich',
+    supportsInlineKeyboard: true,
+    note: 'Bot API 10.1: структурированное сообщение через InputRichMessage (HTML или Markdown rich-формат).',
+  },
+  {
+    id: 'sendRichMessageDraft',
+    title: 'sendRichMessageDraft',
+    description: 'Черновик rich message',
+    category: 'rich',
+    note: 'Bot API 10.1: временный 30-секундный preview для потоковой генерации. После завершения нужен sendRichMessage.',
+  },
   // ── МЕДИА ────────────────────────────────────────────────────────────────
   {
     id: 'sendPhoto',
@@ -112,6 +127,19 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     supportsInlineKeyboard: true,
   },
   {
+    id: 'sendLivePhoto',
+    title: 'sendLivePhoto',
+    description: 'Live photo',
+    category: 'live_photo',
+    supportsCaption: true,
+    supportsParseMode: true,
+    supportsSpoiler: true,
+    supportsShowCaptionAboveMedia: true,
+    supportsDirectMessagesTopic: true,
+    supportsInlineKeyboard: true,
+    note: 'Bot API 10.0: видео live_photo до 10 секунд и статичное фото. HTTP URL для live photos сейчас не поддерживается.',
+  },
+  {
     id: 'sendMediaGroup',
     title: 'sendMediaGroup',
     description: 'Альбом media group',
@@ -152,7 +180,7 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     description: 'Опрос',
     category: 'poll',
     supportsInlineKeyboard: true,
-    note: 'Для опроса нужно минимум 2 варианта ответа.',
+    note: 'Bot API 10.1: минимум 1 вариант, quiz поддерживает несколько правильных ответов, media/explanation_media и link-media.',
   },
   {
     id: 'sendDice',
@@ -227,6 +255,13 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     hint: 'Возвращает массив ChatMember со всеми администраторами чата.',
   },
   {
+    id: 'getUserPersonalChatMessages',
+    title: 'getUserPersonalChatMessages',
+    description: 'Сообщения из personal chat',
+    category: 'get',
+    hint: 'Bot API 10.0: возвращает последние сообщения из личного чата, добавленного пользователем в профиль.',
+  },
+  {
     id: 'getChatMemberCount',
     title: 'getChatMemberCount',
     description: 'Число участников',
@@ -291,6 +326,20 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     hint: 'Удаляет все закреплённые сообщения в чате.',
   },
   {
+    id: 'getManagedBotAccessSettings',
+    title: 'getManagedBotAccessSettings',
+    description: 'Доступ managed bot',
+    category: 'admin',
+    hint: 'Bot API 10.0: получить настройки доступа управляемого бота.',
+  },
+  {
+    id: 'setManagedBotAccessSettings',
+    title: 'setManagedBotAccessSettings',
+    description: 'Изменить доступ managed bot',
+    category: 'admin',
+    hint: 'Bot API 10.0: ограничить доступ к управляемому боту и добавить до 10 пользователей.',
+  },
+  {
     id: 'setMyCommands',
     title: 'setMyCommands',
     description: 'Установить команды бота',
@@ -347,6 +396,27 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     description: 'Ответ на Web App запрос',
     category: 'inline',
     hint: 'Отправляет результат в ответ на WebAppQuery из Telegram Mini App.',
+  },
+  {
+    id: 'answerGuestQuery',
+    title: 'answerGuestQuery',
+    description: 'Ответ на guest query',
+    category: 'guest',
+    hint: 'Bot API 10.0: ответить на guest message, когда бот не является участником чата.',
+  },
+  {
+    id: 'answerChatJoinRequestQuery',
+    title: 'answerChatJoinRequestQuery',
+    description: 'Решение join request query',
+    category: 'join_request',
+    hint: 'Bot API 10.1: approve, decline или queue для query_id из ChatJoinRequest.',
+  },
+  {
+    id: 'sendChatJoinRequestWebApp',
+    title: 'sendChatJoinRequestWebApp',
+    description: 'Mini App для join request',
+    category: 'join_request',
+    hint: 'Bot API 10.1: открыть Mini App пользователю перед решением по заявке на вступление.',
   },
   {
     id: 'editMessageText',
@@ -438,11 +508,27 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     category: 'updating',
     hint: 'Удаляет до 100 сообщений по массиву message_ids.',
   },
+  {
+    id: 'deleteMessageReaction',
+    title: 'deleteMessageReaction',
+    description: 'Удалить реакцию',
+    category: 'updating',
+    hint: 'Bot API 10.0: удалить реакцию пользователя или чата с конкретного сообщения.',
+  },
+  {
+    id: 'deleteAllMessageReactions',
+    title: 'deleteAllMessageReactions',
+    description: 'Удалить реакции пользователя/чата',
+    category: 'updating',
+    hint: 'Bot API 10.0: удалить до 10000 последних реакций от заданного user_id или actor_chat_id.',
+  },
 ];
 
 export const CATEGORY_LABELS: Record<string, string> = {
   text: 'Текст',
+  rich: 'Rich messages',
   media: 'Медиа',
+  live_photo: 'Live photo',
   album: 'Альбом',
   location: 'Геолокация',
   venue: 'Место',
@@ -455,6 +541,8 @@ export const CATEGORY_LABELS: Record<string, string> = {
   admin: 'Администрирование',
   webhook: 'Webhook / Updates',
   inline: 'Inline режим',
+  guest: 'Guest mode',
+  join_request: 'Join request queries',
   updating: 'Updating messages',
 };
 

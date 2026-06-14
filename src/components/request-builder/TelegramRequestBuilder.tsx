@@ -59,6 +59,11 @@ const SEND_OPTION_DESCRIPTIONS = [
     apiName: 'protect_content',
     description: 'Защитить контент от пересылки и сохранения внутри Telegram.',
   },
+  {
+    key: 'allowPaidBroadcast' as const,
+    apiName: 'allow_paid_broadcast',
+    description: 'Разрешить платную ускоренную рассылку до 1000 сообщений/сек. Списывает Telegram Stars.',
+  },
 ] as const;
 
 const PERMISSION_KEYS: Array<keyof ChatPermissions> = [
@@ -72,13 +77,15 @@ const PERMISSION_KEYS: Array<keyof ChatPermissions> = [
   'can_send_polls',
   'can_send_other_messages',
   'can_add_web_page_previews',
+  'can_react_to_messages',
+  'can_edit_tag',
   'can_change_info',
   'can_invite_users',
   'can_pin_messages',
   'can_manage_topics',
 ];
 
-const SEND_CATEGORIES = new Set(['text', 'media', 'album', 'location', 'venue', 'contact', 'poll', 'dice']);
+const SEND_CATEGORIES = new Set(['text', 'media', 'live_photo', 'album', 'location', 'venue', 'contact', 'poll', 'dice']);
 
 export function TelegramRequestBuilder() {
   const [form, setForm] = useState<RequestFormState>(() => createDefaultRequestForm());
@@ -163,11 +170,11 @@ export function TelegramRequestBuilder() {
 
   const removePollOption = useCallback((id: string) => {
     setForm(prev => {
-      if (prev.pollOptions.length <= 2) return prev;
+      if (prev.pollOptions.length <= 1) return prev;
       return {
         ...prev,
         pollOptions: prev.pollOptions.filter(item => item.id !== id),
-        pollCorrectOptionId: prev.pollCorrectOptionId === id ? '' : prev.pollCorrectOptionId,
+        pollCorrectOptionIds: prev.pollCorrectOptionIds.filter(optionId => optionId !== id),
       };
     });
   }, []);
@@ -176,10 +183,18 @@ export function TelegramRequestBuilder() {
     setForm(prev => ({
       ...prev,
       pollType,
-      pollAllowsMultipleAnswers: pollType === 'quiz' ? false : prev.pollAllowsMultipleAnswers,
       pollExplanation: pollType === 'quiz' ? prev.pollExplanation : '',
       pollExplanationParseMode: pollType === 'quiz' ? prev.pollExplanationParseMode : 'HTML',
-      pollCorrectOptionId: pollType === 'quiz' ? prev.pollCorrectOptionId : '',
+      pollCorrectOptionIds: pollType === 'quiz' ? prev.pollCorrectOptionIds : [],
+    }));
+  }, []);
+
+  const togglePollCorrectOption = useCallback((id: string, checked: boolean) => {
+    setForm(prev => ({
+      ...prev,
+      pollCorrectOptionIds: checked
+        ? Array.from(new Set([...prev.pollCorrectOptionIds, id]))
+        : prev.pollCorrectOptionIds.filter(optionId => optionId !== id),
     }));
   }, []);
 
@@ -242,6 +257,114 @@ export function TelegramRequestBuilder() {
       />
       {hint && <div className={styles.fieldHint}>{hint}</div>}
     </div>
+  );
+
+  const renderMessageThreadField = (hint = 'ID топика в форуме или супергруппе.') => (
+    <div className={styles.field}>
+      <label className={styles.label}>message_thread_id</label>
+      <input
+        type="text"
+        value={form.messageThreadId}
+        placeholder="Топик / thread id"
+        onChange={e => updateField('messageThreadId', e.target.value)}
+      />
+      <div className={styles.fieldHint}>{hint}</div>
+    </div>
+  );
+
+  const renderDirectMessagesTopicField = () => (
+    <div className={styles.field}>
+      <label className={styles.label}>direct_messages_topic_id</label>
+      <input
+        type="number"
+        value={form.directMessagesTopicId}
+        placeholder="Опционально"
+        onChange={e => updateField('directMessagesTopicId', e.target.value)}
+      />
+      <div className={styles.fieldHint}>Нужно для direct messages chat канала.</div>
+    </div>
+  );
+
+  const renderRichMessageFields = () => (
+    <>
+      <div className={styles.field}>
+        <label className={styles.label}>rich format</label>
+        <select
+          value={form.richMessageFormat}
+          onChange={e => updateField('richMessageFormat', e.target.value as RequestFormState['richMessageFormat'])}
+        >
+          <option value="html">html</option>
+          <option value="markdown">markdown</option>
+        </select>
+        <div className={styles.fieldHint}>InputRichMessage использует ровно одно поле: html или markdown.</div>
+      </div>
+
+      <div className={styles.fieldFull}>
+        <label className={styles.label}>
+          {form.richMessageFormat === 'html' ? 'rich_message.html' : 'rich_message.markdown'}
+        </label>
+        <textarea
+          className={styles.textarea}
+          value={form.richMessageContent}
+          rows={7}
+          placeholder={form.richMessageFormat === 'html' ? '<p>Текст rich message</p>' : '# Заголовок\n\nТекст'}
+          onChange={e => updateField('richMessageContent', e.target.value)}
+        />
+        <div className={styles.fieldHint}>
+          Bot API 10.1: rich message поддерживает структурированный текст, таблицы, цитаты и медиа-блоки через формат Telegram.
+        </div>
+      </div>
+
+      <div className={styles.fieldFull}>
+        <div className={styles.checkboxRow}>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={form.richMessageIsRtl}
+              onChange={e => updateField('richMessageIsRtl', e.target.checked)}
+            />
+            <span>is_rtl</span>
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={form.richMessageSkipEntityDetection}
+              onChange={e => updateField('richMessageSkipEntityDetection', e.target.checked)}
+            />
+            <span>skip_entity_detection</span>
+          </label>
+        </div>
+      </div>
+    </>
+  );
+
+  const renderInlineContentFields = (messageTextLabel = 'message_text') => (
+    <>
+      <div className={styles.fieldFull}>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={form.inlineUseRichMessage}
+            onChange={e => updateField('inlineUseRichMessage', e.target.checked)}
+          />
+          <span>InputRichMessageContent (Bot API 10.1)</span>
+        </label>
+      </div>
+      {form.inlineUseRichMessage ? (
+        renderRichMessageFields()
+      ) : (
+        <div className={styles.fieldFull}>
+          <label className={styles.label}>{messageTextLabel}</label>
+          <textarea
+            className={styles.textarea}
+            value={form.inlineResultText}
+            rows={3}
+            placeholder="Текст, который будет отправлен при выборе"
+            onChange={e => updateField('inlineResultText', e.target.value)}
+          />
+        </div>
+      )}
+    </>
   );
 
   const renderUserIdField = (hint?: string) => (
@@ -612,9 +735,25 @@ export function TelegramRequestBuilder() {
           <div className={styles.fieldHint}>Метод не требует параметров.</div>
         );
       case 'getChat':
-      case 'getChatAdministrators':
       case 'getChatMemberCount':
         return renderChatIdField();
+      case 'getChatAdministrators':
+        return (
+          <>
+            {renderChatIdField()}
+            <div className={styles.fieldFull}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={form.chatAdminReturnBots}
+                  onChange={e => updateField('chatAdminReturnBots', e.target.checked)}
+                />
+                <span>return_bots</span>
+              </label>
+              <div className={styles.fieldHint}>Bot API 10.0: вернуть всех ботов-администраторов, а не только текущего.</div>
+            </div>
+          </>
+        );
       case 'getChatMember':
         return (
           <>
@@ -657,6 +796,22 @@ export function TelegramRequestBuilder() {
                 onChange={e => updateField('userPhotosLimit', e.target.value)}
               />
               <div className={styles.fieldHint}>От 1 до 100. По умолчанию 100.</div>
+            </div>
+          </>
+        );
+      case 'getUserPersonalChatMessages':
+        return (
+          <>
+            {renderUserIdField('Пользователь, чей personal chat нужно прочитать.')}
+            <div className={styles.field}>
+              <label className={styles.label}>limit</label>
+              <input
+                type="number"
+                value={form.personalChatMessagesLimit}
+                placeholder="10"
+                onChange={e => updateField('personalChatMessagesLimit', e.target.value)}
+              />
+              <div className={styles.fieldHint}>От 1 до 20 сообщений.</div>
             </div>
           </>
         );
@@ -775,6 +930,35 @@ export function TelegramRequestBuilder() {
         );
       case 'unpinAllChatMessages':
         return chatIdField;
+      case 'getManagedBotAccessSettings':
+        return renderUserIdField('User ID управляемого бота.');
+      case 'setManagedBotAccessSettings':
+        return (
+          <>
+            {renderUserIdField('User ID управляемого бота.')}
+            <div className={styles.fieldFull}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={form.isAccessRestricted}
+                  onChange={e => updateField('isAccessRestricted', e.target.checked)}
+                />
+                <span>is_access_restricted</span>
+              </label>
+              <div className={styles.fieldHint}>Если включено, доступ будет только у владельца и added_user_ids.</div>
+            </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>added_user_ids</label>
+              <input
+                type="text"
+                value={form.addedUserIds}
+                placeholder="123456, 789012"
+                onChange={e => updateField('addedUserIds', e.target.value)}
+              />
+              <div className={styles.fieldHint}>До 10 Telegram ID через запятую или пробел.</div>
+            </div>
+          </>
+        );
       case 'setMyCommands':
         return (
           <>
@@ -881,26 +1065,42 @@ export function TelegramRequestBuilder() {
           <>
             {renderEditableTargetFields()}
             <div className={styles.fieldFull}>
-              <label className={styles.label}>text</label>
-              <FormattedTextField
-                value={form.text}
-                parseMode={form.parseMode}
-                rows={6}
-                placeholder="Новый текст сообщения"
-                onChange={value => updateField('text', value)}
-              />
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={form.editUseRichMessage}
+                  onChange={e => updateField('editUseRichMessage', e.target.checked)}
+                />
+                <span>Редактировать как rich_message (Bot API 10.1)</span>
+              </label>
             </div>
-            <div className={styles.field}>
-              <label className={styles.label}>parse_mode</label>
-              <select
-                value={form.parseMode}
-                onChange={e => updateField('parseMode', e.target.value as RequestFormState['parseMode'])}
-              >
-                {PARSE_MODE_OPTIONS.map(option => (
-                  <option key={option.value || 'none'} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
+            {form.editUseRichMessage ? (
+              renderRichMessageFields()
+            ) : (
+              <>
+                <div className={styles.fieldFull}>
+                  <label className={styles.label}>text</label>
+                  <FormattedTextField
+                    value={form.text}
+                    parseMode={form.parseMode}
+                    rows={6}
+                    placeholder="Новый текст сообщения"
+                    onChange={value => updateField('text', value)}
+                  />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>parse_mode</label>
+                  <select
+                    value={form.parseMode}
+                    onChange={e => updateField('parseMode', e.target.value as RequestFormState['parseMode'])}
+                  >
+                    {PARSE_MODE_OPTIONS.map(option => (
+                      <option key={option.value || 'none'} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
           </>
         );
       case 'editMessageCaption':
@@ -1079,6 +1279,33 @@ export function TelegramRequestBuilder() {
             {renderMessageIdsField()}
           </>
         );
+      case 'deleteMessageReaction':
+      case 'deleteAllMessageReactions':
+        return (
+          <>
+            {renderChatIdField()}
+            {methodConfig.id === 'deleteMessageReaction' && renderTargetMessageIdField()}
+            <div className={styles.field}>
+              <label className={styles.label}>user_id</label>
+              <input
+                type="number"
+                value={form.userId}
+                placeholder="ID пользователя"
+                onChange={e => updateField('userId', e.target.value)}
+              />
+              <div className={styles.fieldHint}>Укажите user_id или actor_chat_id, но не оба сразу.</div>
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>actor_chat_id</label>
+              <input
+                type="number"
+                value={form.actorChatId}
+                placeholder="ID чата-автора реакции"
+                onChange={e => updateField('actorChatId', e.target.value)}
+              />
+            </div>
+          </>
+        );
       default:
         return null;
     }
@@ -1223,16 +1450,7 @@ export function TelegramRequestBuilder() {
                 onChange={e => updateField('inlineResultTitle', e.target.value)}
               />
             </div>
-            <div className={styles.fieldFull}>
-              <label className={styles.label}>message_text</label>
-              <textarea
-                className={styles.textarea}
-                value={form.inlineResultText}
-                rows={3}
-                placeholder="Текст, который будет отправлен при выборе"
-                onChange={e => updateField('inlineResultText', e.target.value)}
-              />
-            </div>
+            {renderInlineContentFields()}
           </>
         );
       case 'answerWebAppQuery':
@@ -1263,11 +1481,22 @@ export function TelegramRequestBuilder() {
               <label className={styles.label}>message_text</label>
               <input
                 type="text"
-                value={form.webAppResultUrl}
+                value={form.inlineResultText}
                 placeholder="Текст сообщения"
-                onChange={e => updateField('webAppResultUrl', e.target.value)}
+                onChange={e => updateField('inlineResultText', e.target.value)}
               />
             </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={form.inlineUseRichMessage}
+                  onChange={e => updateField('inlineUseRichMessage', e.target.checked)}
+                />
+                <span>InputRichMessageContent (Bot API 10.1)</span>
+              </label>
+            </div>
+            {form.inlineUseRichMessage && renderRichMessageFields()}
           </>
         );
       default:
@@ -1275,8 +1504,131 @@ export function TelegramRequestBuilder() {
     }
   };
 
+  const renderGuestFields = () => (
+    <>
+      <div className={styles.fieldFull}>
+        <label className={styles.label}>guest_query_id</label>
+        <input
+          type="text"
+          value={form.guestQueryId}
+          placeholder="Из Message.guest_query_id"
+          onChange={e => updateField('guestQueryId', e.target.value)}
+        />
+      </div>
+      <div className={styles.fieldFull}>
+        <div className={styles.sectionTitle}>result — Article</div>
+        <div className={styles.sectionText}>Bot API 10.0: ответ на guest query через InlineQueryResult.</div>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label}>id</label>
+        <input
+          type="text"
+          value={form.inlineResultId}
+          placeholder="1"
+          onChange={e => updateField('inlineResultId', e.target.value)}
+        />
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label}>title</label>
+        <input
+          type="text"
+          value={form.inlineResultTitle}
+          placeholder="Заголовок результата"
+          onChange={e => updateField('inlineResultTitle', e.target.value)}
+        />
+      </div>
+      {renderInlineContentFields()}
+    </>
+  );
+
+  const renderJoinRequestFields = () => (
+    <>
+      <div className={styles.fieldFull}>
+        <label className={styles.label}>chat_join_request_query_id</label>
+        <input
+          type="text"
+          value={form.chatJoinRequestQueryId}
+          placeholder="Из ChatJoinRequest.query_id"
+          onChange={e => updateField('chatJoinRequestQueryId', e.target.value)}
+        />
+        <div className={styles.fieldHint}>Bot API 10.1: если query_id пришёл, ответить нужно в течение 10 секунд.</div>
+      </div>
+      {methodConfig.id === 'answerChatJoinRequestQuery' ? (
+        <div className={styles.field}>
+          <label className={styles.label}>result</label>
+          <select
+            value={form.chatJoinRequestResult}
+            onChange={e => updateField(
+              'chatJoinRequestResult',
+              e.target.value as RequestFormState['chatJoinRequestResult']
+            )}
+          >
+            <option value="approve">approve</option>
+            <option value="decline">decline</option>
+            <option value="queue">queue</option>
+          </select>
+        </div>
+      ) : (
+        <div className={styles.fieldFull}>
+          <label className={styles.label}>web_app_url</label>
+          <input
+            type="text"
+            value={form.chatJoinRequestWebAppUrl}
+            placeholder="https://example.com/join-review"
+            onChange={e => updateField('chatJoinRequestWebAppUrl', e.target.value)}
+          />
+          <div className={styles.fieldHint}>URL Mini App, которую Telegram откроет пользователю перед решением.</div>
+        </div>
+      )}
+    </>
+  );
+
   const renderMethodFields = () => {
     switch (methodConfig.category) {
+      case 'rich':
+        return (
+          <>
+            {renderChatIdField(
+              methodConfig.id === 'sendRichMessageDraft'
+                ? 'ID private chat. Черновики rich message работают как временный preview.'
+                : 'ID чата, группы, супергруппы, канала или @username.'
+            )}
+            {renderMessageThreadField()}
+            {methodConfig.id === 'sendRichMessage' && renderDirectMessagesTopicField()}
+            {methodConfig.id === 'sendRichMessageDraft' && (
+              <div className={styles.field}>
+                <label className={styles.label}>draft_id</label>
+                <input
+                  type="number"
+                  value={form.richMessageDraftId}
+                  placeholder="1"
+                  onChange={e => updateField('richMessageDraftId', e.target.value)}
+                />
+                <div className={styles.fieldHint}>Ненулевой ID черновика. Одинаковый ID анимирует изменения.</div>
+              </div>
+            )}
+            {renderRichMessageFields()}
+            {methodConfig.id === 'sendRichMessage' && (
+              <div className={styles.fieldFull}>
+                <div className={styles.optionGrid}>
+                  {SEND_OPTION_DESCRIPTIONS.map(option => (
+                    <label key={option.apiName} className={styles.optionCard}>
+                      <span className={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={form[option.key]}
+                          onChange={e => updateField(option.key, e.target.checked)}
+                        />
+                        <span>{option.apiName}</span>
+                      </span>
+                      <span className={styles.optionHint}>{option.description}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
       case 'text':
         return (
           <>
@@ -1309,6 +1661,72 @@ export function TelegramRequestBuilder() {
         );
       case 'media':
         return renderMediaSourceInput();
+      case 'live_photo':
+        return (
+          <>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>live_photo</label>
+              <input
+                type="text"
+                value={form.livePhotoValue}
+                placeholder="file_id видео или attach://live_photo"
+                onChange={e => updateField('livePhotoValue', e.target.value)}
+              />
+              <div className={styles.fieldHint}>Видео до 10 секунд и до 10 MB. HTTP URL Telegram сейчас не принимает.</div>
+            </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>photo</label>
+              <input
+                type="text"
+                value={form.livePhotoPhoto}
+                placeholder="file_id фото или attach://photo"
+                onChange={e => updateField('livePhotoPhoto', e.target.value)}
+              />
+              <div className={styles.fieldHint}>Статичное фото для live photo. Используйте file_id или multipart attach.</div>
+            </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>caption</label>
+              <FormattedTextField
+                value={form.caption}
+                parseMode={form.parseMode}
+                rows={4}
+                placeholder="Опциональная подпись"
+                onChange={value => updateField('caption', value)}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>parse_mode</label>
+              <select
+                value={form.parseMode}
+                onChange={e => updateField('parseMode', e.target.value as RequestFormState['parseMode'])}
+              >
+                {PARSE_MODE_OPTIONS.map(option => (
+                  <option key={option.value || 'none'} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.fieldFull}>
+              <div className={styles.checkboxRow}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.showCaptionAboveMedia}
+                    onChange={e => updateField('showCaptionAboveMedia', e.target.checked)}
+                  />
+                  <span>show_caption_above_media</span>
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.hasSpoiler}
+                    onChange={e => updateField('hasSpoiler', e.target.checked)}
+                  />
+                  <span>has_spoiler</span>
+                </label>
+              </div>
+            </div>
+          </>
+        );
       case 'album':
         return renderAlbumFields();
       case 'location':
@@ -1444,7 +1862,7 @@ export function TelegramRequestBuilder() {
               <div className={styles.inlineHeader}>
                 <div>
                   <label className={styles.label}>options</label>
-                  <div className={styles.fieldHint}>От 2 до 12 вариантов ответа. У каждого ответа лимит 100 символов.</div>
+                  <div className={styles.fieldHint}>От 1 до 12 вариантов ответа. У каждого ответа лимит 100 символов.</div>
                 </div>
                 <button
                   className={styles.secondaryBtn}
@@ -1463,7 +1881,7 @@ export function TelegramRequestBuilder() {
                       <button
                         className={styles.linkBtn}
                         onClick={() => removePollOption(option.id)}
-                        disabled={form.pollOptions.length <= 2}
+                        disabled={form.pollOptions.length <= 1}
                       >
                         Удалить
                       </button>
@@ -1484,15 +1902,28 @@ export function TelegramRequestBuilder() {
                         <div className={styles.fieldFull}>
                           <label className={styles.checkboxLabel}>
                             <input
-                              type="radio"
-                              name="poll-correct-option"
-                              checked={form.pollCorrectOptionId === option.id}
-                              onChange={() => updateField('pollCorrectOptionId', option.id)}
+                              type="checkbox"
+                              checked={form.pollCorrectOptionIds.includes(option.id)}
+                              onChange={e => togglePollCorrectOption(option.id, e.target.checked)}
                             />
                             <span>Правильный ответ</span>
                           </label>
                         </div>
                       )}
+
+                      <div className={styles.fieldFull}>
+                        <label className={styles.label}>media</label>
+                        <textarea
+                          className={styles.textarea}
+                          value={option.mediaJson}
+                          rows={3}
+                          placeholder='{"type":"link","url":"https://example.com"}'
+                          onChange={e => updatePollOption(option.id, current => ({ ...current, mediaJson: e.target.value }))}
+                        />
+                        <div className={styles.fieldHint}>
+                          Опционально: InputPollOptionMedia JSON. Bot API 10.1 поддерживает type=link.
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1519,7 +1950,7 @@ export function TelegramRequestBuilder() {
                 placeholder="Например: 60"
                 onChange={e => updateField('pollOpenPeriod', e.target.value)}
               />
-              <div className={styles.fieldHint}>От 5 до 600 секунд. Нельзя вместе с close_date.</div>
+              <div className={styles.fieldHint}>От 5 до 2628000 секунд. Нельзя вместе с close_date.</div>
             </div>
 
             <div className={styles.field}>
@@ -1530,7 +1961,56 @@ export function TelegramRequestBuilder() {
                 placeholder="Unix timestamp"
                 onChange={e => updateField('pollCloseDate', e.target.value)}
               />
-              <div className={styles.fieldHint}>Unix timestamp на ближайшие 5–600 секунд.</div>
+              <div className={styles.fieldHint}>Unix timestamp на ближайшие 5–2628000 секунд.</div>
+            </div>
+
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>description</label>
+              <FormattedTextField
+                value={form.pollDescription}
+                parseMode={form.pollDescriptionParseMode}
+                rows={3}
+                placeholder="Опциональное описание опроса"
+                onChange={value => updateField('pollDescription', value)}
+              />
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>description_parse_mode</label>
+              <select
+                value={form.pollDescriptionParseMode}
+                onChange={e => updateField(
+                  'pollDescriptionParseMode',
+                  e.target.value as RequestFormState['pollDescriptionParseMode']
+                )}
+              >
+                {PARSE_MODE_OPTIONS.map(option => (
+                  <option key={option.value || 'none'} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>media</label>
+              <textarea
+                className={styles.textarea}
+                value={form.pollMediaJson}
+                rows={3}
+                placeholder='{"type":"photo","media":"file_id"}'
+                onChange={e => updateField('pollMediaJson', e.target.value)}
+              />
+              <div className={styles.fieldHint}>Опционально: InputPollMedia JSON для описания опроса.</div>
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>country_codes</label>
+              <input
+                type="text"
+                value={form.pollCountryCodes}
+                placeholder="RU, US, FT"
+                onChange={e => updateField('pollCountryCodes', e.target.value)}
+              />
+              <div className={styles.fieldHint}>До 12 ISO-кодов. FT — номера Fragment.</div>
             </div>
 
             <div className={styles.fieldFull}>
@@ -1547,10 +2027,49 @@ export function TelegramRequestBuilder() {
                   <input
                     type="checkbox"
                     checked={form.pollAllowsMultipleAnswers}
-                    disabled={form.pollType === 'quiz'}
                     onChange={e => updateField('pollAllowsMultipleAnswers', e.target.checked)}
                   />
                   <span>allows_multiple_answers</span>
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.pollAllowsRevoting}
+                    onChange={e => updateField('pollAllowsRevoting', e.target.checked)}
+                  />
+                  <span>allows_revoting</span>
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.pollShuffleOptions}
+                    onChange={e => updateField('pollShuffleOptions', e.target.checked)}
+                  />
+                  <span>shuffle_options</span>
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.pollAllowAddingOptions}
+                    onChange={e => updateField('pollAllowAddingOptions', e.target.checked)}
+                  />
+                  <span>allow_adding_options</span>
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.pollHideResultsUntilCloses}
+                    onChange={e => updateField('pollHideResultsUntilCloses', e.target.checked)}
+                  />
+                  <span>hide_results_until_closes</span>
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.pollMembersOnly}
+                    onChange={e => updateField('pollMembersOnly', e.target.checked)}
+                  />
+                  <span>members_only</span>
                 </label>
                 <label className={styles.checkboxLabel}>
                   <input
@@ -1590,6 +2109,18 @@ export function TelegramRequestBuilder() {
                     ))}
                   </select>
                 </div>
+
+                <div className={styles.fieldFull}>
+                  <label className={styles.label}>explanation_media</label>
+                  <textarea
+                    className={styles.textarea}
+                    value={form.pollExplanationMediaJson}
+                    rows={3}
+                    placeholder='{"type":"link","url":"https://example.com"}'
+                    onChange={e => updateField('pollExplanationMediaJson', e.target.value)}
+                  />
+                  <div className={styles.fieldHint}>Опционально: InputPollMedia JSON для объяснения quiz.</div>
+                </div>
               </>
             )}
           </>
@@ -1624,6 +2155,10 @@ export function TelegramRequestBuilder() {
         return renderWebhookFields();
       case 'inline':
         return renderInlineFields();
+      case 'guest':
+        return renderGuestFields();
+      case 'join_request':
+        return renderJoinRequestFields();
       case 'updating':
         return renderUpdatingFields();
       default:
@@ -1636,8 +2171,9 @@ export function TelegramRequestBuilder() {
       <div className={styles.notice}>
         <div className={styles.noticeTitle}>Конструктор запросов Telegram Bot API</div>
         <div className={styles.noticeText}>
-          Сверен с документацией Bot API 9.6. Доступны 52 метода: отправка, пересылка и копирование сообщений,
-          редактирование, удаление, работа с чатами, администрирование, webhook, inline-режим.
+          Сверен с документацией Bot API 10.1 от 11.06.2026. Доступно {REQUEST_METHODS.length} методов:
+          rich messages, live photo, guest mode, join request queries, опросы, медиа, администрирование,
+          webhook, inline-режим и редактирование сообщений.
         </div>
       </div>
 
@@ -1685,16 +2221,9 @@ export function TelegramRequestBuilder() {
                 <div className={styles.fieldHint}>ID чата, группы, супергруппы или @username канала.</div>
               </div>
 
-              <div className={styles.field}>
-                <label className={styles.label}>message_thread_id</label>
-                <input
-                  type="text"
-                  value={form.messageThreadId}
-                  placeholder="Топик / thread id"
-                  onChange={e => updateField('messageThreadId', e.target.value)}
-                />
-                <div className={styles.fieldHint}>ID топика в форуме или супергруппе.</div>
-              </div>
+              {renderMessageThreadField()}
+
+              {renderDirectMessagesTopicField()}
 
               <div className={styles.field}>
                 <label className={styles.label}>Эффект сообщения</label>

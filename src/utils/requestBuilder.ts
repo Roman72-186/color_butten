@@ -15,7 +15,7 @@ import type {
   RequestPreview,
 } from '../types/requestBuilder';
 
-const SEND_CATEGORIES = ['text', 'media', 'album', 'location', 'venue', 'contact', 'poll', 'dice'] as const;
+const SEND_CATEGORIES = ['text', 'media', 'live_photo', 'album', 'location', 'venue', 'contact', 'poll', 'dice'] as const;
 type SendCategory = typeof SEND_CATEGORIES[number];
 
 function isSendCategory(category: string): category is SendCategory {
@@ -68,6 +68,13 @@ function parseNumberList(value: string): number[] {
     .map(Number);
 }
 
+function parseStringList(value: string): string[] {
+  return value
+    .split(/[\s,]+/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
 function isNumberList(value: string): boolean {
   const items = value
     .split(/[\s,]+/)
@@ -82,6 +89,15 @@ function parseJsonPreview(value: string): unknown {
     return JSON.parse(value);
   } catch {
     return value.trim();
+  }
+}
+
+function isJsonObject(value: string): boolean {
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+  } catch {
+    return false;
   }
 }
 
@@ -117,8 +133,13 @@ function createCommonPayload(
     payload.message_thread_id = maybeNumber(form.messageThreadId);
   }
 
+  if (form.directMessagesTopicId.trim()) {
+    payload.direct_messages_topic_id = Number(form.directMessagesTopicId);
+  }
+
   pushIfValue(payload, 'disable_notification', form.disableNotification);
   pushIfValue(payload, 'protect_content', form.protectContent);
+  pushIfValue(payload, 'allow_paid_broadcast', form.allowPaidBroadcast);
   pushIfValue(payload, 'message_effect_id', form.messageEffectId);
 
   return payload;
@@ -145,12 +166,40 @@ function getPollOptionTexts(options: PollOptionItem[]): string[] {
     .filter(Boolean);
 }
 
-function getPollCorrectOptionIndex(form: RequestFormState): number {
-  if (!form.pollCorrectOptionId) {
-    return -1;
+function getPollCorrectOptionIndexes(form: RequestFormState): number[] {
+  const selectedIds = new Set(form.pollCorrectOptionIds);
+
+  return form.pollOptions
+    .map((option, index) => selectedIds.has(option.id) ? index : -1)
+    .filter(index => index >= 0);
+}
+
+function buildInputRichMessage(form: RequestFormState): Record<string, unknown> {
+  const key = form.richMessageFormat === 'markdown' ? 'markdown' : 'html';
+  const richMessage: Record<string, unknown> = {
+    [key]: form.richMessageContent.trim(),
+  };
+
+  if (form.richMessageIsRtl) {
+    richMessage.is_rtl = true;
   }
 
-  return form.pollOptions.findIndex(option => option.id === form.pollCorrectOptionId);
+  if (form.richMessageSkipEntityDetection) {
+    richMessage.skip_entity_detection = true;
+  }
+
+  return richMessage;
+}
+
+function buildInlineArticleResult(form: RequestFormState): Record<string, unknown> {
+  return {
+    type: 'article',
+    id: form.inlineResultId.trim() || '1',
+    title: form.inlineResultTitle.trim() || form.webAppResultTitle.trim() || 'Результат',
+    input_message_content: form.inlineUseRichMessage
+      ? { rich_message: buildInputRichMessage(form) }
+      : { message_text: form.inlineResultText.trim() || form.webAppResultUrl.trim() },
+  };
 }
 
 function buildAlbumMediaArray(form: RequestFormState): Array<Record<string, unknown>> {
@@ -221,6 +270,22 @@ function buildSendPayload(
         payload.emoji = form.stickerEmoji.trim();
       }
       break;
+    case 'sendLivePhoto':
+      payload.live_photo = form.livePhotoValue.trim();
+      payload.photo = form.livePhotoPhoto.trim();
+      if (normalizedCaption) {
+        payload.caption = normalizedCaption;
+      }
+      if (normalizedCaption && form.parseMode) {
+        payload.parse_mode = form.parseMode;
+      }
+      if (form.showCaptionAboveMedia) {
+        payload.show_caption_above_media = true;
+      }
+      if (form.hasSpoiler) {
+        payload.has_spoiler = true;
+      }
+      break;
     case 'sendMediaGroup':
       payload.media = buildAlbumMediaArray(form);
       break;
@@ -243,19 +308,24 @@ function buildSendPayload(
       break;
     case 'sendPoll': {
       const options = form.pollOptions
-        .map(item => item.text.trim())
-        .filter(Boolean)
-        .map(text => ({ text }));
-      const correctOptionIndex = getPollCorrectOptionIndex(form);
+        .filter(item => item.text.trim())
+        .map(item => {
+          const option: Record<string, unknown> = { text: item.text.trim() };
+          if (item.mediaJson.trim()) {
+            option.media = parseJsonPreview(item.mediaJson);
+          }
+          return option;
+        });
+      const correctOptionIndexes = getPollCorrectOptionIndexes(form);
 
       payload.question = form.pollQuestion.trim();
       payload.options = options;
       payload.type = form.pollType;
       payload.is_anonymous = form.pollIsAnonymous;
-      payload.allows_multiple_answers = form.pollType === 'quiz' ? false : form.pollAllowsMultipleAnswers;
+      payload.allows_multiple_answers = form.pollAllowsMultipleAnswers;
 
-      if (form.pollType === 'quiz' && correctOptionIndex >= 0) {
-        payload.correct_option_id = correctOptionIndex;
+      if (form.pollType === 'quiz' && correctOptionIndexes.length > 0) {
+        payload.correct_option_ids = correctOptionIndexes;
       }
 
       if (normalizedPollExplanation) {
@@ -275,6 +345,31 @@ function buildSendPayload(
 
       if (form.pollIsClosed) {
         payload.is_closed = true;
+      }
+
+      if (form.pollDescription.trim()) {
+        payload.description = normalizeFormattedValue(form.pollDescription, form.pollDescriptionParseMode);
+        if (form.pollDescriptionParseMode) {
+          payload.description_parse_mode = form.pollDescriptionParseMode;
+        }
+      }
+
+      if (form.pollMediaJson.trim()) {
+        payload.media = parseJsonPreview(form.pollMediaJson);
+      }
+
+      if (form.pollExplanationMediaJson.trim()) {
+        payload.explanation_media = parseJsonPreview(form.pollExplanationMediaJson);
+      }
+
+      pushIfValue(payload, 'allows_revoting', form.pollAllowsRevoting);
+      pushIfValue(payload, 'shuffle_options', form.pollShuffleOptions);
+      pushIfValue(payload, 'allow_adding_options', form.pollAllowAddingOptions);
+      pushIfValue(payload, 'hide_results_until_closes', form.pollHideResultsUntilCloses);
+      pushIfValue(payload, 'members_only', form.pollMembersOnly);
+
+      if (form.pollCountryCodes.trim()) {
+        payload.country_codes = parseStringList(form.pollCountryCodes).map(code => code.toUpperCase());
       }
       break;
     }
@@ -301,6 +396,23 @@ function buildSpecialPayload(
   const normalizedCaption = normalizeFormattedValue(form.caption, form.parseMode);
 
   switch (config.id) {
+    case 'sendRichMessage':
+      payload.chat_id = chatId();
+      if (form.messageThreadId.trim()) payload.message_thread_id = maybeNumber(form.messageThreadId);
+      if (form.directMessagesTopicId.trim()) payload.direct_messages_topic_id = Number(form.directMessagesTopicId);
+      payload.rich_message = buildInputRichMessage(form);
+      addSendOptions(payload, form);
+      pushIfValue(payload, 'allow_paid_broadcast', form.allowPaidBroadcast);
+      if (form.inlineButtons.length > 0) payload.reply_markup = buildInlineKeyboard(form.inlineButtons);
+      break;
+
+    case 'sendRichMessageDraft':
+      payload.chat_id = chatId();
+      if (form.messageThreadId.trim()) payload.message_thread_id = maybeNumber(form.messageThreadId);
+      payload.draft_id = Number(form.richMessageDraftId);
+      payload.rich_message = buildInputRichMessage(form);
+      break;
+
     case 'forwardMessage':
       payload.chat_id = chatId();
       payload.from_chat_id = maybeNumber(form.fromChatId.trim());
@@ -350,6 +462,9 @@ function buildSpecialPayload(
     case 'getChatMemberCount':
     case 'unpinAllChatMessages':
       payload.chat_id = chatId();
+      if (config.id === 'getChatAdministrators' && form.chatAdminReturnBots) {
+        payload.return_bots = true;
+      }
       break;
 
     case 'getChatMember':
@@ -365,6 +480,11 @@ function buildSpecialPayload(
       if (form.userId.trim()) payload.user_id = Number(form.userId);
       if (form.userPhotosOffset.trim()) payload.offset = Number(form.userPhotosOffset);
       if (form.userPhotosLimit.trim()) payload.limit = Number(form.userPhotosLimit);
+      break;
+
+    case 'getUserPersonalChatMessages':
+      if (form.userId.trim()) payload.user_id = Number(form.userId);
+      if (form.personalChatMessagesLimit.trim()) payload.limit = Number(form.personalChatMessagesLimit);
       break;
 
     // ── ADMIN ────────────────────────────────────────────────────────────
@@ -386,6 +506,18 @@ function buildSpecialPayload(
       if (form.userId.trim()) payload.user_id = Number(form.userId);
       payload.permissions = buildChatPermissions(form.chatPermissions);
       if (form.untilDate.trim()) payload.until_date = Number(form.untilDate);
+      break;
+
+    case 'getManagedBotAccessSettings':
+      if (form.userId.trim()) payload.user_id = Number(form.userId);
+      break;
+
+    case 'setManagedBotAccessSettings':
+      if (form.userId.trim()) payload.user_id = Number(form.userId);
+      payload.is_access_restricted = form.isAccessRestricted;
+      if (form.addedUserIds.trim()) {
+        payload.added_user_ids = parseNumberList(form.addedUserIds);
+      }
       break;
 
     case 'pinChatMessage':
@@ -442,28 +574,37 @@ function buildSpecialPayload(
     // ── INLINE ───────────────────────────────────────────────────────────
     case 'answerInlineQuery':
       payload.inline_query_id = form.inlineQueryId.trim();
-      payload.results = [{
-        type: 'article',
-        id: form.inlineResultId.trim() || '1',
-        title: form.inlineResultTitle.trim() || 'Результат',
-        input_message_content: { message_text: form.inlineResultText.trim() },
-      }];
+      payload.results = [buildInlineArticleResult(form)];
       break;
 
     case 'answerWebAppQuery':
       payload.web_app_query_id = form.webAppQueryId.trim();
-      payload.result = {
-        type: 'article',
-        id: '1',
-        title: form.webAppResultTitle.trim() || 'Результат',
-        input_message_content: { message_text: form.webAppResultUrl.trim() },
-      };
+      payload.result = buildInlineArticleResult(form);
+      break;
+
+    case 'answerGuestQuery':
+      payload.guest_query_id = form.guestQueryId.trim();
+      payload.result = buildInlineArticleResult(form);
+      break;
+
+    case 'answerChatJoinRequestQuery':
+      payload.chat_join_request_query_id = form.chatJoinRequestQueryId.trim();
+      payload.result = form.chatJoinRequestResult;
+      break;
+
+    case 'sendChatJoinRequestWebApp':
+      payload.chat_join_request_query_id = form.chatJoinRequestQueryId.trim();
+      payload.web_app_url = form.chatJoinRequestWebAppUrl.trim();
       break;
 
     case 'editMessageText':
       addEditableMessageTarget(payload, form);
-      payload.text = normalizedText;
-      if (form.parseMode) payload.parse_mode = form.parseMode;
+      if (form.editUseRichMessage) {
+        payload.rich_message = buildInputRichMessage(form);
+      } else {
+        payload.text = normalizedText;
+        if (form.parseMode) payload.parse_mode = form.parseMode;
+      }
       if (form.inlineButtons.length > 0) payload.reply_markup = buildInlineKeyboard(form.inlineButtons);
       break;
 
@@ -534,6 +675,19 @@ function buildSpecialPayload(
       payload.chat_id = chatId();
       payload.message_ids = parseNumberList(form.messageIds);
       break;
+
+    case 'deleteMessageReaction':
+      payload.chat_id = chatId();
+      payload.message_id = Number(form.targetMessageId);
+      if (form.userId.trim()) payload.user_id = Number(form.userId);
+      if (form.actorChatId.trim()) payload.actor_chat_id = Number(form.actorChatId);
+      break;
+
+    case 'deleteAllMessageReactions':
+      payload.chat_id = chatId();
+      if (form.userId.trim()) payload.user_id = Number(form.userId);
+      if (form.actorChatId.trim()) payload.actor_chat_id = Number(form.actorChatId);
+      break;
   }
 
   return payload;
@@ -574,6 +728,7 @@ export function createDefaultPollOption(text = ''): PollOptionItem {
   return {
     id: generateId(),
     text,
+    mediaJson: '',
   };
 }
 
@@ -596,6 +751,8 @@ const DEFAULT_CHAT_PERMISSIONS: ChatPermissions = {
   can_send_polls: false,
   can_send_other_messages: false,
   can_add_web_page_previews: false,
+  can_react_to_messages: false,
+  can_edit_tag: false,
   can_change_info: false,
   can_invite_users: false,
   can_pin_messages: false,
@@ -607,14 +764,23 @@ export function createDefaultRequestForm(): RequestFormState {
     method: 'sendMessage',
     chatId: DEFAULT_CHAT_ID,
     messageThreadId: '',
+    directMessagesTopicId: '',
     disableNotification: false,
     protectContent: false,
+    allowPaidBroadcast: false,
     messageEffectId: '',
     parseMode: 'HTML',
     text: '',
+    richMessageFormat: 'html',
+    richMessageContent: '<p>Текст rich message</p>',
+    richMessageIsRtl: false,
+    richMessageSkipEntityDetection: false,
+    richMessageDraftId: '1',
     caption: '',
     mediaSource: 'file_id',
     mediaValue: '',
+    livePhotoValue: '',
+    livePhotoPhoto: '',
     showCaptionAboveMedia: false,
     hasSpoiler: false,
     stickerEmoji: '',
@@ -631,12 +797,22 @@ export function createDefaultRequestForm(): RequestFormState {
     pollType: 'regular',
     pollIsAnonymous: true,
     pollAllowsMultipleAnswers: false,
-    pollCorrectOptionId: '',
+    pollCorrectOptionIds: [],
     pollExplanation: '',
     pollExplanationParseMode: 'HTML',
+    pollDescription: '',
+    pollDescriptionParseMode: 'HTML',
+    pollMediaJson: '',
+    pollExplanationMediaJson: '',
     pollOpenPeriod: '',
     pollCloseDate: '',
     pollIsClosed: false,
+    pollAllowsRevoting: false,
+    pollShuffleOptions: false,
+    pollAllowAddingOptions: false,
+    pollHideResultsUntilCloses: false,
+    pollMembersOnly: false,
+    pollCountryCodes: '',
     diceEmoji: DICE_EMOJI_OPTIONS[0].value,
     inlineButtons: [],
     fromChatId: '',
@@ -647,17 +823,21 @@ export function createDefaultRequestForm(): RequestFormState {
     checklistJson: '{\n  "title": "Checklist",\n  "tasks": []\n}',
     suggestedPostSendDate: '',
     suggestedPostComment: '',
+    actorChatId: '',
     // get
     userId: '',
     fileId: '',
     userPhotosOffset: '',
     userPhotosLimit: '',
+    personalChatMessagesLimit: '10',
     // admin
     targetMessageId: '',
     untilDate: '',
     revokeMessages: false,
     onlyIfBanned: false,
     chatPermissions: { ...DEFAULT_CHAT_PERMISSIONS },
+    isAccessRestricted: false,
+    addedUserIds: '',
     botCommands: [],
     botCommandScope: '',
     languageCode: '',
@@ -675,9 +855,16 @@ export function createDefaultRequestForm(): RequestFormState {
     inlineResultId: '',
     inlineResultTitle: '',
     inlineResultText: '',
+    inlineUseRichMessage: false,
     webAppQueryId: '',
     webAppResultTitle: '',
     webAppResultUrl: '',
+    guestQueryId: '',
+    chatJoinRequestQueryId: '',
+    chatJoinRequestResult: 'approve',
+    chatJoinRequestWebAppUrl: '',
+    chatAdminReturnBots: false,
+    editUseRichMessage: false,
   };
 }
 
@@ -738,9 +925,13 @@ export function validateRequestForm(form: RequestFormState): string[] {
     ].includes(config.id);
     const hasInlineTarget = canUseInlineTarget && form.inlineMessageId.trim();
 
-    if (!hasInlineTarget && config.id !== 'deleteMessages') {
+    if (!hasInlineTarget && config.id !== 'deleteMessages' && config.id !== 'deleteAllMessageReactions') {
       if (!form.chatId.trim()) errors.push('Поле chat_id обязательно.');
       if (!form.targetMessageId.trim()) errors.push('Поле message_id обязательно.');
+    }
+
+    if (config.id === 'deleteAllMessageReactions' && !form.chatId.trim()) {
+      errors.push('Поле chat_id обязательно.');
     }
 
     if (config.id === 'deleteMessages' && !isNumberList(form.messageIds)) {
@@ -749,6 +940,26 @@ export function validateRequestForm(form: RequestFormState): string[] {
   }
 
   switch (config.category) {
+    case 'rich':
+      if (!form.chatId.trim()) {
+        errors.push('Поле chat_id обязательно.');
+      }
+      if (form.messageThreadId.trim() && !/^-?\d+$/.test(form.messageThreadId.trim())) {
+        errors.push('message_thread_id должен быть числом.');
+      }
+      if (form.directMessagesTopicId.trim() && !/^\d+$/.test(form.directMessagesTopicId.trim())) {
+        errors.push('direct_messages_topic_id должен быть числом.');
+      }
+      if (!form.richMessageContent.trim()) {
+        errors.push('Для rich_message нужен html или markdown.');
+      }
+      if (
+        config.id === 'sendRichMessageDraft' &&
+        (!/^\d+$/.test(form.richMessageDraftId.trim()) || Number(form.richMessageDraftId) === 0)
+      ) {
+        errors.push('draft_id должен быть ненулевым числом.');
+      }
+      break;
     case 'text':
       if (!form.text.trim()) {
         errors.push('Для sendMessage нужен текст.');
@@ -767,6 +978,24 @@ export function validateRequestForm(form: RequestFormState): string[] {
         errors.push('Для режима URL ссылка должна начинаться с http:// или https://.');
       }
       if (config.supportsCaption && formatMode) {
+        errors.push(
+          ...validateFormattedText(normalizedCaption, formatMode, { validatePercentEncoding: false })
+            .map(error => `caption: ${error}`)
+        );
+      }
+      break;
+    case 'live_photo':
+      if (!form.livePhotoValue.trim()) {
+        errors.push('Заполните live_photo: file_id или attach://name.');
+      } else if (/^https?:\/\//i.test(form.livePhotoValue.trim())) {
+        errors.push('sendLivePhoto не поддерживает HTTP URL для live_photo.');
+      }
+      if (!form.livePhotoPhoto.trim()) {
+        errors.push('Заполните photo: file_id или attach://name.');
+      } else if (/^https?:\/\//i.test(form.livePhotoPhoto.trim())) {
+        errors.push('sendLivePhoto не поддерживает HTTP URL для photo.');
+      }
+      if (formatMode && form.caption.trim()) {
         errors.push(
           ...validateFormattedText(normalizedCaption, formatMode, { validatePercentEncoding: false })
             .map(error => `caption: ${error}`)
@@ -839,15 +1068,21 @@ export function validateRequestForm(form: RequestFormState): string[] {
       break;
     case 'poll': {
       const options = getPollOptionTexts(form.pollOptions);
-      const correctOptionIndex = getPollCorrectOptionIndex(form);
+      const correctOptionIndexes = getPollCorrectOptionIndexes(form);
       const normalizedExplanation = normalizeFormattedValue(
         form.pollExplanation,
         form.pollExplanationParseMode
       );
+      const normalizedDescription = normalizeFormattedValue(
+        form.pollDescription,
+        form.pollDescriptionParseMode
+      );
       const explanationMode = getFormatModeFromParseMode(form.pollExplanationParseMode);
+      const descriptionMode = getFormatModeFromParseMode(form.pollDescriptionParseMode);
       const openPeriod = form.pollOpenPeriod.trim();
       const closeDate = form.pollCloseDate.trim();
       const explanationLineBreaks = (normalizedExplanation.match(/\n/g) || []).length;
+      const countryCodes = parseStringList(form.pollCountryCodes);
 
       if (!form.pollQuestion.trim()) {
         errors.push('Для poll нужен вопрос.');
@@ -857,8 +1092,8 @@ export function validateRequestForm(form: RequestFormState): string[] {
         errors.push('Вопрос poll не должен превышать 300 символов.');
       }
 
-      if (options.length < 2) {
-        errors.push('Для poll нужно минимум 2 варианта ответа.');
+      if (options.length < 1) {
+        errors.push('Для poll нужен минимум 1 вариант ответа.');
       }
 
       if (options.length > 12) {
@@ -876,10 +1111,14 @@ export function validateRequestForm(form: RequestFormState): string[] {
         if (trimmed.length > 100) {
           errors.push(`Вариант ${index + 1}: текст ответа не должен превышать 100 символов.`);
         }
+
+        if (option.mediaJson.trim() && !isJsonObject(option.mediaJson)) {
+          errors.push(`Вариант ${index + 1}: media должен быть валидным JSON-объектом.`);
+        }
       });
 
-      if (form.pollType === 'quiz' && correctOptionIndex < 0) {
-        errors.push('Для quiz нужно выбрать правильный ответ.');
+      if (form.pollType === 'quiz' && correctOptionIndexes.length === 0) {
+        errors.push('Для quiz нужно выбрать хотя бы один правильный ответ.');
       }
 
       if (normalizedExplanation.length > 200) {
@@ -898,12 +1137,40 @@ export function validateRequestForm(form: RequestFormState): string[] {
         );
       }
 
+      if (normalizedDescription.length > 300) {
+        errors.push('description не должно превышать 300 символов.');
+      }
+
+      if (descriptionMode && normalizedDescription) {
+        errors.push(
+          ...validateFormattedText(normalizedDescription, descriptionMode, {
+            validatePercentEncoding: false,
+          }).map(error => `description: ${error}`)
+        );
+      }
+
+      if (form.pollMediaJson.trim() && !isJsonObject(form.pollMediaJson)) {
+        errors.push('media должен быть валидным JSON-объектом.');
+      }
+
+      if (form.pollExplanationMediaJson.trim() && !isJsonObject(form.pollExplanationMediaJson)) {
+        errors.push('explanation_media должен быть валидным JSON-объектом.');
+      }
+
+      if (countryCodes.length > 12) {
+        errors.push('country_codes принимает не больше 12 кодов.');
+      }
+
+      if (countryCodes.some(code => !/^[a-z]{2}$/i.test(code))) {
+        errors.push('country_codes должны быть двухбуквенными ISO-кодами, например RU, US, FT.');
+      }
+
       if (openPeriod && closeDate) {
         errors.push('В sendPoll нельзя одновременно задавать open_period и close_date.');
       }
 
-      if (openPeriod && (!/^\d+$/.test(openPeriod) || Number(openPeriod) < 5 || Number(openPeriod) > 600)) {
-        errors.push('open_period должен быть числом от 5 до 600 секунд.');
+      if (openPeriod && (!/^\d+$/.test(openPeriod) || Number(openPeriod) < 5 || Number(openPeriod) > 2628000)) {
+        errors.push('open_period должен быть числом от 5 до 2628000 секунд.');
       }
 
       if (closeDate) {
@@ -912,8 +1179,8 @@ export function validateRequestForm(form: RequestFormState): string[] {
 
         if (!/^\d+$/.test(closeDate) || Number.isNaN(closeDateValue)) {
           errors.push('close_date должен быть Unix timestamp.');
-        } else if (closeDateValue < now + 5 || closeDateValue > now + 600) {
-          errors.push('close_date должен быть между +5 и +600 секунд от текущего времени.');
+        } else if (closeDateValue < now + 5 || closeDateValue > now + 2628000) {
+          errors.push('close_date должен быть между +5 и +2628000 секунд от текущего времени.');
         }
       }
       break;
@@ -951,6 +1218,16 @@ export function validateRequestForm(form: RequestFormState): string[] {
         case 'getUserProfilePhotos':
           if (!form.userId.trim()) errors.push('Поле user_id обязательно.');
           break;
+        case 'getUserPersonalChatMessages':
+          if (!form.userId.trim()) errors.push('Поле user_id обязательно.');
+          if (
+            !/^\d+$/.test(form.personalChatMessagesLimit.trim()) ||
+            Number(form.personalChatMessagesLimit) < 1 ||
+            Number(form.personalChatMessagesLimit) > 20
+          ) {
+            errors.push('limit должен быть числом от 1 до 20.');
+          }
+          break;
       }
       break;
     case 'admin':
@@ -960,6 +1237,18 @@ export function validateRequestForm(form: RequestFormState): string[] {
         case 'restrictChatMember':
           if (!form.chatId.trim()) errors.push('Поле chat_id обязательно.');
           if (!form.userId.trim()) errors.push('Поле user_id обязательно.');
+          break;
+        case 'getManagedBotAccessSettings':
+          if (!form.userId.trim()) errors.push('Поле user_id обязательно.');
+          break;
+        case 'setManagedBotAccessSettings':
+          if (!form.userId.trim()) errors.push('Поле user_id обязательно.');
+          if (form.addedUserIds.trim() && !isNumberList(form.addedUserIds)) {
+            errors.push('added_user_ids должен содержать ID пользователей через запятую или пробел.');
+          }
+          if (parseNumberList(form.addedUserIds).length > 10) {
+            errors.push('added_user_ids принимает не больше 10 пользователей.');
+          }
           break;
         case 'pinChatMessage':
           if (!form.chatId.trim()) errors.push('Поле chat_id обязательно.');
@@ -986,17 +1275,43 @@ export function validateRequestForm(form: RequestFormState): string[] {
     case 'inline':
       if (config.id === 'answerInlineQuery') {
         if (!form.inlineQueryId.trim()) errors.push('Поле inline_query_id обязательно.');
-        if (!form.inlineResultText.trim()) errors.push('Поле message_text обязательно.');
+        if (!form.inlineUseRichMessage && !form.inlineResultText.trim()) errors.push('Поле message_text обязательно.');
       }
       if (config.id === 'answerWebAppQuery') {
         if (!form.webAppQueryId.trim()) errors.push('Поле web_app_query_id обязательно.');
+      }
+      if (form.inlineUseRichMessage && !form.richMessageContent.trim()) {
+        errors.push('Для input_message_content.rich_message нужен html или markdown.');
+      }
+      break;
+    case 'guest':
+      if (!form.guestQueryId.trim()) errors.push('Поле guest_query_id обязательно.');
+      if (!form.inlineUseRichMessage && !form.inlineResultText.trim()) errors.push('Поле message_text обязательно.');
+      if (form.inlineUseRichMessage && !form.richMessageContent.trim()) {
+        errors.push('Для input_message_content.rich_message нужен html или markdown.');
+      }
+      break;
+    case 'join_request':
+      if (!form.chatJoinRequestQueryId.trim()) {
+        errors.push('Поле chat_join_request_query_id обязательно.');
+      }
+      if (config.id === 'sendChatJoinRequestWebApp') {
+        if (!form.chatJoinRequestWebAppUrl.trim()) {
+          errors.push('Поле web_app_url обязательно.');
+        } else if (!isHttpUrl(form.chatJoinRequestWebAppUrl)) {
+          errors.push('web_app_url должен начинаться с http:// или https://.');
+        }
       }
       break;
     case 'updating':
       switch (config.id) {
         case 'editMessageText':
-          if (!form.text.trim()) errors.push('Поле text обязательно.');
-          if (formatMode) {
+          if (form.editUseRichMessage) {
+            if (!form.richMessageContent.trim()) errors.push('Поле rich_message обязательно.');
+          } else if (!form.text.trim()) {
+            errors.push('Поле text обязательно.');
+          }
+          if (!form.editUseRichMessage && formatMode) {
             errors.push(
               ...validateFormattedText(normalizedText, formatMode, { validatePercentEncoding: false })
                 .map(error => `text: ${error}`)
@@ -1038,6 +1353,15 @@ export function validateRequestForm(form: RequestFormState): string[] {
         case 'deleteMessages':
           if (parseNumberList(form.messageIds).length > 100) {
             errors.push('deleteMessages принимает не больше 100 message_ids.');
+          }
+          break;
+        case 'deleteMessageReaction':
+        case 'deleteAllMessageReactions':
+          if (!form.userId.trim() && !form.actorChatId.trim()) {
+            errors.push('Укажите user_id или actor_chat_id.');
+          }
+          if (form.userId.trim() && form.actorChatId.trim()) {
+            errors.push('Нельзя одновременно указывать user_id и actor_chat_id.');
           }
           break;
       }
