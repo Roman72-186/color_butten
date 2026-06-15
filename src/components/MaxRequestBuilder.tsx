@@ -7,6 +7,7 @@ import styles from '../styles/RequestBuilder.module.css';
 type MaxMethod =
   | 'sendMessage'
   | 'editMessage'
+  | 'deleteMessage'
   | 'getMessage'
   | 'getMe'
   | 'getChats'
@@ -64,6 +65,7 @@ interface MaxMethodConfig {
 const MAX_METHODS: MaxMethodConfig[] = [
   { id: 'sendMessage',    label: 'Отправить сообщение',    description: 'Отправить сообщение пользователю или в чат/канал', category: 'messages', httpMethod: 'POST'   },
   { id: 'editMessage',    label: 'Редактировать сообщение', description: 'Редактировать отправленное сообщение',            category: 'messages', httpMethod: 'PUT'    },
+  { id: 'deleteMessage',  label: 'Удалить сообщение',       description: 'Удалить сообщение по ID',                         category: 'messages', httpMethod: 'DELETE' },
   { id: 'getMessage',     label: 'Получить сообщение',      description: 'Получить сообщение по ID',                        category: 'messages', httpMethod: 'GET'    },
   { id: 'getMe',          label: 'Информация о боте',      description: 'Информация о боте и его настройки',               category: 'bot',      httpMethod: 'GET'    },
   { id: 'getChats',       label: 'Список чатов',           description: 'Список чатов и каналов, где состоит бот',         category: 'chats',    httpMethod: 'GET'    },
@@ -196,6 +198,8 @@ function buildRequest(form: MaxFormState): BuildResult {
       if (att.length > 0) body.attachments = att;
       return { httpMethod: 'PUT', endpoint: `${BASE_URL}/messages?message_id=${messageId}`, body };
     }
+    case 'deleteMessage':
+      return { httpMethod: 'DELETE', endpoint: `${BASE_URL}/messages?message_id=${messageId}`, body: null };
     case 'getMessage':
       return { httpMethod: 'GET', endpoint: `${BASE_URL}/messages/${messageId}`, body: null };
     case 'getMe':
@@ -234,7 +238,7 @@ function buildRequest(form: MaxFormState): BuildResult {
 
 const NEEDS_TARGET   = new Set<MaxMethod>(['sendMessage']);
 const NEEDS_MSG_BODY = new Set<MaxMethod>(['sendMessage', 'editMessage']);
-const NEEDS_MSG_ID   = new Set<MaxMethod>(['editMessage', 'getMessage', 'pinMessage']);
+const NEEDS_MSG_ID   = new Set<MaxMethod>(['editMessage', 'deleteMessage', 'getMessage', 'pinMessage']);
 const NEEDS_CHAT_ID  = new Set<MaxMethod>(['getChat', 'editChat', 'getChatMembers', 'getChatMember', 'addChatMember', 'kickChatMember', 'leaveChat', 'pinMessage', 'unpinMessage']);
 const NEEDS_USER_ID  = new Set<MaxMethod>(['getChatMember', 'addChatMember', 'kickChatMember']);
 const NEEDS_COUNT    = new Set<MaxMethod>(['getChats', 'getChatMembers']);
