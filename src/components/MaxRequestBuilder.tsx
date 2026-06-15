@@ -8,18 +8,34 @@ type MaxMethod =
   | 'sendMessage'
   | 'editMessage'
   | 'deleteMessage'
+  | 'getMessages'
   | 'getMessage'
+  | 'getVideoInfo'
+  | 'answerCallback'
   | 'getMe'
   | 'getChats'
+  | 'getChatByLink'
   | 'getChat'
   | 'editChat'
+  | 'deleteChat'
+  | 'sendChatAction'
+  | 'getPinnedMessage'
+  | 'getMyChatMember'
+  | 'getChatAdmins'
+  | 'addChatAdmin'
+  | 'removeChatAdmin'
   | 'getChatMembers'
   | 'getChatMember'
   | 'addChatMember'
   | 'kickChatMember'
   | 'leaveChat'
   | 'pinMessage'
-  | 'unpinMessage';
+  | 'unpinMessage'
+  | 'getSubscriptions'
+  | 'subscribeWebhook'
+  | 'unsubscribeWebhook'
+  | 'getUpdates'
+  | 'getUploadUrl';
 
 interface MaxImageItem {
   id: string;
@@ -38,16 +54,37 @@ interface MaxFormState {
   buttons: MaxButtonItem[];
   // message_id (editMessage / getMessage / pinMessage)
   messageId: string;
+  // message_ids (getMessages)
+  messageIds: string;
+  // video token (getVideoInfo)
+  videoToken: string;
+  // callback_id (answerCallback)
+  callbackId: string;
   // chat_id (most chat methods)
   chatId: string;
+  // public channel link (getChatByLink)
+  chatLink: string;
   // user_id (addChatMember / kickChatMember)
   userId: string;
+  // sendChatAction
+  chatAction: 'typing_on' | 'sending_photo' | 'sending_video' | 'sending_audio' | 'sending_file';
   // kickChatMember
   blockUser: boolean;
+  // admins
+  adminPermissions: string;
+  adminAlias: string;
   // editChat
   chatTitle: string;
   // pagination (getChats / getChatMembers)
   count: string;
+  marker: string;
+  timeout: string;
+  updateTypes: string;
+  // subscriptions
+  webhookUrl: string;
+  webhookSecret: string;
+  // upload
+  uploadType: 'image' | 'video' | 'audio' | 'file';
   // pinMessage
   pinNotify: boolean;
 }
@@ -58,7 +95,7 @@ interface MaxMethodConfig {
   id: MaxMethod;
   label: string;
   description: string;
-  category: 'messages' | 'chats' | 'bot';
+  category: 'messages' | 'chats' | 'bot' | 'subscriptions' | 'upload';
   httpMethod: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 }
 
@@ -66,11 +103,22 @@ const MAX_METHODS: MaxMethodConfig[] = [
   { id: 'sendMessage',    label: 'Отправить сообщение',    description: 'Отправить сообщение пользователю или в чат/канал', category: 'messages', httpMethod: 'POST'   },
   { id: 'editMessage',    label: 'Редактировать сообщение', description: 'Редактировать отправленное сообщение',            category: 'messages', httpMethod: 'PUT'    },
   { id: 'deleteMessage',  label: 'Удалить сообщение',       description: 'Удалить сообщение по ID',                         category: 'messages', httpMethod: 'DELETE' },
+  { id: 'getMessages',    label: 'Получить сообщения',      description: 'Получить массив сообщений по chat_id или message_ids', category: 'messages', httpMethod: 'GET' },
   { id: 'getMessage',     label: 'Получить сообщение',      description: 'Получить сообщение по ID',                        category: 'messages', httpMethod: 'GET'    },
+  { id: 'getVideoInfo',   label: 'Информация о видео',      description: 'Получить URL и метаданные видео по video token',   category: 'messages', httpMethod: 'GET'    },
+  { id: 'answerCallback', label: 'Ответ на callback',       description: 'Ответить на нажатие callback-кнопки',              category: 'messages', httpMethod: 'POST'   },
   { id: 'getMe',          label: 'Информация о боте',      description: 'Информация о боте и его настройки',               category: 'bot',      httpMethod: 'GET'    },
-  { id: 'getChats',       label: 'Список чатов',           description: 'Список чатов и каналов, где состоит бот',         category: 'chats',    httpMethod: 'GET'    },
+  { id: 'getChats',       label: 'Список чатов (deprecated)', description: 'GET /chats больше не поддерживается с июня 2026', category: 'chats',    httpMethod: 'GET'    },
+  { id: 'getChatByLink',  label: 'Канал по ссылке',        description: 'Получить информацию о канале по публичной ссылке', category: 'chats',    httpMethod: 'GET'    },
   { id: 'getChat',        label: 'Информация о чате',      description: 'Информация о конкретном чате или канале',         category: 'chats',    httpMethod: 'GET'    },
   { id: 'editChat',       label: 'Изменить название чата', description: 'Изменить название чата',                          category: 'chats',    httpMethod: 'PATCH'  },
+  { id: 'deleteChat',     label: 'Удалить чат',            description: 'Удалить групповой чат',                           category: 'chats',    httpMethod: 'DELETE' },
+  { id: 'sendChatAction', label: 'Действие бота',          description: 'typing_on / sending_photo / sending_video и др.', category: 'chats',    httpMethod: 'POST'   },
+  { id: 'getPinnedMessage', label: 'Закреплённое сообщение', description: 'Получить закреплённое сообщение',                category: 'chats',    httpMethod: 'GET'    },
+  { id: 'getMyChatMember', label: 'Членство бота',         description: 'Информация о членстве бота в чате или канале',    category: 'chats',    httpMethod: 'GET'    },
+  { id: 'getChatAdmins',  label: 'Администраторы',         description: 'Список администраторов чата или канала',          category: 'chats',    httpMethod: 'GET'    },
+  { id: 'addChatAdmin',   label: 'Назначить администратора', description: 'Выдать права администратора пользователю или боту', category: 'chats', httpMethod: 'POST' },
+  { id: 'removeChatAdmin', label: 'Снять администратора',  description: 'Отменить права администратора',                   category: 'chats',    httpMethod: 'DELETE' },
   { id: 'getChatMembers', label: 'Участники чата',         description: 'Список участников чата с пагинацией',             category: 'chats',    httpMethod: 'GET'    },
   { id: 'getChatMember',  label: 'Найти участника',        description: 'Проверить конкретного пользователя в чате',       category: 'chats',    httpMethod: 'GET'    },
   { id: 'addChatMember',  label: 'Добавить участника',     description: 'Добавить пользователя в чат',                    category: 'chats',    httpMethod: 'POST'   },
@@ -78,12 +126,19 @@ const MAX_METHODS: MaxMethodConfig[] = [
   { id: 'leaveChat',      label: 'Покинуть чат',           description: 'Бот покидает чат',                               category: 'chats',    httpMethod: 'DELETE' },
   { id: 'pinMessage',     label: 'Закрепить сообщение',    description: 'Закрепить сообщение в чате или канале',          category: 'chats',    httpMethod: 'PUT'    },
   { id: 'unpinMessage',   label: 'Открепить сообщение',    description: 'Открепить закреплённое сообщение',               category: 'chats',    httpMethod: 'DELETE' },
+  { id: 'getSubscriptions', label: 'Webhook подписки',      description: 'Получить все Webhook-подписки',                  category: 'subscriptions', httpMethod: 'GET' },
+  { id: 'subscribeWebhook', label: 'Создать Webhook',       description: 'Подписаться на обновления через Webhook',        category: 'subscriptions', httpMethod: 'POST' },
+  { id: 'unsubscribeWebhook', label: 'Удалить Webhook',     description: 'Отписаться от Webhook по URL',                   category: 'subscriptions', httpMethod: 'DELETE' },
+  { id: 'getUpdates',     label: 'Long Polling',           description: 'Получить обновления для dev/test',               category: 'subscriptions', httpMethod: 'GET' },
+  { id: 'getUploadUrl',   label: 'URL загрузки файла',     description: 'Получить URL для загрузки image/video/audio/file', category: 'upload', httpMethod: 'POST' },
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {
   messages: 'Сообщения',
   bot: 'Бот',
   chats: 'Чаты и каналы',
+  subscriptions: 'Webhook / Long Polling',
+  upload: 'Загрузка файлов',
 };
 
 const HTTP_METHOD_COLORS: Record<string, string> = {
@@ -124,11 +179,24 @@ function createDefaultForm(): MaxFormState {
     images: [],
     buttons: [],
     messageId: '{{message_id}}',
+    messageIds: '{{message_id}}',
+    videoToken: '{{video_token}}',
+    callbackId: '{{callback_id}}',
     chatId: '{{max_chat_id}}',
+    chatLink: '@channel',
     userId: '{{max_id}}',
+    chatAction: 'typing_on',
     blockUser: false,
+    adminPermissions: 'read_all_messages, add_remove_members, add_admins, change_chat_info, pin_message, write',
+    adminAlias: '',
     chatTitle: '',
     count: '50',
+    marker: '',
+    timeout: '30',
+    updateTypes: 'message_created,message_callback',
+    webhookUrl: 'https://example.com/webhook',
+    webhookSecret: '',
+    uploadType: 'file',
     pinNotify: true,
   };
 }
@@ -169,6 +237,18 @@ function buildMessageAttachments(images: MaxImageItem[], buttons: MaxButtonItem[
   return attachments;
 }
 
+function splitCsv(value: string): string[] {
+  return value.split(',').map(item => item.trim()).filter(Boolean);
+}
+
+function buildMessageBody(form: MaxFormState): Record<string, unknown> {
+  const body: Record<string, unknown> = { text: form.text || 'text' };
+  if (form.format) body.format = form.format;
+  const att = buildMessageAttachments(form.images, form.buttons);
+  if (att.length > 0) body.attachments = att;
+  return body;
+}
+
 interface BuildResult {
   httpMethod: string;
   endpoint: string;
@@ -179,37 +259,62 @@ function buildRequest(form: MaxFormState): BuildResult {
   const chatId = form.chatId || '{{max_chat_id}}';
   const userId = form.userId || '{{max_id}}';
   const messageId = form.messageId || '{{message_id}}';
+  const messageIds = splitCsv(form.messageIds || messageId);
 
   switch (form.method) {
     case 'sendMessage': {
       const query = form.targetType === 'user'
         ? `user_id=${form.targetId || '{{max_id}}'}`
         : `chat_id=${form.targetId || '{{max_chat_id}}'}`;
-      const body: Record<string, unknown> = { text: form.text || 'text' };
-      if (form.format) body.format = form.format;
-      const att = buildMessageAttachments(form.images, form.buttons);
-      if (att.length > 0) body.attachments = att;
-      return { httpMethod: 'POST', endpoint: `${BASE_URL}/messages?${query}`, body };
+      return { httpMethod: 'POST', endpoint: `${BASE_URL}/messages?${query}`, body: buildMessageBody(form) };
     }
     case 'editMessage': {
-      const body: Record<string, unknown> = { text: form.text || 'text' };
-      if (form.format) body.format = form.format;
-      const att = buildMessageAttachments(form.images, form.buttons);
-      if (att.length > 0) body.attachments = att;
-      return { httpMethod: 'PUT', endpoint: `${BASE_URL}/messages?message_id=${messageId}`, body };
+      return { httpMethod: 'PUT', endpoint: `${BASE_URL}/messages?message_id=${messageId}`, body: buildMessageBody(form) };
     }
     case 'deleteMessage':
       return { httpMethod: 'DELETE', endpoint: `${BASE_URL}/messages?message_id=${messageId}`, body: null };
+    case 'getMessages': {
+      const params = new URLSearchParams();
+      if (form.messageIds.trim()) {
+        for (const id of messageIds) params.append('message_ids', id);
+      } else {
+        params.set('chat_id', chatId);
+      }
+      return { httpMethod: 'GET', endpoint: `${BASE_URL}/messages?${params.toString()}`, body: null };
+    }
     case 'getMessage':
       return { httpMethod: 'GET', endpoint: `${BASE_URL}/messages/${messageId}`, body: null };
+    case 'getVideoInfo':
+      return { httpMethod: 'GET', endpoint: `${BASE_URL}/videos/${form.videoToken || '{{video_token}}'}`, body: null };
+    case 'answerCallback':
+      return { httpMethod: 'POST', endpoint: `${BASE_URL}/answers?callback_id=${form.callbackId || '{{callback_id}}'}`, body: { message: buildMessageBody(form) } };
     case 'getMe':
       return { httpMethod: 'GET', endpoint: `${BASE_URL}/me`, body: null };
     case 'getChats':
       return { httpMethod: 'GET', endpoint: `${BASE_URL}/chats?count=${form.count || '50'}`, body: null };
+    case 'getChatByLink':
+      return { httpMethod: 'GET', endpoint: `${BASE_URL}/chats/${encodeURIComponent(form.chatLink || '@channel')}`, body: null };
     case 'getChat':
       return { httpMethod: 'GET', endpoint: `${BASE_URL}/chats/${chatId}`, body: null };
     case 'editChat':
       return { httpMethod: 'PATCH', endpoint: `${BASE_URL}/chats/${chatId}`, body: { title: form.chatTitle || 'Новое название' } };
+    case 'deleteChat':
+      return { httpMethod: 'DELETE', endpoint: `${BASE_URL}/chats/${chatId}`, body: null };
+    case 'sendChatAction':
+      return { httpMethod: 'POST', endpoint: `${BASE_URL}/chats/${chatId}/actions`, body: { action: form.chatAction } };
+    case 'getPinnedMessage':
+      return { httpMethod: 'GET', endpoint: `${BASE_URL}/chats/${chatId}/pin`, body: null };
+    case 'getMyChatMember':
+      return { httpMethod: 'GET', endpoint: `${BASE_URL}/chats/${chatId}/members/me`, body: null };
+    case 'getChatAdmins':
+      return { httpMethod: 'GET', endpoint: `${BASE_URL}/chats/${chatId}/members/admins`, body: null };
+    case 'addChatAdmin': {
+      const admin: Record<string, unknown> = { user_id: userId, permissions: splitCsv(form.adminPermissions) };
+      if (form.adminAlias.trim()) admin.alias = form.adminAlias.trim();
+      return { httpMethod: 'POST', endpoint: `${BASE_URL}/chats/${chatId}/members/admins`, body: { admins: [admin] } };
+    }
+    case 'removeChatAdmin':
+      return { httpMethod: 'DELETE', endpoint: `${BASE_URL}/chats/${chatId}/members/admins/${userId}`, body: null };
     case 'getChatMembers':
       return { httpMethod: 'GET', endpoint: `${BASE_URL}/chats/${chatId}/members?count=${form.count || '50'}`, body: null };
     case 'getChatMember':
@@ -231,18 +336,48 @@ function buildRequest(form: MaxFormState): BuildResult {
     }
     case 'unpinMessage':
       return { httpMethod: 'DELETE', endpoint: `${BASE_URL}/chats/${chatId}/pin`, body: null };
+    case 'getSubscriptions':
+      return { httpMethod: 'GET', endpoint: `${BASE_URL}/subscriptions`, body: null };
+    case 'subscribeWebhook': {
+      const body: Record<string, unknown> = { url: form.webhookUrl || 'https://example.com/webhook' };
+      const updateTypes = splitCsv(form.updateTypes);
+      if (updateTypes.length > 0) body.update_types = updateTypes;
+      if (form.webhookSecret.trim()) body.secret = form.webhookSecret.trim();
+      return { httpMethod: 'POST', endpoint: `${BASE_URL}/subscriptions`, body };
+    }
+    case 'unsubscribeWebhook':
+      return { httpMethod: 'DELETE', endpoint: `${BASE_URL}/subscriptions?url=${encodeURIComponent(form.webhookUrl || 'https://example.com/webhook')}`, body: null };
+    case 'getUpdates': {
+      const params = new URLSearchParams();
+      params.set('limit', form.count || '50');
+      params.set('timeout', form.timeout || '30');
+      if (form.marker.trim()) params.set('marker', form.marker.trim());
+      for (const type of splitCsv(form.updateTypes)) params.append('types', type);
+      return { httpMethod: 'GET', endpoint: `${BASE_URL}/updates?${params.toString()}`, body: null };
+    }
+    case 'getUploadUrl':
+      return { httpMethod: 'POST', endpoint: `${BASE_URL}/uploads?type=${form.uploadType}`, body: null };
   }
 }
 
 // ─── Field visibility helpers ────────────────────────────────────────────────
 
 const NEEDS_TARGET   = new Set<MaxMethod>(['sendMessage']);
-const NEEDS_MSG_BODY = new Set<MaxMethod>(['sendMessage', 'editMessage']);
+const NEEDS_MSG_BODY = new Set<MaxMethod>(['sendMessage', 'editMessage', 'answerCallback']);
 const NEEDS_MSG_ID   = new Set<MaxMethod>(['editMessage', 'deleteMessage', 'getMessage', 'pinMessage']);
-const NEEDS_CHAT_ID  = new Set<MaxMethod>(['getChat', 'editChat', 'getChatMembers', 'getChatMember', 'addChatMember', 'kickChatMember', 'leaveChat', 'pinMessage', 'unpinMessage']);
-const NEEDS_USER_ID  = new Set<MaxMethod>(['getChatMember', 'addChatMember', 'kickChatMember']);
+const NEEDS_MESSAGE_IDS = new Set<MaxMethod>(['getMessages']);
+const NEEDS_VIDEO_TOKEN = new Set<MaxMethod>(['getVideoInfo']);
+const NEEDS_CALLBACK_ID = new Set<MaxMethod>(['answerCallback']);
+const NEEDS_CHAT_ID  = new Set<MaxMethod>(['getMessages', 'getChat', 'editChat', 'deleteChat', 'sendChatAction', 'getPinnedMessage', 'getMyChatMember', 'getChatAdmins', 'addChatAdmin', 'removeChatAdmin', 'getChatMembers', 'getChatMember', 'addChatMember', 'kickChatMember', 'leaveChat', 'pinMessage', 'unpinMessage']);
+const NEEDS_CHAT_LINK = new Set<MaxMethod>(['getChatByLink']);
+const NEEDS_USER_ID  = new Set<MaxMethod>(['getChatMember', 'addChatMember', 'kickChatMember', 'addChatAdmin', 'removeChatAdmin']);
 const NEEDS_COUNT    = new Set<MaxMethod>(['getChats', 'getChatMembers']);
 const NEEDS_TITLE    = new Set<MaxMethod>(['editChat']);
+const NEEDS_CHAT_ACTION = new Set<MaxMethod>(['sendChatAction']);
+const NEEDS_ADMIN_BODY = new Set<MaxMethod>(['addChatAdmin']);
+const NEEDS_WEBHOOK = new Set<MaxMethod>(['subscribeWebhook', 'unsubscribeWebhook']);
+const NEEDS_UPDATES = new Set<MaxMethod>(['getUpdates']);
+const NEEDS_UPLOAD = new Set<MaxMethod>(['getUploadUrl']);
 const NEEDS_PIN_OPT  = new Set<MaxMethod>(['pinMessage']);
 const NEEDS_BLOCK_OPT = new Set<MaxMethod>(['kickChatMember']);
 
@@ -312,7 +447,7 @@ export function MaxRequestBuilder() {
 
 
   // Group methods by category for the select
-  const categories = ['messages', 'bot', 'chats'] as const;
+  const categories = ['messages', 'bot', 'chats', 'subscriptions', 'upload'] as const;
 
   return (
     <div className={styles.builder}>
@@ -436,6 +571,79 @@ export function MaxRequestBuilder() {
         </div>
       )}
 
+      {/* message_ids */}
+      {NEEDS_MESSAGE_IDS.has(form.method) && (
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>Message IDs</div>
+          <div className={styles.grid}>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>message_ids</label>
+              <input
+                type="text"
+                value={form.messageIds}
+                placeholder="{{message_id}}, {{message_id_2}}"
+                onChange={e => updateField('messageIds', e.target.value)}
+              />
+              <div className={styles.fieldHint}>Если очистить поле, запрос будет построен по chat_id.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* video_token */}
+      {NEEDS_VIDEO_TOKEN.has(form.method) && (
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>Video</div>
+          <div className={styles.grid}>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>video_token</label>
+              <input
+                type="text"
+                value={form.videoToken}
+                placeholder="{{video_token}}"
+                onChange={e => updateField('videoToken', e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* callback_id */}
+      {NEEDS_CALLBACK_ID.has(form.method) && (
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>Callback</div>
+          <div className={styles.grid}>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>callback_id</label>
+              <input
+                type="text"
+                value={form.callbackId}
+                placeholder="{{callback_id}}"
+                onChange={e => updateField('callbackId', e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* chat link */}
+      {NEEDS_CHAT_LINK.has(form.method) && (
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>Public link</div>
+          <div className={styles.grid}>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>chatLink</label>
+              <input
+                type="text"
+                value={form.chatLink}
+                placeholder="@channel"
+                onChange={e => updateField('chatLink', e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* user_id */}
       {NEEDS_USER_ID.has(form.method) && (
         <div className={styles.card}>
@@ -469,6 +677,165 @@ export function MaxRequestBuilder() {
                 onChange={e => updateField('count', e.target.value)}
               />
               <div className={styles.fieldHint}>Максимум 100.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* chat action */}
+      {NEEDS_CHAT_ACTION.has(form.method) && (
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>Action</div>
+          <div className={styles.grid}>
+            <div className={styles.field}>
+              <label className={styles.label}>action</label>
+              <select
+                value={form.chatAction}
+                onChange={e => updateField('chatAction', e.target.value as MaxFormState['chatAction'])}
+              >
+                <option value="typing_on">typing_on</option>
+                <option value="sending_photo">sending_photo</option>
+                <option value="sending_video">sending_video</option>
+                <option value="sending_audio">sending_audio</option>
+                <option value="sending_file">sending_file</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* admin */}
+      {NEEDS_ADMIN_BODY.has(form.method) && (
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>Admin permissions</div>
+          <div className={styles.grid}>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>permissions</label>
+              <input
+                type="text"
+                value={form.adminPermissions}
+                placeholder="read_all_messages, write"
+                onChange={e => updateField('adminPermissions', e.target.value)}
+              />
+              <div className={styles.fieldHint}>Права через запятую.</div>
+            </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>alias</label>
+              <input
+                type="text"
+                value={form.adminAlias}
+                placeholder="optional"
+                onChange={e => updateField('adminAlias', e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* webhook */}
+      {NEEDS_WEBHOOK.has(form.method) && (
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>Webhook</div>
+          <div className={styles.grid}>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>url</label>
+              <input
+                type="text"
+                value={form.webhookUrl}
+                placeholder="https://example.com/webhook"
+                onChange={e => updateField('webhookUrl', e.target.value)}
+              />
+            </div>
+            {form.method === 'subscribeWebhook' && (
+              <>
+                <div className={styles.fieldFull}>
+                  <label className={styles.label}>update_types</label>
+                  <input
+                    type="text"
+                    value={form.updateTypes}
+                    placeholder="message_created,message_callback"
+                    onChange={e => updateField('updateTypes', e.target.value)}
+                  />
+                  <div className={styles.fieldHint}>Типы обновлений через запятую.</div>
+                </div>
+                <div className={styles.fieldFull}>
+                  <label className={styles.label}>secret</label>
+                  <input
+                    type="text"
+                    value={form.webhookSecret}
+                    placeholder="optional"
+                    onChange={e => updateField('webhookSecret', e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* long polling */}
+      {NEEDS_UPDATES.has(form.method) && (
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>Long Polling</div>
+          <div className={styles.grid}>
+            <div className={styles.field}>
+              <label className={styles.label}>limit</label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={form.count}
+                onChange={e => updateField('count', e.target.value)}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>timeout</label>
+              <input
+                type="number"
+                min={0}
+                max={90}
+                value={form.timeout}
+                onChange={e => updateField('timeout', e.target.value)}
+              />
+            </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>marker</label>
+              <input
+                type="text"
+                value={form.marker}
+                placeholder="optional"
+                onChange={e => updateField('marker', e.target.value)}
+              />
+            </div>
+            <div className={styles.fieldFull}>
+              <label className={styles.label}>types</label>
+              <input
+                type="text"
+                value={form.updateTypes}
+                placeholder="message_created,message_callback"
+                onChange={e => updateField('updateTypes', e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* upload */}
+      {NEEDS_UPLOAD.has(form.method) && (
+        <div className={styles.card}>
+          <div className={styles.sectionTitle}>Upload</div>
+          <div className={styles.grid}>
+            <div className={styles.field}>
+              <label className={styles.label}>type</label>
+              <select
+                value={form.uploadType}
+                onChange={e => updateField('uploadType', e.target.value as MaxFormState['uploadType'])}
+              >
+                <option value="image">image</option>
+                <option value="video">video</option>
+                <option value="audio">audio</option>
+                <option value="file">file</option>
+              </select>
             </div>
           </div>
         </div>
