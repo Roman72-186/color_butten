@@ -12,6 +12,7 @@ import {
   type FormatType,
 } from '../utils/textFormatting';
 import { EmojiPicker } from './EmojiPicker';
+import { TextMarkupHelp } from './request-builder/TextMarkupHelp';
 import styles from '../styles/TextFormatter.module.css';
 
 export function TextFormatter() {
@@ -204,6 +205,8 @@ export function TextFormatter() {
         placeholder="Вставьте текст с форматированием или введите вручную..."
         rows={8}
       />
+
+      <TextMarkupHelp platform="telegram" mode={mode === 'html' ? 'HTML' : 'MarkdownV2'} />
 
       {text.trim() && (
         <div className={styles.preview}>
