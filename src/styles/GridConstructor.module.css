@@ -78,23 +78,21 @@
 .cellInactive:hover {
   animation: none;
   border-color: var(--accent);
-  background-color: rgba(100, 148, 255, 0.08);
+  background-color: var(--accent-soft);
   color: var(--accent);
 }
 
 .cellActive {
   border: 1px solid var(--accent);
-  background-color: rgba(100, 148, 255, 0.12);
+  background-color: var(--accent-soft);
   color: var(--accent);
-  box-shadow: 0 0 6px rgba(100, 148, 255, 0.2);
   font-weight: 700;
 }
 
 .cellActive:hover {
-  background-color: rgba(224, 96, 110, 0.12);
+  background-color: rgba(217,92,110,0.12);
   border-color: var(--danger);
   color: var(--danger);
-  box-shadow: 0 0 6px rgba(224, 96, 110, 0.2);
 }
 
 /* ── Hint ────────────────────────────────────────────────────────────────── */

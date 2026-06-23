@@ -3,6 +3,10 @@ import { generateId, groupButtonsByRow } from './helpers';
 import { buttonToJson } from './generateJson';
 import type { ButtonConfig } from '../types';
 import { getFormatModeFromParseMode, normalizeTextFormattingInput, validateFormattedText } from './textFormatting';
+import {
+  normalizeTelegramRichHtml,
+  validateTelegramRichHtmlCompatibility,
+} from './telegramRichHtml';
 import type {
   AlbumItem,
   BotCommandItem,
@@ -176,8 +180,9 @@ function getPollCorrectOptionIndexes(form: RequestFormState): number[] {
 
 function buildInputRichMessage(form: RequestFormState): Record<string, unknown> {
   const key = form.richMessageFormat === 'markdown' ? 'markdown' : 'html';
+  const content = form.richMessageContent.trim();
   const richMessage: Record<string, unknown> = {
-    [key]: form.richMessageContent.trim(),
+    [key]: key === 'html' ? normalizeTelegramRichHtml(content) : content,
   };
 
   if (form.richMessageIsRtl) {
@@ -887,6 +892,11 @@ export function validateRequestForm(form: RequestFormState): string[] {
   const formatMode = getFormatModeFromParseMode(form.parseMode);
   const normalizedText = formatMode ? normalizeTextFormattingInput(form.text, formatMode) : form.text;
   const normalizedCaption = formatMode ? normalizeTextFormattingInput(form.caption, formatMode) : form.caption;
+  const validateRichHtml = () => {
+    if (form.richMessageFormat === 'html') {
+      errors.push(...validateTelegramRichHtmlCompatibility(form.richMessageContent));
+    }
+  };
 
   if (isSendCategory(config.category)) {
     if (!form.chatId.trim()) {
@@ -953,6 +963,7 @@ export function validateRequestForm(form: RequestFormState): string[] {
       if (!form.richMessageContent.trim()) {
         errors.push('Для rich_message нужен html или markdown.');
       }
+      validateRichHtml();
       if (
         config.id === 'sendRichMessageDraft' &&
         (!/^\d+$/.test(form.richMessageDraftId.trim()) || Number(form.richMessageDraftId) === 0)
@@ -1283,6 +1294,7 @@ export function validateRequestForm(form: RequestFormState): string[] {
       if (form.inlineUseRichMessage && !form.richMessageContent.trim()) {
         errors.push('Для input_message_content.rich_message нужен html или markdown.');
       }
+      if (form.inlineUseRichMessage) validateRichHtml();
       break;
     case 'guest':
       if (!form.guestQueryId.trim()) errors.push('Поле guest_query_id обязательно.');
@@ -1290,6 +1302,7 @@ export function validateRequestForm(form: RequestFormState): string[] {
       if (form.inlineUseRichMessage && !form.richMessageContent.trim()) {
         errors.push('Для input_message_content.rich_message нужен html или markdown.');
       }
+      if (form.inlineUseRichMessage) validateRichHtml();
       break;
     case 'join_request':
       if (!form.chatJoinRequestQueryId.trim()) {
@@ -1308,6 +1321,7 @@ export function validateRequestForm(form: RequestFormState): string[] {
         case 'editMessageText':
           if (form.editUseRichMessage) {
             if (!form.richMessageContent.trim()) errors.push('Поле rich_message обязательно.');
+            validateRichHtml();
           } else if (!form.text.trim()) {
             errors.push('Поле text обязательно.');
           }

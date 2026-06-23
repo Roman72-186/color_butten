@@ -4,13 +4,12 @@
   border-radius: var(--radius);
   padding: 16px;
   margin-bottom: 10px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
   animation: cyber-slide .3s ease;
 }
 
 .card:hover {
-  border-color: rgba(0,245,255,.4);
-  box-shadow: 0 0 0 1px rgba(0,245,255,.1), 0 0 20px rgba(0,245,255,.06);
+  border-color: var(--border-neon);
 }
 
 .cardHeader {
@@ -21,11 +20,10 @@
 }
 
 .cardTitle {
-  font-family: 'Orbitron', monospace;
+  font-family: 'Geist', sans-serif;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--accent);
-  letter-spacing: 0.5px;
 }
 
 .badge {
@@ -35,8 +33,6 @@
   font-size: 12px;
   font-weight: 700;
   color: #000;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .rowBadge {
@@ -56,13 +52,12 @@
   font-size: 14px;
   color: var(--text-dim);
   background: transparent;
-  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .deleteBtn:hover {
   background: rgba(255,34,85,.15);
   color: var(--danger);
-  box-shadow: var(--glow-red);
 }
 
 .fields {
@@ -92,6 +87,4 @@
   font-size: 12px;
   color: var(--text-muted);
   margin-bottom: 5px;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
 }

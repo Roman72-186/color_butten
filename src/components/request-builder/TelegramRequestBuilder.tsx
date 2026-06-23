@@ -36,6 +36,7 @@ import { FormattedTextField } from '../FormattedTextField';
 import { ChatIdSelector } from './ChatIdSelector';
 import { InlineKeyboardSection } from './InlineKeyboardSection';
 import { TextMarkupHelp } from './TextMarkupHelp';
+import { RichMarkupHelp } from './RichMarkupHelp';
 import styles from '../../styles/RequestBuilder.module.css';
 
 function getSourcePlaceholder(mode: MediaSourceMode, fieldName: string): string {
@@ -307,12 +308,20 @@ export function TelegramRequestBuilder() {
           className={styles.textarea}
           value={form.richMessageContent}
           rows={7}
-          placeholder={form.richMessageFormat === 'html' ? '<p>Текст rich message</p>' : '# Заголовок\n\nТекст'}
+          placeholder={form.richMessageFormat === 'html'
+            ? '<b>Заголовок</b><br><br><i>Подзаголовок</i><br><br><blockquote>Текст карточки</blockquote>'
+            : '# Заголовок\n\nТекст'}
           onChange={e => updateField('richMessageContent', e.target.value)}
         />
         <div className={styles.fieldHint}>
-          Bot API 10.1: rich message поддерживает структурированный текст, таблицы, цитаты и медиа-блоки через формат Telegram.
+          {form.richMessageFormat === 'html'
+            ? 'Bot API 10.1: доступны заголовки, списки, таблицы, цитаты, <details>, code/<pre>, медиа и LaTeX. Для HTTP-блока переносы автоматически станут <br>, пустые строки — <br><br>.'
+            : 'Bot API 10.1: Rich Markdown (GitHub Flavored Markdown), допускает HTML-теги внутри текста.'}
         </div>
+      </div>
+
+      <div className={styles.fieldFull}>
+        <RichMarkupHelp format={form.richMessageFormat} />
       </div>
 
       <div className={styles.fieldFull}>

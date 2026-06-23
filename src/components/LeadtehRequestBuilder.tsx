@@ -152,6 +152,26 @@ function tryParseJson(raw: string): unknown {
   }
 }
 
+function appendFiltersToEndpoint(endpoint: string, rawFilters: string): string {
+  const filters = tryParseJson(rawFilters);
+  if (!filters || typeof filters !== 'object' || Array.isArray(filters)) return endpoint;
+
+  for (const [field, rawValue] of Object.entries(filters)) {
+    const values = Array.isArray(rawValue) ? rawValue : [rawValue];
+
+    for (const value of values) {
+      if (value === null || value === undefined) continue;
+
+      // LEADTEX ожидает фильтры в URL в формате filters[field]=value.
+      const suffix = Array.isArray(rawValue) ? '[]' : '';
+      const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      endpoint += `&filters[${field}]${suffix}=${stringValue}`;
+    }
+  }
+
+  return endpoint;
+}
+
 function buildRequest(form: LeadtehFormState): LeadtehBuildResult {
   const method = form.method;
   const httpMethod = LT_METHODS.find(m => m.id === method)!.httpMethod;
@@ -207,8 +227,6 @@ function buildRequest(form: LeadtehFormState): LeadtehBuildResult {
       if (form.schemaId.trim()) body.schema_id = form.schemaId.trim();
       if (form.orderBy.trim()) body.order_by = form.orderBy.trim();
       if (form.page.trim()) body.page = parseInt(form.page.trim());
-      const filtersParsed = tryParseJson(form.filtersJson);
-      if (filtersParsed !== undefined) body.filters = filtersParsed;
     } else if (method === 'addListItem') {
       if (form.schemaId.trim()) body.schema_id = form.schemaId.trim();
       const dataParsed = tryParseJson(form.dataJson);
@@ -236,12 +254,14 @@ function buildRequest(form: LeadtehFormState): LeadtehBuildResult {
       if (form.description.trim()) body.description = form.description.trim();
     } else if (method === 'getReferrals' || method === 'getCountReferrals') {
       body.contact_id = contactId;
-      const filtersParsed = tryParseJson(form.filtersJson);
-      if (filtersParsed !== undefined) body.filters = filtersParsed;
       if (method === 'getReferrals' && form.page.trim()) body.page = parseInt(form.page.trim());
     } else if (method === 'decodeShortLink') {
       if (form.url.trim()) body.url = form.url.trim();
     }
+  }
+
+  if (NEEDS_FILTERS_JSON.has(method)) {
+    endpoint = appendFiltersToEndpoint(endpoint, form.filtersJson);
   }
 
   const headers: Record<string, string> = { 'X-Requested-With': 'XMLHttpRequest' };
@@ -720,14 +740,15 @@ export function LeadtehRequestBuilder() {
       {NEEDS_FILTERS_JSON.has(form.method) && (
         <div className={styles.card}>
           <div className={styles.sectionTitle}>Фильтры</div>
+          <div className={styles.sectionText}>Поля будут добавлены в URL как filters[field]=value.</div>
           <div className={styles.grid}>
             <div className={styles.fieldFull}>
-              <label className={styles.label}>filters (JSON)</label>
+              <label className={styles.label}>filters (JSON → URL)</label>
               <textarea
                 className={styles.textarea}
                 rows={4}
                 value={form.filtersJson}
-                placeholder='{"field_name":"value"}'
+                placeholder={form.method === 'getListItems' ? '{"id_voditelya":"{{max_id}}"}' : '{"tag_name":["Горячий","Холодный"]}'}
                 onChange={e => updateField('filtersJson', e.target.value)}
               />
             </div>
