@@ -325,22 +325,32 @@ export function TelegramRequestBuilder() {
       </div>
 
       <div className={styles.fieldFull}>
-        <div className={styles.checkboxRow}>
-          <label className={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              checked={form.richMessageIsRtl}
-              onChange={e => updateField('richMessageIsRtl', e.target.checked)}
-            />
-            <span>is_rtl</span>
+        <div className={styles.optionGrid}>
+          <label className={styles.optionCard}>
+            <span className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={form.richMessageIsRtl}
+                onChange={e => updateField('richMessageIsRtl', e.target.checked)}
+              />
+              <span>is_rtl</span>
+            </span>
+            <span className={styles.optionHint}>
+              Показывать сообщение справа налево — для арабского, иврита, фарси. Для русского/английского не нужно.
+            </span>
           </label>
-          <label className={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              checked={form.richMessageSkipEntityDetection}
-              onChange={e => updateField('richMessageSkipEntityDetection', e.target.checked)}
-            />
-            <span>skip_entity_detection</span>
+          <label className={styles.optionCard}>
+            <span className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={form.richMessageSkipEntityDetection}
+                onChange={e => updateField('richMessageSkipEntityDetection', e.target.checked)}
+              />
+              <span>skip_entity_detection</span>
+            </span>
+            <span className={styles.optionHint}>
+              Отключить автоопределение ссылок, @упоминаний, #хэштегов, $кэштегов, /команд, телефонов и карт в тексте.
+            </span>
           </label>
         </div>
       </div>
