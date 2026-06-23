@@ -11,21 +11,47 @@ import {
   type FormatMode,
   type FormatType,
 } from '../utils/textFormatting';
+import { validateTelegramRichHtmlCompatibility } from '../utils/telegramRichHtml';
+import type { RichMessageFormat } from '../types/requestBuilder';
 import { EmojiPicker } from './EmojiPicker';
 import { TextMarkupHelp } from './request-builder/TextMarkupHelp';
+import { RichMarkupHelp } from './request-builder/RichMarkupHelp';
 import styles from '../styles/TextFormatter.module.css';
+
+// Режим редактора: обычное сообщение (HTML/MarkdownV2) или rich-сообщение Bot API 10.1.
+// Rich живёт по другим правилам: блочная разметка (таблицы, <pre>, заголовки, LaTeX),
+// копирование «как есть» без %0a-склейки, без обычных кнопок формата (они дают
+// MarkdownV2-синтаксис, несовместимый с GitHub-style rich markdown).
+type EditorMode = 'html' | 'markdown' | 'rich-html' | 'rich-markdown';
 
 export function TextFormatter() {
   const [text, setText] = useState('');
-  const [mode, setMode] = useState<FormatMode>('html');
+  const [mode, setMode] = useState<EditorMode>('html');
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastSelectionRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
 
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
 
-  const normalizedText = useMemo(() => normalizeTextFormattingInput(text, mode), [text, mode]);
-  const textErrors = useMemo(() => validateFormattedText(normalizedText, mode), [normalizedText, mode]);
+  const isRich = mode === 'rich-html' || mode === 'rich-markdown';
+  // Обычные функции форматирования типизированы FormatMode — в rich-режиме они не
+  // вызываются (тулбар/конвертация вставки скрыты), но значение нужно для типов.
+  const normalMode: FormatMode = mode === 'markdown' ? 'markdown' : 'html';
+  const richFormat: RichMessageFormat = mode === 'rich-markdown' ? 'markdown' : 'html';
+
+  const normalizedText = useMemo(
+    () => (isRich ? text : normalizeTextFormattingInput(text, normalMode)),
+    [isRich, text, normalMode],
+  );
+  const textErrors = useMemo(
+    () => (isRich ? [] : validateFormattedText(normalizedText, normalMode)),
+    [isRich, normalizedText, normalMode],
+  );
+  // Псевдотаблицы из box-drawing — мягкое предупреждение, копирование не блокирует.
+  const richWarnings = useMemo(
+    () => (mode === 'rich-html' ? validateTelegramRichHtmlCompatibility(text) : []),
+    [mode, text],
+  );
 
   const trackSelection = useCallback(() => {
     const textarea = textareaRef.current;
@@ -47,7 +73,7 @@ export function TextFormatter() {
     }
 
     const result = applyTextFormat(
-      text, mode, type,
+      text, normalMode, type,
       textarea.selectionStart, textarea.selectionEnd, url
     );
     setText(result.text);
@@ -58,7 +84,7 @@ export function TextFormatter() {
       textarea.selectionEnd = result.selectionEnd;
       lastSelectionRef.current = { start: result.selectionStart, end: result.selectionEnd };
     });
-  }, [text, mode]);
+  }, [text, normalMode]);
 
   const handleEmojiInsert = useCallback((fallback: string, id: string) => {
     const { start, end } = lastSelectionRef.current;
@@ -68,7 +94,7 @@ export function TextFormatter() {
 
     if (id) {
       // Premium animated emoji
-      const result = insertCustomEmoji(text, mode, id, fallback, start, end);
+      const result = insertCustomEmoji(text, normalMode, id, fallback, start, end);
       newText = result.text;
       newPos = result.selectionStart;
     } else {
@@ -88,9 +114,13 @@ export function TextFormatter() {
       textarea.selectionEnd = newPos;
       lastSelectionRef.current = { start: newPos, end: newPos };
     });
-  }, [text, mode]);
+  }, [text, normalMode]);
 
   const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    // В rich-режиме не конвертируем вставку в обычную разметку — пользователь
+    // вставляет rich-HTML/Markdown как есть (браузерная вставка по умолчанию).
+    if (isRich) return;
+
     const html = e.clipboardData.getData('text/html');
     const plain = e.clipboardData.getData('text/plain');
 
@@ -99,7 +129,7 @@ export function TextFormatter() {
 
     e.preventDefault();
 
-    const converted = convertClipboardHtml(markup, mode);
+    const converted = convertClipboardHtml(markup, normalMode);
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -115,9 +145,10 @@ export function TextFormatter() {
       textarea.focus();
       lastSelectionRef.current = { start: newPos, end: newPos };
     });
-  }, [text, mode]);
+  }, [isRich, text, normalMode]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isRich) return;
     if (e.ctrlKey || e.metaKey) {
       switch (e.key) {
         case 'b': e.preventDefault(); applyFormat('bold'); break;
@@ -125,28 +156,45 @@ export function TextFormatter() {
         case 'u': e.preventDefault(); applyFormat('underline'); break;
       }
     }
-  }, [applyFormat]);
+  }, [isRich, applyFormat]);
 
   const handleCopy = useCallback(() => {
-    if (!text.trim() || textErrors.length > 0) return;
+    if (!text.trim()) return;
+
+    // Rich копируется как есть: без %0a-склейки — содержимое идёт в поле
+    // rich_message.html / .markdown, где переносы строк осмысленны сами по себе.
+    if (isRich) {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(() => undefined);
+      return;
+    }
+
+    if (textErrors.length > 0) return;
     const output = normalizedText.replace(/\n/g, '%0a');
     navigator.clipboard.writeText(output).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }).catch(() => undefined);
-  }, [normalizedText, text, textErrors]);
+  }, [isRich, normalizedText, text, textErrors]);
 
   const handleShare = useCallback(() => {
     const url = 'https://t.me/share/url?url=&text=' + encodeURIComponent(normalizedText);
     window.open(url, '_blank');
   }, [normalizedText]);
 
-  const previewHtml = useMemo(() => textToPreviewHtml(normalizedText, mode), [normalizedText, mode]);
+  const previewHtml = useMemo(
+    () => (isRich ? '' : textToPreviewHtml(normalizedText, normalMode)),
+    [isRich, normalizedText, normalMode],
+  );
 
   const handleBlur = useCallback(() => {
     trackSelection();
     if (normalizedText !== text) setText(normalizedText);
   }, [normalizedText, text, trackSelection]);
+
+  const copyDisabled = isRich ? !text.trim() : (!text.trim() || textErrors.length > 0);
 
   return (
     <div className={styles.formatter}>
@@ -154,42 +202,48 @@ export function TextFormatter() {
         <select
           className={styles.modeSelectEl}
           value={mode}
-          onChange={e => setMode(e.target.value as FormatMode)}
+          onChange={e => setMode(e.target.value as EditorMode)}
         >
           <option value="html">HTML</option>
           <option value="markdown">MarkdownV2</option>
+          <option value="rich-html">Rich HTML (10.1)</option>
+          <option value="rich-markdown">Rich Markdown (10.1)</option>
         </select>
       </div>
 
-      <div className={styles.toolbar}>
-        {FORMAT_BUTTONS.map(btn => (
+      {!isRich && (
+        <div className={styles.toolbar}>
+          {FORMAT_BUTTONS.map(btn => (
+            <button
+              key={btn.type}
+              className={styles.fmtBtn}
+              style={btn.style}
+              title={btn.title}
+              onClick={() => applyFormat(btn.type)}
+            >
+              {btn.label}
+            </button>
+          ))}
           <button
-            key={btn.type}
-            className={styles.fmtBtn}
-            style={btn.style}
-            title={btn.title}
-            onClick={() => applyFormat(btn.type)}
+            className={`${styles.fmtBtn} ${emojiPickerOpen ? styles.fmtBtnActive : ''}`}
+            title="Вставить emoji"
+            onClick={() => setEmojiPickerOpen(v => !v)}
           >
-            {btn.label}
+            ✨ emoji
           </button>
-        ))}
-        <button
-          className={`${styles.fmtBtn} ${emojiPickerOpen ? styles.fmtBtnActive : ''}`}
-          title="Вставить emoji"
-          onClick={() => setEmojiPickerOpen(v => !v)}
-        >
-          ✨ emoji
-        </button>
-      </div>
+        </div>
+      )}
 
-      {emojiPickerOpen && (
+      {!isRich && emojiPickerOpen && (
         <EmojiPicker onInsert={handleEmojiInsert} />
       )}
 
-      <div className={styles.hint}>
-        Вставка из Word, Google Docs и браузеров автоматически переносит жирный, курсив,
-        ссылки и абзацы. Telegram Desktop не передаёт форматирование в буфер обмена.
-      </div>
+      {!isRich && (
+        <div className={styles.hint}>
+          Вставка из Word, Google Docs и браузеров автоматически переносит жирный, курсив,
+          ссылки и абзацы. Telegram Desktop не передаёт форматирование в буфер обмена.
+        </div>
+      )}
 
       <textarea
         ref={textareaRef}
@@ -202,13 +256,17 @@ export function TextFormatter() {
         onSelect={trackSelection}
         onPaste={handlePaste}
         onBlur={handleBlur}
-        placeholder="Вставьте текст с форматированием или введите вручную..."
+        placeholder={isRich
+          ? 'Введите rich-разметку (заголовки, таблицы, списки, цитаты, LaTeX)...'
+          : 'Вставьте текст с форматированием или введите вручную...'}
         rows={8}
       />
 
-      <TextMarkupHelp platform="telegram" mode={mode === 'html' ? 'HTML' : 'MarkdownV2'} />
+      {isRich
+        ? <RichMarkupHelp format={richFormat} />
+        : <TextMarkupHelp platform="telegram" mode={mode === 'html' ? 'HTML' : 'MarkdownV2'} />}
 
-      {text.trim() && (
+      {!isRich && text.trim() && (
         <div className={styles.preview}>
           <div className={styles.previewTitle}>Предпросмотр</div>
           <div
@@ -218,7 +276,17 @@ export function TextFormatter() {
         </div>
       )}
 
-      {text.trim() && (
+      {mode === 'rich-html' && text.trim() && (
+        <div className={styles.preview}>
+          <div className={styles.previewTitle}>Предпросмотр (приблизительно, как отрисует браузер)</div>
+          <div
+            className={styles.previewContent}
+            dangerouslySetInnerHTML={{ __html: text }}
+          />
+        </div>
+      )}
+
+      {!isRich && text.trim() && (
         <div className={styles.output}>
           <div className={styles.previewTitle}>Что скопируется</div>
           <div className={styles.outputContent}>
@@ -232,10 +300,18 @@ export function TextFormatter() {
         </div>
       )}
 
-      {textErrors.length > 0 && (
+      {!isRich && textErrors.length > 0 && (
         <div className={styles.errors}>
           {textErrors.map((err, i) => (
             <div key={i} className={styles.errorItem}>{err}</div>
+          ))}
+        </div>
+      )}
+
+      {isRich && richWarnings.length > 0 && (
+        <div className={styles.hint}>
+          {richWarnings.map((w, i) => (
+            <div key={i}>{w}</div>
           ))}
         </div>
       )}
@@ -244,17 +320,19 @@ export function TextFormatter() {
         <button
           className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
           onClick={handleCopy}
-          disabled={!text.trim() || textErrors.length > 0}
+          disabled={copyDisabled}
         >
-          {copied ? '\u2713 Скопировано' : 'Скопировать'}
+          {copied ? '✓ Скопировано' : 'Скопировать'}
         </button>
-        <button
-          className={styles.shareBtn}
-          onClick={handleShare}
-          disabled={!text.trim() || textErrors.length > 0}
-        >
-          Поделиться
-        </button>
+        {!isRich && (
+          <button
+            className={styles.shareBtn}
+            onClick={handleShare}
+            disabled={!text.trim() || textErrors.length > 0}
+          >
+            Поделиться
+          </button>
+        )}
       </div>
     </div>
   );
