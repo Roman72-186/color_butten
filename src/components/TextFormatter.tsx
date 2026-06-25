@@ -23,19 +23,121 @@ import styles from '../styles/TextFormatter.module.css';
 // копирование «как есть» без %0a-склейки, без обычных кнопок формата (они дают
 // MarkdownV2-синтаксис, несовместимый с GitHub-style rich markdown).
 type EditorMode = 'html' | 'markdown' | 'rich-html' | 'rich-markdown';
-type RichFormatType = 'bold' | 'italic' | 'blockquote' | 'br' | 'paragraph';
+type RichFormatType =
+  | 'bold'
+  | 'italic'
+  | 'underline'
+  | 'strike'
+  | 'mark'
+  | 'spoiler'
+  | 'code'
+  | 'pre'
+  | 'sub'
+  | 'sup'
+  | 'math'
+  | 'link'
+  | 'reference'
+  | 'anchor'
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'h4'
+  | 'h5'
+  | 'h6'
+  | 'paragraph'
+  | 'blockquote'
+  | 'aside'
+  | 'details'
+  | 'footer'
+  | 'hr'
+  | 'ul'
+  | 'ol'
+  | 'task'
+  | 'taskDone'
+  | 'br'
+  | 'blank';
 
-const RICH_FORMAT_BUTTONS: Array<{
+interface RichFormatButton {
   type: RichFormatType;
   label: string;
   title: string;
-}> = [
-  { type: 'bold', label: 'B', title: 'Жирный' },
-  { type: 'italic', label: 'I', title: 'Курсив' },
-  { type: 'blockquote', label: 'quote', title: 'Цитата / blockquote' },
-  { type: 'br', label: 'br', title: 'Перенос строки' },
-  { type: 'paragraph', label: 'br br', title: 'Пустая строка / новый абзац' },
+}
+
+const RICH_FORMAT_GROUPS: Array<{ title: string; buttons: RichFormatButton[] }> = [
+  {
+    title: 'Текст',
+    buttons: [
+      { type: 'bold', label: 'B', title: 'Жирный' },
+      { type: 'italic', label: 'I', title: 'Курсив' },
+      { type: 'underline', label: 'U', title: 'Подчёркнутый' },
+      { type: 'strike', label: 'S', title: 'Зачёркнутый' },
+      { type: 'mark', label: 'mark', title: 'Выделение маркером' },
+      { type: 'spoiler', label: 'spoiler', title: 'Спойлер' },
+      { type: 'code', label: 'code', title: 'Инлайн-код' },
+      { type: 'sub', label: 'sub', title: 'Нижний индекс' },
+      { type: 'sup', label: 'sup', title: 'Верхний индекс' },
+      { type: 'math', label: 'math', title: 'Формула LaTeX' },
+      { type: 'link', label: 'link', title: 'Ссылка' },
+    ],
+  },
+  {
+    title: 'Блоки',
+    buttons: [
+      { type: 'h1', label: 'H1', title: 'Заголовок 1' },
+      { type: 'h2', label: 'H2', title: 'Заголовок 2' },
+      { type: 'h3', label: 'H3', title: 'Заголовок 3' },
+      { type: 'h4', label: 'H4', title: 'Заголовок 4' },
+      { type: 'h5', label: 'H5', title: 'Заголовок 5' },
+      { type: 'h6', label: 'H6', title: 'Заголовок 6' },
+      { type: 'paragraph', label: 'p', title: 'Абзац' },
+      { type: 'blockquote', label: 'quote', title: 'Блочная цитата' },
+      { type: 'aside', label: 'aside', title: 'Выносная цитата' },
+      { type: 'details', label: 'details', title: 'Сворачиваемый блок' },
+      { type: 'footer', label: 'footer', title: 'Подвал / примечание' },
+      { type: 'hr', label: 'hr', title: 'Разделитель' },
+    ],
+  },
+  {
+    title: 'Списки',
+    buttons: [
+      { type: 'ul', label: 'ul', title: 'Маркированный список' },
+      { type: 'ol', label: 'ol', title: 'Нумерованный список' },
+      { type: 'task', label: '☐ task', title: 'Чеклист' },
+      { type: 'taskDone', label: '☑ task', title: 'Выполненный пункт чеклиста' },
+      { type: 'pre', label: 'pre', title: 'Блок кода' },
+    ],
+  },
+  {
+    title: 'Служебное',
+    buttons: [
+      { type: 'reference', label: 'ref', title: 'Сноска / reference' },
+      { type: 'anchor', label: 'anchor', title: 'Якорь' },
+      { type: 'br', label: 'br', title: 'Перенос строки' },
+      { type: 'blank', label: 'br br', title: 'Пустая строка / новый абзац' },
+    ],
+  },
 ];
+
+function escapeHtmlAttribute(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
+function normalizeRichHtmlSelection(selected: string): string {
+  return selected
+    .replace(/\r\n?/g, '\n')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+function getSelectedLines(selected: string, fallback = 'Пункт'): string[] {
+  const lines = selected
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  return lines.length > 0 ? lines : [fallback];
+}
 
 export function TextFormatter() {
   const [text, setText] = useState('');
@@ -105,55 +207,225 @@ export function TextFormatter() {
 
     const { start, end } = lastSelectionRef.current;
     const selected = text.substring(start, end);
-    let formatted = selected;
+    let formatted = '';
     let selectionStart = start;
     let selectionEnd = end;
 
-    if (mode === 'rich-html') {
-      const htmlSelected = selected
-        .replace(/\r\n?/g, '\n')
-        .replace(/\n\n/g, '<br><br>')
-        .replace(/\n/g, '<br>');
+    const replaceWith = (
+      nextValue: string,
+      options?: { innerStart?: number; innerEnd?: number; collapseToEnd?: boolean }
+    ) => {
+      formatted = nextValue;
 
-      if (type === 'br' || type === 'paragraph') {
-        const marker = type === 'br' ? '<br>' : '<br><br>';
-        formatted = selected ? `${htmlSelected}${marker}` : marker;
-        selectionStart = start + formatted.length;
+      if (options?.collapseToEnd) {
+        selectionStart = start + nextValue.length;
         selectionEnd = selectionStart;
-      } else {
-        const tags: Partial<Record<RichFormatType, [string, string]>> = {
+        return;
+      }
+
+      if (options?.innerStart !== undefined) {
+        selectionStart = start + options.innerStart;
+        selectionEnd = start + (options.innerEnd ?? options.innerStart);
+        return;
+      }
+
+      selectionStart = start;
+      selectionEnd = start + nextValue.length;
+    };
+
+    if (mode === 'rich-html') {
+      const htmlSelected = normalizeRichHtmlSelection(selected);
+
+      const wrapHtml = (open: string, close: string, placeholder = 'Текст') => {
+        const content = selected ? htmlSelected : placeholder;
+        replaceWith(`${open}${content}${close}`, selected ? undefined : {
+          innerStart: open.length,
+          innerEnd: open.length + placeholder.length,
+        });
+      };
+
+      const inlineTags: Partial<Record<RichFormatType, [string, string]>> = {
           bold: ['<b>', '</b>'],
           italic: ['<i>', '</i>'],
-          blockquote: ['<blockquote>', '</blockquote>'],
-        };
-        const [open, close] = tags[type] ?? ['', ''];
-        formatted = selected ? `${open}${htmlSelected}${close}` : `${open}${close}`;
-        selectionStart = selected ? start : start + open.length;
-        selectionEnd = selected ? start + formatted.length : selectionStart;
-      }
-    } else if (type === 'blockquote') {
-      formatted = selected
-        ? selected.split('\n').map(line => `> ${line}`).join('\n')
-        : '> ';
-      selectionStart = selected ? start : start + formatted.length;
-      selectionEnd = selected ? start + formatted.length : selectionStart;
-    } else if (type === 'br') {
-      formatted = selected ? `${selected}<br>` : '<br>';
-      selectionStart = start + formatted.length;
-      selectionEnd = selectionStart;
-    } else if (type === 'paragraph') {
-      formatted = selected ? `${selected}<br><br>` : '<br><br>';
-      selectionStart = start + formatted.length;
-      selectionEnd = selectionStart;
-    } else {
-      const tags: Record<Extract<RichFormatType, 'bold' | 'italic'>, [string, string]> = {
-        bold: ['**', '**'],
-        italic: ['*', '*'],
+        underline: ['<u>', '</u>'],
+        strike: ['<s>', '</s>'],
+        mark: ['<mark>', '</mark>'],
+        spoiler: ['<tg-spoiler>', '</tg-spoiler>'],
+        code: ['<code>', '</code>'],
+        sub: ['<sub>', '</sub>'],
+        sup: ['<sup>', '</sup>'],
+        math: ['<tg-math>', '</tg-math>'],
+        pre: ['<pre>', '</pre>'],
+        h1: ['<h1>', '</h1>'],
+        h2: ['<h2>', '</h2>'],
+        h3: ['<h3>', '</h3>'],
+        h4: ['<h4>', '</h4>'],
+        h5: ['<h5>', '</h5>'],
+        h6: ['<h6>', '</h6>'],
+        paragraph: ['<p>', '</p>'],
+        blockquote: ['<blockquote>', '</blockquote>'],
+        aside: ['<aside>', '</aside>'],
+        footer: ['<footer>', '</footer>'],
+        reference: ['<tg-reference name="note-1">', '</tg-reference>'],
       };
-      const [open, close] = tags[type];
-      formatted = selected ? `${open}${selected}${close}` : `${open}${close}`;
-      selectionStart = selected ? start : start + open.length;
-      selectionEnd = selected ? start + formatted.length : selectionStart;
+
+      if (inlineTags[type]) {
+        const [open, close] = inlineTags[type];
+        wrapHtml(open, close);
+      } else if (type === 'link') {
+        const url = prompt('Введите URL:', 'https://')?.trim();
+        if (!url) return;
+        const open = `<a href="${escapeHtmlAttribute(url)}">`;
+        wrapHtml(open, '</a>', 'текст ссылки');
+      } else if (type === 'anchor') {
+        const name = prompt('Введите имя якоря:', 'chapter-1')?.trim();
+        if (!name) return;
+        replaceWith(`<a name="${escapeHtmlAttribute(name)}"></a>`, { collapseToEnd: true });
+      } else if (type === 'details') {
+        const summary = prompt('Заголовок details:', 'Подробнее')?.trim() || 'Подробнее';
+        const open = `<details open><summary>${summary}</summary>`;
+        wrapHtml(open, '</details>');
+      } else if (type === 'hr') {
+        replaceWith('<hr/>', { collapseToEnd: true });
+      } else if (type === 'br' || type === 'blank') {
+        const marker = type === 'br' ? '<br>' : '<br><br>';
+        replaceWith(selected ? `${htmlSelected}${marker}` : marker, { collapseToEnd: true });
+      } else if (type === 'ul' || type === 'ol') {
+        const tag = type;
+        const items = getSelectedLines(selected)
+          .map(line => `<li>${normalizeRichHtmlSelection(line)}</li>`)
+          .join('');
+        replaceWith(`<${tag}>${items}</${tag}>`);
+      } else if (type === 'task' || type === 'taskDone') {
+        const checked = type === 'taskDone' ? ' checked' : '';
+        const items = getSelectedLines(selected, 'Задача')
+          .map(line => `<li><input type="checkbox"${checked}>${normalizeRichHtmlSelection(line)}</li>`)
+          .join('');
+        replaceWith(`<ul>${items}</ul>`);
+      }
+    } else {
+      const wrapMarkdown = (open: string, close: string, placeholder = 'Текст') => {
+        const content = selected || placeholder;
+        replaceWith(`${open}${content}${close}`, selected ? undefined : {
+          innerStart: open.length,
+          innerEnd: open.length + placeholder.length,
+        });
+      };
+
+      switch (type) {
+        case 'bold':
+          wrapMarkdown('**', '**');
+          break;
+        case 'italic':
+          wrapMarkdown('*', '*');
+          break;
+        case 'underline':
+          wrapMarkdown('<u>', '</u>');
+          break;
+        case 'strike':
+          wrapMarkdown('~~', '~~');
+          break;
+        case 'mark':
+          wrapMarkdown('==', '==');
+          break;
+        case 'spoiler':
+          wrapMarkdown('||', '||');
+          break;
+        case 'code':
+          wrapMarkdown('`', '`');
+          break;
+        case 'pre':
+          wrapMarkdown('```\n', '\n```', 'код');
+          break;
+        case 'sub':
+          wrapMarkdown('<sub>', '</sub>');
+          break;
+        case 'sup':
+          wrapMarkdown('<sup>', '</sup>');
+          break;
+        case 'math':
+          wrapMarkdown('$', '$', 'x^2 + y^2');
+          break;
+        case 'link': {
+          const url = prompt('Введите URL:', 'https://')?.trim();
+          if (!url) return;
+          wrapMarkdown('[', `](${url})`, 'текст ссылки');
+          break;
+        }
+        case 'reference':
+          wrapMarkdown('<tg-reference name="note-1">', '</tg-reference>');
+          break;
+        case 'anchor': {
+          const name = prompt('Введите имя якоря:', 'chapter-1')?.trim();
+          if (!name) return;
+          replaceWith(`<a name="${escapeHtmlAttribute(name)}"></a>`, { collapseToEnd: true });
+          break;
+        }
+        case 'h1':
+        case 'h2':
+        case 'h3':
+        case 'h4':
+        case 'h5':
+        case 'h6': {
+          const level = Number(type.slice(1));
+          const prefix = `${'#'.repeat(level)} `;
+          const lines = selected
+            ? selected.replace(/\r\n?/g, '\n').split('\n').map(line => `${prefix}${line}`).join('\n')
+            : prefix;
+          replaceWith(lines, selected ? undefined : { collapseToEnd: true });
+          break;
+        }
+        case 'paragraph':
+          replaceWith(selected ? `${selected}\n\n` : '\n\n', { collapseToEnd: true });
+          break;
+        case 'blockquote': {
+          const quote = selected
+            ? selected.replace(/\r\n?/g, '\n').split('\n').map(line => `> ${line}`).join('\n')
+            : '> ';
+          replaceWith(quote, selected ? undefined : { collapseToEnd: true });
+          break;
+        }
+        case 'aside':
+          wrapMarkdown('<aside>', '</aside>');
+          break;
+        case 'details': {
+          const summary = prompt('Заголовок details:', 'Подробнее')?.trim() || 'Подробнее';
+          wrapMarkdown(`<details open><summary>${summary}</summary>\n`, '\n</details>');
+          break;
+        }
+        case 'footer':
+          wrapMarkdown('<footer>', '</footer>');
+          break;
+        case 'hr':
+          replaceWith('---', { collapseToEnd: true });
+          break;
+        case 'ul': {
+          const lines = getSelectedLines(selected).map(line => `- ${line}`).join('\n');
+          replaceWith(lines);
+          break;
+        }
+        case 'ol': {
+          const lines = getSelectedLines(selected).map((line, index) => `${index + 1}. ${line}`).join('\n');
+          replaceWith(lines);
+          break;
+        }
+        case 'task':
+        case 'taskDone': {
+          const marker = type === 'taskDone' ? '- [x]' : '- [ ]';
+          const lines = getSelectedLines(selected, 'Задача').map(line => `${marker} ${line}`).join('\n');
+          replaceWith(lines);
+          break;
+        }
+        case 'br':
+          replaceWith(selected ? `${selected}<br>` : '<br>', { collapseToEnd: true });
+          break;
+        case 'blank':
+          replaceWith(selected ? `${selected}<br><br>` : '<br><br>', { collapseToEnd: true });
+          break;
+        default:
+          replaceWith(selected);
+          break;
+      };
     }
 
     const newText = text.substring(0, start) + formatted + text.substring(end);
@@ -335,17 +607,22 @@ export function TextFormatter() {
       )}
 
       {isRich && (
-        <div className={styles.toolbar}>
-          {RICH_FORMAT_BUTTONS.map(btn => (
-            <button
-              key={btn.type}
-              className={styles.fmtBtn}
-              title={mode === 'rich-html' ? btn.title : `${btn.title} (Rich Markdown)`}
-              onMouseDown={e => e.preventDefault()}
-              onClick={() => applyRichFormat(btn.type)}
-            >
-              {btn.label}
-            </button>
+        <div className={`${styles.toolbar} ${styles.richToolbar}`}>
+          {RICH_FORMAT_GROUPS.map(group => (
+            <div key={group.title} className={styles.richToolbarGroup}>
+              <span className={styles.richToolbarTitle}>{group.title}</span>
+              {group.buttons.map(btn => (
+                <button
+                  key={btn.type}
+                  className={styles.fmtBtn}
+                  title={mode === 'rich-html' ? btn.title : `${btn.title} (Rich Markdown)`}
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => applyRichFormat(btn.type)}
+                >
+                  {btn.label}
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       )}
@@ -363,9 +640,9 @@ export function TextFormatter() {
 
       {isRich && (
         <div className={styles.hint}>
-          Выдели фрагмент в поле и нажми кнопку разметки. В Rich HTML используются безопасные теги
-          <code> &lt;b&gt;</code>, <code> &lt;i&gt;</code>, <code> &lt;blockquote&gt;</code>,
-          <code> &lt;br&gt;</code> и <code> &lt;br&gt;&lt;br&gt;</code>.
+          Выдели фрагмент в поле и нажми кнопку разметки. Rich HTML использует теги Telegram Bot API 10.1:
+          текстовые, блочные, списки, чеклисты, details, ссылки, якоря, сноски, формулы и переносы
+          через <code> &lt;br&gt;</code>/<code>&lt;br&gt;&lt;br&gt;</code>.
         </div>
       )}
 

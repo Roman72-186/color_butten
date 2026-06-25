@@ -36,6 +36,36 @@
   border-radius: var(--radius);
 }
 
+.richToolbar {
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.richToolbarGroup {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0 10px 0 0;
+  border-right: 1px solid var(--border);
+}
+
+.richToolbarGroup:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+.richToolbarTitle {
+  width: 100%;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+
 .fmtBtn {
   padding: 6px 12px;
   background: var(--surface-hover);
