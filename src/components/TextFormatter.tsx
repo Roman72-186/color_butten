@@ -11,7 +11,7 @@ import {
   type FormatMode,
   type FormatType,
 } from '../utils/textFormatting';
-import { validateTelegramRichHtmlCompatibility } from '../utils/telegramRichHtml';
+import { normalizeTelegramRichHtml, validateTelegramRichHtmlCompatibility } from '../utils/telegramRichHtml';
 import type { RichMessageFormat } from '../types/requestBuilder';
 import { EmojiPicker } from './EmojiPicker';
 import { TextMarkupHelp } from './request-builder/TextMarkupHelp';
@@ -23,6 +23,19 @@ import styles from '../styles/TextFormatter.module.css';
 // копирование «как есть» без %0a-склейки, без обычных кнопок формата (они дают
 // MarkdownV2-синтаксис, несовместимый с GitHub-style rich markdown).
 type EditorMode = 'html' | 'markdown' | 'rich-html' | 'rich-markdown';
+type RichFormatType = 'bold' | 'italic' | 'blockquote' | 'br' | 'paragraph';
+
+const RICH_FORMAT_BUTTONS: Array<{
+  type: RichFormatType;
+  label: string;
+  title: string;
+}> = [
+  { type: 'bold', label: 'B', title: 'Жирный' },
+  { type: 'italic', label: 'I', title: 'Курсив' },
+  { type: 'blockquote', label: 'quote', title: 'Цитата / blockquote' },
+  { type: 'br', label: 'br', title: 'Перенос строки' },
+  { type: 'paragraph', label: 'br br', title: 'Пустая строка / новый абзац' },
+];
 
 export function TextFormatter() {
   const [text, setText] = useState('');
@@ -86,6 +99,74 @@ export function TextFormatter() {
     });
   }, [text, normalMode]);
 
+  const applyRichFormat = useCallback((type: RichFormatType) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const { start, end } = lastSelectionRef.current;
+    const selected = text.substring(start, end);
+    let formatted = selected;
+    let selectionStart = start;
+    let selectionEnd = end;
+
+    if (mode === 'rich-html') {
+      const htmlSelected = selected
+        .replace(/\r\n?/g, '\n')
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>');
+
+      if (type === 'br' || type === 'paragraph') {
+        const marker = type === 'br' ? '<br>' : '<br><br>';
+        formatted = selected ? `${htmlSelected}${marker}` : marker;
+        selectionStart = start + formatted.length;
+        selectionEnd = selectionStart;
+      } else {
+        const tags: Partial<Record<RichFormatType, [string, string]>> = {
+          bold: ['<b>', '</b>'],
+          italic: ['<i>', '</i>'],
+          blockquote: ['<blockquote>', '</blockquote>'],
+        };
+        const [open, close] = tags[type] ?? ['', ''];
+        formatted = selected ? `${open}${htmlSelected}${close}` : `${open}${close}`;
+        selectionStart = selected ? start : start + open.length;
+        selectionEnd = selected ? start + formatted.length : selectionStart;
+      }
+    } else if (type === 'blockquote') {
+      formatted = selected
+        ? selected.split('\n').map(line => `> ${line}`).join('\n')
+        : '> ';
+      selectionStart = selected ? start : start + formatted.length;
+      selectionEnd = selected ? start + formatted.length : selectionStart;
+    } else if (type === 'br') {
+      formatted = selected ? `${selected}<br>` : '<br>';
+      selectionStart = start + formatted.length;
+      selectionEnd = selectionStart;
+    } else if (type === 'paragraph') {
+      formatted = selected ? `${selected}<br><br>` : '<br><br>';
+      selectionStart = start + formatted.length;
+      selectionEnd = selectionStart;
+    } else {
+      const tags: Record<Extract<RichFormatType, 'bold' | 'italic'>, [string, string]> = {
+        bold: ['**', '**'],
+        italic: ['*', '*'],
+      };
+      const [open, close] = tags[type];
+      formatted = selected ? `${open}${selected}${close}` : `${open}${close}`;
+      selectionStart = selected ? start : start + open.length;
+      selectionEnd = selected ? start + formatted.length : selectionStart;
+    }
+
+    const newText = text.substring(0, start) + formatted + text.substring(end);
+    setText(newText);
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.selectionStart = selectionStart;
+      textarea.selectionEnd = selectionEnd;
+      lastSelectionRef.current = { start: selectionStart, end: selectionEnd };
+    });
+  }, [mode, text]);
+
   const handleEmojiInsert = useCallback((fallback: string, id: string) => {
     const { start, end } = lastSelectionRef.current;
 
@@ -148,23 +229,42 @@ export function TextFormatter() {
   }, [isRich, text, normalMode]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (isRich) return;
     if (e.ctrlKey || e.metaKey) {
       switch (e.key) {
-        case 'b': e.preventDefault(); applyFormat('bold'); break;
-        case 'i': e.preventDefault(); applyFormat('italic'); break;
-        case 'u': e.preventDefault(); applyFormat('underline'); break;
+        case 'b':
+          e.preventDefault();
+          if (isRich) {
+            applyRichFormat('bold');
+          } else {
+            applyFormat('bold');
+          }
+          break;
+        case 'i':
+          e.preventDefault();
+          if (isRich) {
+            applyRichFormat('italic');
+          } else {
+            applyFormat('italic');
+          }
+          break;
+        case 'u':
+          if (!isRich) {
+            e.preventDefault();
+            applyFormat('underline');
+          }
+          break;
       }
     }
-  }, [isRich, applyFormat]);
+  }, [isRich, applyFormat, applyRichFormat]);
 
   const handleCopy = useCallback(() => {
     if (!text.trim()) return;
 
-    // Rich копируется как есть: без %0a-склейки — содержимое идёт в поле
-    // rich_message.html / .markdown, где переносы строк осмысленны сами по себе.
+    // Rich HTML копируется в формате для rich_message.html: переносы нормализуются в <br>.
+    // Rich Markdown копируется как есть, потому что там собственные markdown-правила.
     if (isRich) {
-      navigator.clipboard.writeText(text).then(() => {
+      const richOutput = mode === 'rich-html' ? normalizeTelegramRichHtml(text) : text;
+      navigator.clipboard.writeText(richOutput).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }).catch(() => undefined);
@@ -177,7 +277,7 @@ export function TextFormatter() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }).catch(() => undefined);
-  }, [isRich, normalizedText, text, textErrors]);
+  }, [isRich, mode, normalizedText, text, textErrors]);
 
   const handleShare = useCallback(() => {
     const url = 'https://t.me/share/url?url=&text=' + encodeURIComponent(normalizedText);
@@ -234,6 +334,22 @@ export function TextFormatter() {
         </div>
       )}
 
+      {isRich && (
+        <div className={styles.toolbar}>
+          {RICH_FORMAT_BUTTONS.map(btn => (
+            <button
+              key={btn.type}
+              className={styles.fmtBtn}
+              title={mode === 'rich-html' ? btn.title : `${btn.title} (Rich Markdown)`}
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => applyRichFormat(btn.type)}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {!isRich && emojiPickerOpen && (
         <EmojiPicker onInsert={handleEmojiInsert} />
       )}
@@ -242,6 +358,14 @@ export function TextFormatter() {
         <div className={styles.hint}>
           Вставка из Word, Google Docs и браузеров автоматически переносит жирный, курсив,
           ссылки и абзацы. Telegram Desktop не передаёт форматирование в буфер обмена.
+        </div>
+      )}
+
+      {isRich && (
+        <div className={styles.hint}>
+          Выдели фрагмент в поле и нажми кнопку разметки. В Rich HTML используются безопасные теги
+          <code> &lt;b&gt;</code>, <code> &lt;i&gt;</code>, <code> &lt;blockquote&gt;</code>,
+          <code> &lt;br&gt;</code> и <code> &lt;br&gt;&lt;br&gt;</code>.
         </div>
       )}
 
