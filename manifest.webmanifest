@@ -1,0 +1,19 @@
+{
+  "name": "Конструктор клавиатур Telegram и MAX",
+  "short_name": "Keyboard Builder",
+  "description": "Веб-версия конструктора inline-клавиатур, Bot API-запросов, JSON и LEADTEH.",
+  "lang": "ru",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0F0F11",
+  "theme_color": "#0F0F11",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
