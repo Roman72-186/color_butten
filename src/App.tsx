@@ -13,6 +13,7 @@ import { BurgerMenu } from './components/BurgerMenu';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
 import { createDefaultButton, groupButtonsByRow } from './utils/helpers';
+import { getLaunchContext } from './utils/launchContext';
 import styles from './styles/App.module.css';
 
 type TabType = 'keyboard' | 'requests' | 'formatter' | 'json' | 'leadteh';
@@ -27,6 +28,7 @@ const TABS = [
 ] as const satisfies readonly { id: TabType; label: string }[];
 
 function App() {
+  const launchContext = useMemo(() => getLaunchContext(), []);
   const [activeTab, setActiveTab] = useState<TabType>('keyboard');
   const [keyboardPlatform, setKeyboardPlatform] = useState<KeyboardPlatform>('telegram');
 
@@ -74,9 +76,23 @@ function App() {
   }, []);
 
   return (
-    <div className={styles.app}>
+    <div className={`${styles.app} ${launchContext.platform === 'web' ? styles.webMode : ''}`}>
       <RadioactiveSnow />
       <div className={styles.content}>
+        {!launchContext.isMiniApp && (
+          <header className={styles.webHeader}>
+            <div>
+              <p className={styles.webMeta}>Веб-версия</p>
+              <h1 className={styles.webTitle}>Конструктор клавиатур</h1>
+              <p className={styles.webSubtitle}>Telegram Bot API, MAX API, JSON и LEADTEH в одном рабочем окне.</p>
+            </div>
+            <div className={styles.webActions} aria-label="Быстрые разделы">
+              <button type="button" onClick={() => setActiveTab('keyboard')}>Кнопки</button>
+              <button type="button" onClick={() => setActiveTab('requests')}>Запросы</button>
+              <button type="button" onClick={() => setActiveTab('formatter')}>Текст</button>
+            </div>
+          </header>
+        )}
 
         <BurgerMenu
           tabs={TABS}

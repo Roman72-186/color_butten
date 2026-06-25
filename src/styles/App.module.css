@@ -11,6 +11,72 @@
   padding: 20px 16px 40px;
 }
 
+.webMode .content {
+  max-width: 960px;
+  padding-top: 32px;
+}
+
+.webHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.webMeta {
+  margin-bottom: 6px;
+  color: #8A8A9A;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.webTitle {
+  margin: 0;
+  color: var(--text);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.webSubtitle {
+  max-width: 560px;
+  margin-top: 10px;
+  color: #8A8A9A;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.webActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.webActions button {
+  min-height: 38px;
+  padding: 0 14px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.webActions button:hover {
+  background: var(--accent-soft-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 
 /* ── Platform sub-select (inside keyboard tab) ──────────────────────────── */
 .tabSelect {
@@ -92,5 +158,30 @@
 @media (max-width: 480px) {
   .content {
     padding: 12px 8px 32px;
+  }
+}
+
+@media (max-width: 720px) {
+  .webMode .content {
+    padding-top: 18px;
+  }
+
+  .webHeader {
+    display: block;
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+  }
+
+  .webTitle {
+    font-size: 26px;
+  }
+
+  .webSubtitle {
+    font-size: 14px;
+  }
+
+  .webActions {
+    justify-content: flex-start;
+    margin-top: 14px;
   }
 }

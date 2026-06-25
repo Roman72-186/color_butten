@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:web": "npm run build -- --base=/",
+    "build:miniapp": "npm run build -- --base=/color_butten/",
     "lint": "eslint .",
     "preview": "vite preview",
     "deploy": "npm run build -- --base=/color_butten/ && gh-pages -d dist"

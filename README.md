@@ -1,73 +1,25 @@
-# React + TypeScript + Vite
+# Конструктор клавиатур Telegram и MAX
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React/Vite-приложение для сборки inline-клавиатур, Bot API/MAX API-запросов, форматирования текста, JSON и LEADTEH API. Приложение работает в двух режимах:
 
-Currently, two official plugins are available:
+- **Mini App** — production для Telegram открывается с GitHub Pages: `https://roman72-186.github.io/color_butten/`
+- **Web** — обычная браузерная версия, например на Vercel: `https://telegram-keyboard-constructor.vercel.app`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Команды
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev            # локальный запуск
+npm run build:web      # сборка для обычного сайта с base=/
+npm run build:miniapp  # сборка для GitHub Pages с base=/color_butten/
+npm run lint
+npm run preview
+npm run deploy         # production для Telegram Mini App на GitHub Pages
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+`npm run deploy` оставлен единственным production-деплоем для Mini App: он собирает проект с `--base=/color_butten/` и публикует `dist` в `gh-pages`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Web-режим
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+При открытии вне Telegram Mini App приложение показывает web-шапку и использует обычный root-base `/`. При запуске из Telegram Mini App контекст определяется по `tgWebApp*` параметрам или `window.Telegram.WebApp`, поэтому Mini App остаётся компактным.
+
+Для web-публикации на Vercel достаточно `git push origin main`: Vercel подтянет репозиторий сам. Ручной `vercel --prod` для этого проекта не нужен.
