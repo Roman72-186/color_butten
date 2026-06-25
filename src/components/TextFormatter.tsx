@@ -141,7 +141,7 @@ function getSelectedLines(selected: string, fallback = 'Пункт'): string[] {
 
 export function TextFormatter() {
   const [text, setText] = useState('');
-  const [mode, setMode] = useState<EditorMode>('html');
+  const [mode, setMode] = useState<EditorMode>('rich-html');
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastSelectionRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
@@ -576,10 +576,10 @@ export function TextFormatter() {
           value={mode}
           onChange={e => setMode(e.target.value as EditorMode)}
         >
-          <option value="html">HTML</option>
-          <option value="markdown">MarkdownV2</option>
           <option value="rich-html">Rich HTML (10.1)</option>
           <option value="rich-markdown">Rich Markdown (10.1)</option>
+          <option value="html">HTML</option>
+          <option value="markdown">MarkdownV2</option>
         </select>
       </div>
 
