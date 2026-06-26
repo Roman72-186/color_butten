@@ -1,6 +1,6 @@
 {
-  "name": "Конструктор клавиатур Telegram и MAX",
-  "short_name": "Keyboard Builder",
+  "name": "Красим кнопки",
+  "short_name": "Красим кнопки",
   "description": "Веб-версия конструктора inline-клавиатур, Bot API-запросов, JSON и LEADTEH.",
   "lang": "ru",
   "start_url": ".",
