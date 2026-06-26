@@ -83,13 +83,8 @@ function App() {
           <header className={styles.webHeader}>
             <div>
               <p className={styles.webMeta}>Веб-версия</p>
-              <h1 className={styles.webTitle}>Конструктор клавиатур</h1>
+              <h1 className={styles.webTitle}>Красим кнопки</h1>
               <p className={styles.webSubtitle}>Telegram Bot API, MAX API, JSON и LEADTEH в одном рабочем окне.</p>
-            </div>
-            <div className={styles.webActions} aria-label="Быстрые разделы">
-              <button type="button" onClick={() => setActiveTab('keyboard')}>Кнопки</button>
-              <button type="button" onClick={() => setActiveTab('requests')}>Запросы</button>
-              <button type="button" onClick={() => setActiveTab('formatter')}>Текст</button>
             </div>
           </header>
         )}

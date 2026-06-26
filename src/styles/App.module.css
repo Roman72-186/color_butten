@@ -17,10 +17,6 @@
 }
 
 .webHeader {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  align-items: flex-end;
   margin-bottom: 24px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--border);
@@ -52,31 +48,6 @@
   font-size: 15px;
   line-height: 1.45;
 }
-
-.webActions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.webActions button {
-  min-height: 38px;
-  padding: 0 14px;
-  background: var(--surface-alt);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.webActions button:hover {
-  background: var(--accent-soft-hover);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
 
 /* ── Platform sub-select (inside keyboard tab) ──────────────────────────── */
 .tabSelect {
@@ -167,7 +138,6 @@
   }
 
   .webHeader {
-    display: block;
     margin-bottom: 18px;
     padding-bottom: 16px;
   }
@@ -180,8 +150,4 @@
     font-size: 14px;
   }
 
-  .webActions {
-    justify-content: flex-start;
-    margin-top: 14px;
-  }
 }
