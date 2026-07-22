@@ -20,7 +20,8 @@ export function Preview({ rows }: PreviewProps) {
   return (
     <div className={styles.preview}>
       <div className={styles.title}>Предпросмотр раскладки</div>
-      <div className={styles.container}>
+      {/* data-analytics-skip: тут имитация чужой Telegram/MAX-клавиатуры пользователя, не элементы управления приложения */}
+      <div className={styles.container} data-analytics-skip>
         {rows.length === 0 ? (
           <div className={styles.empty}>Добавьте кнопки для предпросмотра</div>
         ) : (

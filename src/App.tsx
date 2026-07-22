@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { ButtonConfig, ButtonStyle, ActionType } from './types';
 import { TextFormatter } from './components/TextFormatter';
 import { JsonFormatter } from './components/JsonFormatter';
@@ -10,10 +10,12 @@ import { Preview } from './components/Preview';
 import { JsonOutput } from './components/JsonOutput';
 import { SlideTabs } from './components/SlideTabs';
 import { AiDictationPanel } from './components/AiDictationPanel';
+import { AnalyticsPanel } from './components/AnalyticsPanel';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
 import { createDefaultButton, groupButtonsByRow, generateId } from './utils/helpers';
 import { getLaunchContext } from './utils/launchContext';
+import { trackPageview } from './utils/analytics';
 import styles from './styles/App.module.css';
 
 const VALID_BUTTON_STYLES: ButtonStyle[] = ['default', 'primary', 'success', 'danger'];
@@ -27,7 +29,7 @@ function clampGridIndex(value: unknown): number {
   return Math.min(7, Math.max(1, Math.round(n)));
 }
 
-type TabType = 'keyboard' | 'requests' | 'formatter' | 'json' | 'leadteh';
+type TabType = 'keyboard' | 'requests' | 'formatter' | 'json' | 'leadteh' | 'analytics';
 type KeyboardPlatform = 'telegram' | 'max';
 
 const TABS = [
@@ -38,10 +40,34 @@ const TABS = [
   { id: 'leadteh',   label: 'API LEADTEH' },
 ] as const satisfies readonly { id: TabType; label: string }[];
 
+const ANALYTICS_TAB = { id: 'analytics', label: 'Аналитика' } as const satisfies { id: TabType; label: string };
+
+/**
+ * Имя страницы для аналитики. 'requests' возвращает null — вкладка «Запросы» держит
+ * свой platform-переключатель внутри RequestBuilder (не поднят в App), поэтому там
+ * трекается отдельно через проп isActive.
+ */
+function pageNameForTab(tab: TabType, keyboardPlatform: KeyboardPlatform): string | null {
+  if (tab === 'keyboard') return `keyboard:${keyboardPlatform}`;
+  if (tab === 'requests') return null;
+  return tab;
+}
+
 function App() {
   const launchContext = useMemo(() => getLaunchContext(), []);
+  // Скрытая админ-вкладка «Аналитика» — доступна только по ?admin=1, обычным пользователям не показывается.
+  const isAdminMode = useMemo(
+    () => new URLSearchParams(window.location.search).get('admin') === '1',
+    []
+  );
+  const tabs = useMemo(() => (isAdminMode ? [...TABS, ANALYTICS_TAB] : TABS), [isAdminMode]);
   const [activeTab, setActiveTab] = useState<TabType>('keyboard');
   const [keyboardPlatform, setKeyboardPlatform] = useState<KeyboardPlatform>('telegram');
+
+  useEffect(() => {
+    const page = pageNameForTab(activeTab, keyboardPlatform);
+    if (page) trackPageview(page);
+  }, [activeTab, keyboardPlatform]);
 
   // ── Telegram keyboard state ──────────────────────────────────────────────
   const [buttons, setButtons] = useState<ButtonConfig[]>([]);
@@ -123,7 +149,7 @@ function App() {
         )}
 
         <SlideTabs
-          tabs={TABS}
+          tabs={tabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
@@ -190,7 +216,7 @@ function App() {
           aria-labelledby="tab-requests"
           hidden={activeTab !== 'requests'}
         >
-          <RequestBuilder />
+          <RequestBuilder isActive={activeTab === 'requests'} />
         </div>
 
         <div
@@ -210,6 +236,17 @@ function App() {
         >
           <LeadtehRequestBuilder />
         </div>
+
+        {isAdminMode && (
+          <div
+            role="tabpanel"
+            id="panel-analytics"
+            aria-labelledby="tab-analytics"
+            hidden={activeTab !== 'analytics'}
+          >
+            <AnalyticsPanel />
+          </div>
+        )}
       </div>
     </div>
   );

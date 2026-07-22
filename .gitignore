@@ -28,3 +28,6 @@ dist-ssr
 # Секреты локальной разработки (vercel dev)
 .env
 .env.local
+
+# Данные SQLite бэкенда аналитики (server/db.js) — не коммитим
+server/data/

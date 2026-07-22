@@ -1,0 +1,195 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.refreshBtn {
+  padding: 8px 14px;
+  min-height: 44px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background: var(--accent-soft-hover);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  font-size: 13px;
+  color: var(--danger);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 480px) {
+  .statsGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.statTile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: center;
+}
+
+.statValue {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.statLabel {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.empty {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.barList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) 2fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.barLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barTrack {
+  height: 10px;
+  background: var(--surface-alt);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-sm);
+}
+
+.barCount {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  text-align: right;
+  min-width: 28px;
+}
+
+.tokenCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  max-width: 360px;
+}
+
+.tokenHint {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.tokenForm {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tokenInput {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 12px;
+  min-height: 44px;
+  background: var(--input-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.tokenSubmit {
+  padding: 10px 16px;
+  min-height: 44px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tokenSubmit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.tokenSubmit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

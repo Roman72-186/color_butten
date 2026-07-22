@@ -1,19 +1,26 @@
 // knopki-ai-api — бэкенд ИИ-диктовки (голос → раскладка кнопок / размеченный текст)
-// для telegram-keyboard-constructor. Живёт на VPS под PM2 (см. deploy/), а не на Vercel:
-// два эндпоинта, оба проксируют в OpenRouter (Whisper + Claude), без фреймворка.
+// и внутренней статистики использования конструктора для telegram-keyboard-constructor.
+// Живёт на VPS под PM2 (см. deploy/), а не на Vercel: без фреймворка, эндпоинты
+// ИИ-диктовки проксируют в OpenRouter (Whisper + Claude), эндпоинты аналитики пишут в SQLite (db.js).
 import 'dotenv/config';
 import { createServer } from 'node:http';
+import { insertEvents, getStats } from './db.js';
 
 const PORT = Number(process.env.PORT) || 8788;
 const HOST = process.env.HOST || '127.0.0.1';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1';
 const MODEL = 'anthropic/claude-sonnet-4.5';
+const ANALYTICS_ADMIN_TOKEN = process.env.ANALYTICS_ADMIN_TOKEN;
 
 // Ограничение на длину base64-аудио и тела запроса в целом — не даёт наговорить
 // многоминутный монолог и держит память процесса под контролем.
 const MAX_BODY_BYTES = 8_000_000;
 const MAX_INPUT_CHARS = 4000;
+
+// Аналитика: батч событий и защита от разрастания записей в БД одним запросом.
+const MAX_EVENTS_PER_BATCH = 500;
+const MAX_ANALYTICS_STRING_LEN = 200;
 
 const ALLOWED_ORIGINS = new Set([
   'https://roman72-186.github.io',
@@ -245,13 +252,80 @@ async function handleGenerate(req, res) {
   }
 }
 
+function sanitizeAnalyticsString(value, maxLen) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, maxLen);
+}
+
+async function handleAnalyticsEvent(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    send(res, 413, { error: 'Тело запроса слишком большое' });
+    return;
+  }
+
+  const sessionId = sanitizeAnalyticsString(body?.sessionId, MAX_ANALYTICS_STRING_LEN);
+  const rawEvents = Array.isArray(body?.events) ? body.events : null;
+
+  if (!sessionId || !rawEvents) {
+    send(res, 400, { error: 'Поля sessionId и events обязательны' });
+    return;
+  }
+
+  const events = rawEvents
+    .slice(0, MAX_EVENTS_PER_BATCH)
+    .map(item => {
+      const type = item?.type === 'pageview' || item?.type === 'click' ? item.type : null;
+      const page = sanitizeAnalyticsString(item?.page, MAX_ANALYTICS_STRING_LEN);
+      const label = sanitizeAnalyticsString(item?.label, MAX_ANALYTICS_STRING_LEN);
+      if (!type || !page) return null;
+      return { type, page, label };
+    })
+    .filter(item => item !== null);
+
+  if (events.length === 0) {
+    send(res, 400, { error: 'Нет валидных событий' });
+    return;
+  }
+
+  try {
+    insertEvents(events, sessionId);
+    send(res, 200, { ok: true });
+  } catch {
+    send(res, 500, { error: 'Не удалось сохранить события' });
+  }
+}
+
+function isAnalyticsAdminAuthorized(req) {
+  const header = req.headers.authorization;
+  if (typeof header !== 'string' || !ANALYTICS_ADMIN_TOKEN) return false;
+  const match = header.match(/^Bearer\s+(.+)$/);
+  return Boolean(match) && match[1] === ANALYTICS_ADMIN_TOKEN;
+}
+
+function handleAnalyticsStats(req, res) {
+  if (!isAnalyticsAdminAuthorized(req)) {
+    send(res, 401, { error: 'unauthorized' });
+    return;
+  }
+  try {
+    send(res, 200, getStats());
+  } catch {
+    send(res, 500, { error: 'Не удалось получить статистику' });
+  }
+}
+
 const server = createServer(async (req, res) => {
   const origin = req.headers.origin;
   if (origin && isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Vary', 'Origin');
 
   if (req.method === 'OPTIONS') {
@@ -264,6 +338,17 @@ const server = createServer(async (req, res) => {
 
   if (url.pathname === '/api/health') {
     send(res, 200, { status: 'ok' });
+    return;
+  }
+
+  // Аналитика — отдельные маршруты до общего POST-гейта ИИ-диктовки: /event публичный
+  // (шлёт сам фронтенд), /stats требует Authorization и не зависит от OPENROUTER_API_KEY.
+  if (url.pathname === '/api/analytics/event' && req.method === 'POST') {
+    await handleAnalyticsEvent(req, res);
+    return;
+  }
+  if (url.pathname === '/api/analytics/stats' && req.method === 'GET') {
+    handleAnalyticsStats(req, res);
     return;
   }
 

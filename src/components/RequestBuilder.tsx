@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TelegramRequestBuilder } from './request-builder/TelegramRequestBuilder';
 import { MaxRequestBuilder } from './MaxRequestBuilder';
+import { trackPageview } from '../utils/analytics';
 import styles from '../styles/RequestBuilder.module.css';
 
-export function RequestBuilder() {
+interface RequestBuilderProps {
+  /** Вкладка «Запросы» сейчас видима — компонент не размонтируется при переключении вкладок, поэтому pageview трекается по факту видимости, а не по монтированию. */
+  isActive: boolean;
+}
+
+export function RequestBuilder({ isActive }: RequestBuilderProps) {
   const [platform, setPlatform] = useState<'telegram' | 'max'>('telegram');
+
+  useEffect(() => {
+    if (isActive) trackPageview(`requests:${platform}`);
+  }, [isActive, platform]);
 
   return (
     <div className={styles.builder}>
