@@ -8,8 +8,7 @@ import { LeadtehRequestBuilder } from './components/LeadtehRequestBuilder';
 import { GridConstructor } from './components/GridConstructor';
 import { Preview } from './components/Preview';
 import { JsonOutput } from './components/JsonOutput';
-import { RadioactiveSnow } from './components/RadioactiveSnow';
-import { BurgerMenu } from './components/BurgerMenu';
+import { SlideTabs } from './components/SlideTabs';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
 import { createDefaultButton, groupButtonsByRow } from './utils/helpers';
@@ -77,7 +76,6 @@ function App() {
 
   return (
     <div className={`${styles.app} ${launchContext.platform === 'web' ? styles.webMode : ''}`}>
-      <RadioactiveSnow />
       <div className={styles.content}>
         {!launchContext.isMiniApp && (
           <header className={styles.webHeader}>
@@ -89,7 +87,7 @@ function App() {
           </header>
         )}
 
-        <BurgerMenu
+        <SlideTabs
           tabs={TABS}
           activeTab={activeTab}
           onTabChange={setActiveTab}

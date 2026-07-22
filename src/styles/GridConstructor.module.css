@@ -39,6 +39,8 @@
 }
 
 /* ── Grid ────────────────────────────────────────────────────────────────── */
+/* minmax(44px, …) на колонках гарантирует iOS HIG touch-target; при нехватке
+   ширины сетка не ужимает ячейки, а честно уходит в горизонтальный скролл. */
 .grid {
   display: grid;
   gap: 4px;
@@ -46,12 +48,14 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── Cell ────────────────────────────────────────────────────────────────── */
 .cell {
   min-height: 44px;
-  min-width: 0;
+  min-width: 44px;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -1,13 +1,18 @@
 .tabBar {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
   gap: 2px;
   padding: 4px;
   margin-bottom: 16px;
   background: #141416;
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabBar::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
@@ -15,7 +20,7 @@
   z-index: 1;
   flex-shrink: 0;
   padding: 8px 13px;
-  min-height: 38px;
+  min-height: 44px;
   background: transparent;
   color: #8A8A9A;
   border: none;

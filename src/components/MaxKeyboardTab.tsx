@@ -221,7 +221,7 @@ export function MaxKeyboardTab() {
       {/* Static 7×7 grid */}
       <div
         className={gridStyles.grid}
-        style={{ gridTemplateColumns: `repeat(${MAX_GRID_COLS}, 1fr)` }}
+        style={{ gridTemplateColumns: `repeat(${MAX_GRID_COLS}, minmax(44px, 1fr))` }}
       >
         {Array.from({ length: MAX_GRID_ROWS }, (_, r) =>
           Array.from({ length: MAX_GRID_COLS }, (_, c) => {

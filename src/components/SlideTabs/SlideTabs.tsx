@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useLayoutEffect, useCallback } from 'react';
 import styles from './SlideTabs.module.css';
 
 interface Tab<T extends string> {
@@ -49,7 +49,8 @@ export function SlideTabs<T extends string>({
     if (style) setPillStyle(style);
   }, [activeIndex, getPillForIndex]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- измерение DOM для позиции плашки, канонический кейс useLayoutEffect
     updatePillToActive();
     window.addEventListener('resize', updatePillToActive);
     return () => window.removeEventListener('resize', updatePillToActive);
