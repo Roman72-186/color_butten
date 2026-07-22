@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { ButtonConfig, ButtonStyle, ActionType } from './types';
 import { TextFormatter } from './components/TextFormatter';
 import { JsonFormatter } from './components/JsonFormatter';
@@ -42,6 +42,12 @@ const TABS = [
 
 const ANALYTICS_TAB = { id: 'analytics', label: 'Аналитика' } as const satisfies { id: TabType; label: string };
 
+const APP_VERSION = '1.1.0';
+// Тройной клик по версии в подвале открывает скрытую вкладку «Аналитика» — вместо URL-параметра,
+// который в Telegram Mini App неудобно подставлять вручную.
+const ADMIN_UNLOCK_CLICKS = 3;
+const ADMIN_UNLOCK_WINDOW_MS = 1500;
+
 /**
  * Имя страницы для аналитики. 'requests' возвращает null — вкладка «Запросы» держит
  * свой platform-переключатель внутри RequestBuilder (не поднят в App), поэтому там
@@ -55,14 +61,26 @@ function pageNameForTab(tab: TabType, keyboardPlatform: KeyboardPlatform): strin
 
 function App() {
   const launchContext = useMemo(() => getLaunchContext(), []);
-  // Скрытая админ-вкладка «Аналитика» — доступна только по ?admin=1, обычным пользователям не показывается.
-  const isAdminMode = useMemo(
-    () => new URLSearchParams(window.location.search).get('admin') === '1',
-    []
-  );
+  // Скрытая админ-вкладка «Аналитика» — открывается тройным кликом по версии в подвале,
+  // обычным пользователям не видна и не показывается в UI до разблокировки.
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const unlockClickTimestampsRef = useRef<number[]>([]);
   const tabs = useMemo(() => (isAdminMode ? [...TABS, ANALYTICS_TAB] : TABS), [isAdminMode]);
   const [activeTab, setActiveTab] = useState<TabType>('keyboard');
   const [keyboardPlatform, setKeyboardPlatform] = useState<KeyboardPlatform>('telegram');
+
+  const handleVersionClick = useCallback(() => {
+    const now = Date.now();
+    const recentClicks = [...unlockClickTimestampsRef.current, now].filter(
+      ts => now - ts <= ADMIN_UNLOCK_WINDOW_MS
+    );
+    unlockClickTimestampsRef.current = recentClicks;
+    if (recentClicks.length >= ADMIN_UNLOCK_CLICKS) {
+      unlockClickTimestampsRef.current = [];
+      setIsAdminMode(true);
+      setActiveTab('analytics');
+    }
+  }, []);
 
   useEffect(() => {
     const page = pageNameForTab(activeTab, keyboardPlatform);
@@ -247,6 +265,17 @@ function App() {
             <AnalyticsPanel />
           </div>
         )}
+
+        <footer className={styles.footer} data-analytics-skip>
+          <button
+            type="button"
+            className={styles.footerVersion}
+            onClick={handleVersionClick}
+            aria-label="Версия приложения"
+          >
+            v:{APP_VERSION}
+          </button>
+        </footer>
       </div>
     </div>
   );

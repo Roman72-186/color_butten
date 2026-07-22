@@ -16,6 +16,26 @@
   padding-top: 32px;
 }
 
+.footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.footerVersion {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 12px;
+  background: none;
+  border: none;
+  color: #6B6B7A;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .webHeader {
   margin-bottom: 24px;
   padding-bottom: 20px;
