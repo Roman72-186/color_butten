@@ -6,8 +6,19 @@ import { groupByRow } from '../utils/helpers';
 import { GridCell } from './GridCell';
 import { Preview } from './Preview';
 import { JsonOutput } from './JsonOutput';
+import { AiDictationPanel } from './AiDictationPanel';
 import cardStyles from '../styles/ButtonCard.module.css';
 import gridStyles from '../styles/GridConstructor.module.css';
+
+const VALID_MAX_BTN_TYPES: MaxButtonType[] = [
+  'callback', 'message', 'link', 'open_app', 'clipboard', 'request_contact', 'request_geo_location',
+];
+
+function clampGridIndex(value: unknown): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(MAX_GRID_ROWS, Math.max(1, Math.round(n)));
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -202,8 +213,33 @@ export function MaxKeyboardTab() {
     setButtons([]);
   }, []);
 
+  const applyAiButtons = useCallback((result: unknown) => {
+    if (!Array.isArray(result)) return;
+
+    const mapped: MaxBtn[] = result
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map(item => ({
+        id: nextId(),
+        type: VALID_MAX_BTN_TYPES.includes(item.type as MaxButtonType) ? (item.type as MaxButtonType) : 'callback',
+        text: String(item.text ?? ''),
+        payload: String(item.payload ?? ''),
+        url: String(item.url ?? ''),
+        row: clampGridIndex(item.row),
+        col: clampGridIndex(item.col),
+      }));
+
+    const deduped = Array.from(new Map(mapped.map(b => [`${b.row}:${b.col}`, b])).values());
+    setButtons(deduped);
+  }, []);
+
   return (
     <>
+      <AiDictationPanel
+        mode="max-keyboard"
+        hint="Опиши голосом раскладку кнопок — например: «кнопка Каталог callback catalog, кнопка Сайт link на example.com»."
+        onResult={applyAiButtons}
+      />
+
       <div className={gridStyles.headerRow} style={{ marginBottom: 12 }}>
         <span className={gridStyles.activeCount}>
           MAX API не поддерживает цветовые стили inline-кнопок в raw JSON

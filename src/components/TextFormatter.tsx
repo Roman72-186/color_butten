@@ -16,6 +16,8 @@ import type { RichMessageFormat } from '../types/requestBuilder';
 import { EmojiPicker } from './EmojiPicker';
 import { TextMarkupHelp } from './request-builder/TextMarkupHelp';
 import { RichMarkupHelp } from './request-builder/RichMarkupHelp';
+import { AiDictationPanel } from './AiDictationPanel';
+import type { GenerateMode } from '../utils/aiClient';
 import styles from '../styles/TextFormatter.module.css';
 
 // Режим редактора: обычное сообщение (HTML/MarkdownV2) или rich-сообщение Bot API 10.1.
@@ -138,6 +140,13 @@ function getSelectedLines(selected: string, fallback = 'Пункт'): string[] {
 
   return lines.length > 0 ? lines : [fallback];
 }
+
+const AI_MODE_BY_EDITOR_MODE: Record<EditorMode, GenerateMode> = {
+  html: 'text-html',
+  markdown: 'text-markdown',
+  'rich-html': 'text-rich-html',
+  'rich-markdown': 'text-rich-markdown',
+};
 
 export function TextFormatter() {
   const [text, setText] = useState('');
@@ -568,6 +577,10 @@ export function TextFormatter() {
 
   const copyDisabled = isRich ? !text.trim() : (!text.trim() || textErrors.length > 0);
 
+  const handleAiResult = useCallback((result: unknown) => {
+    if (typeof result === 'string') setText(result);
+  }, []);
+
   return (
     <div className={styles.formatter}>
       <div className={styles.modeSelect}>
@@ -582,6 +595,12 @@ export function TextFormatter() {
           <option value="markdown">MarkdownV2</option>
         </select>
       </div>
+
+      <AiDictationPanel
+        mode={AI_MODE_BY_EDITOR_MODE[mode]}
+        hint="Надиктуй текст и что в нём выделить — например: «жирным напиши Акция до пятницы, дальше обычным текстом условия»."
+        onResult={handleAiResult}
+      />
 
       {!isRich && (
         <div className={styles.toolbar}>

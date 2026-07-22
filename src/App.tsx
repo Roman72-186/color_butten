@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import type { ButtonConfig } from './types';
+import type { ButtonConfig, ButtonStyle, ActionType } from './types';
 import { TextFormatter } from './components/TextFormatter';
 import { JsonFormatter } from './components/JsonFormatter';
 import { RequestBuilder } from './components/RequestBuilder';
@@ -9,11 +9,23 @@ import { GridConstructor } from './components/GridConstructor';
 import { Preview } from './components/Preview';
 import { JsonOutput } from './components/JsonOutput';
 import { SlideTabs } from './components/SlideTabs';
+import { AiDictationPanel } from './components/AiDictationPanel';
 import { validateButton, hasAnyErrors } from './utils/validation';
 import { generateJson } from './utils/generateJson';
-import { createDefaultButton, groupButtonsByRow } from './utils/helpers';
+import { createDefaultButton, groupButtonsByRow, generateId } from './utils/helpers';
 import { getLaunchContext } from './utils/launchContext';
 import styles from './styles/App.module.css';
+
+const VALID_BUTTON_STYLES: ButtonStyle[] = ['default', 'primary', 'success', 'danger'];
+const VALID_ACTION_TYPES: ActionType[] = [
+  'callback_data', 'url', 'web_app', 'switch_inline_query', 'switch_inline_query_current_chat',
+];
+
+function clampGridIndex(value: unknown): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(7, Math.max(1, Math.round(n)));
+}
 
 type TabType = 'keyboard' | 'requests' | 'formatter' | 'json' | 'leadteh';
 type KeyboardPlatform = 'telegram' | 'max';
@@ -74,6 +86,29 @@ function App() {
     setShowValidation(true);
   }, []);
 
+  const applyAiTelegramButtons = useCallback((result: unknown) => {
+    if (!Array.isArray(result)) return;
+
+    const mapped: ButtonConfig[] = result
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map(item => ({
+        id: generateId(),
+        text: String(item.text ?? ''),
+        style: VALID_BUTTON_STYLES.includes(item.style as ButtonStyle) ? (item.style as ButtonStyle) : 'default',
+        actionType: VALID_ACTION_TYPES.includes(item.actionType as ActionType)
+          ? (item.actionType as ActionType)
+          : 'callback_data',
+        actionValue: String(item.actionValue ?? ''),
+        row: clampGridIndex(item.row),
+        col: clampGridIndex(item.col),
+        iconCustomEmojiId: '',
+      }));
+
+    const deduped = Array.from(new Map(mapped.map(b => [`${b.row}:${b.col}`, b])).values());
+    setButtons(deduped);
+    setShowValidation(false);
+  }, []);
+
   return (
     <div className={`${styles.app} ${launchContext.platform === 'web' ? styles.webMode : ''}`}>
       <div className={styles.content}>
@@ -114,6 +149,11 @@ function App() {
           {/* Telegram keyboard — grid constructor */}
           {keyboardPlatform === 'telegram' && (
             <>
+              <AiDictationPanel
+                mode="telegram-keyboard"
+                hint="Опиши голосом раскладку кнопок — например: «кнопка Записаться callback zapis, рядом кнопка Отмена callback cancel»."
+                onResult={applyAiTelegramButtons}
+              />
               <GridConstructor
                 buttons={buttons}
                 errorsById={errorsById}

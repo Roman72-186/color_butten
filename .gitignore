@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Секреты локальной разработки (vercel dev)
+.env
+.env.local
