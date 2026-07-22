@@ -36,7 +36,7 @@ const TABS = [
   { id: 'keyboard',  label: 'Кнопки' },
   { id: 'requests',  label: 'Запросы' },
   { id: 'formatter', label: 'Текст' },
-  { id: 'json',      label: 'JSON-форматор' },
+  { id: 'json',      label: 'Форматор' },
   { id: 'leadteh',   label: 'API LEADTEH' },
 ] as const satisfies readonly { id: TabType; label: string }[];
 
