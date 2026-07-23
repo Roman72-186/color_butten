@@ -641,6 +641,14 @@ export function TextFormatter() {
         )}
       </div>
 
+      <AiDictationPanel
+        mode={AI_MODE_BY_EDITOR_MODE[mode]}
+        modeLabel={currentModeLabel}
+        existingText={text}
+        hint="Надиктуй текст и что в нём выделить — например: «жирным напиши Акция до пятницы, дальше обычным текстом условия». Если в поле уже есть текст — надиктуй только инструкцию по разметке («это выдели жирным», «здесь перенос строки»): содержание сохранится, применится только оформление в текущем режиме."
+        onResult={handleAiResult}
+      />
+
       {!isRich && (
         <div className={styles.toolbar}>
           {FORMAT_BUTTONS.map(btn => (
@@ -703,14 +711,6 @@ export function TextFormatter() {
           через <code> &lt;br&gt;</code>/<code>&lt;br&gt;&lt;br&gt;</code>.
         </div>
       )}
-
-      <AiDictationPanel
-        mode={AI_MODE_BY_EDITOR_MODE[mode]}
-        modeLabel={currentModeLabel}
-        existingText={text}
-        hint="Надиктуй текст и что в нём выделить — например: «жирным напиши Акция до пятницы, дальше обычным текстом условия». Если в поле уже есть текст — надиктуй только инструкцию по разметке («это выдели жирным», «здесь перенос строки»): содержание сохранится, применится только оформление в текущем режиме."
-        onResult={handleAiResult}
-      />
 
       <details className={styles.helpDetails}>
         <summary className={styles.helpSummary}>Справка по разметке</summary>
