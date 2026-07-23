@@ -17,6 +17,7 @@ const ANALYTICS_ADMIN_TOKEN = process.env.ANALYTICS_ADMIN_TOKEN;
 // многоминутный монолог и держит память процесса под контролем.
 const MAX_BODY_BYTES = 8_000_000;
 const MAX_INPUT_CHARS = 4000;
+const MAX_EXISTING_TEXT_CHARS = 4000;
 
 // Аналитика: батч событий и защита от разрастания записей в БД одним запросом.
 const MAX_EVENTS_PER_BATCH = 500;
@@ -30,6 +31,14 @@ const ALLOWED_ORIGINS = new Set([
 function isAllowedOrigin(origin) {
   return ALLOWED_ORIGINS.has(origin) || origin.endsWith('.vercel.app');
 }
+
+const EXISTING_TEXT_START = '===EXISTING_TEXT_START===';
+const EXISTING_TEXT_END = '===EXISTING_TEXT_END===';
+const INSTRUCTION_MARK = '===INSTRUCTION===';
+
+const EXISTING_TEXT_APPENDIX = `
+
+Если в сообщении пользователя есть блок между маркерами ${EXISTING_TEXT_START} и ${EXISTING_TEXT_END} — это уже готовый, ранее написанный текст. Твоя задача: вернуть его с ПОЛНОСТЬЮ сохранённым дословным содержанием (не пересказывай, не сокращай, не добавляй и не убирай информацию, не меняй формулировки), применив к нему ТОЛЬКО разметку/оформление и структурные правки (переносы строк, абзацы, списки, отступы, заголовки и т.п.), описанные в блоке ${INSTRUCTION_MARK} — строго в рамках синтаксиса, разрешённого выше для этого режима. Если блока ${EXISTING_TEXT_START} нет — блок ${INSTRUCTION_MARK} (или всё сообщение целиком) — это описание, по которому нужно сочинить текст с нуля, как обычно.`;
 
 const SYSTEM_PROMPTS = {
   'telegram-keyboard': `Ты помогаешь собрать inline-клавиатуру Telegram Bot API по описанию пользователя на русском языке. Текст получен из голосовой диктовки — в нём могут быть оговорки и распознанные с ошибкой слова, исправляй их по смыслу.
@@ -75,22 +84,22 @@ const SYSTEM_PROMPTS = {
   'text-html': `Ты помогаешь оформить текст сообщения Telegram (parse_mode=HTML) по надиктованному описанию на русском языке. В тексте могут быть оговорки и ошибки распознавания речи — исправляй их по смыслу.
 
 Разрешены только теги: <b>, <i>, <u>, <s>, <tg-spoiler>, <code>, <pre>, <a href="URL">. Никаких других тегов и markdown-синтаксиса.
-Верни СТРОГО JSON-объект без пояснений и без markdown-обрамления: {"result": "готовый HTML-текст"}.`,
+Верни СТРОГО JSON-объект без пояснений и без markdown-обрамления: {"result": "готовый HTML-текст"}.` + EXISTING_TEXT_APPENDIX,
 
   'text-markdown': `Ты помогаешь оформить текст сообщения Telegram (parse_mode=MarkdownV2) по надиктованному описанию на русском языке. В тексте могут быть оговорки и ошибки распознавания речи — исправляй их по смыслу.
 
 Синтаксис: *жирный*, _курсив_, __подчёркнутый__, ~зачёркнутый~, ||спойлер||, \`код\`, тройные обратные кавычки для блока кода, [текст](url) для ссылки. Экранируй обратным слэшем служебные символы MarkdownV2 (_ * [ ] ( ) ~ \` > # + - = | { } . !), которые встречаются вне разметки как обычная пунктуация.
-Верни СТРОГО JSON-объект без пояснений и без markdown-обрамления: {"result": "готовый текст в MarkdownV2"}.`,
+Верни СТРОГО JSON-объект без пояснений и без markdown-обрамления: {"result": "готовый текст в MarkdownV2"}.` + EXISTING_TEXT_APPENDIX,
 
   'text-rich-html': `Ты помогаешь оформить rich-сообщение Telegram Bot API 10.1 (rich_message.html) по надиктованному описанию на русском языке. В тексте могут быть оговорки и ошибки распознавания речи — исправляй их по смыслу.
 
 Доступные теги: <b> <i> <u> <s> <mark> <tg-spoiler> <code> <pre> <sub> <sup> <tg-math> (LaTeX-формула), <h1>-<h6>, <p>, <blockquote>, <aside>, <footer>, <hr/>, <ul><li>, <ol><li>, чеклист через <ul><li><input type="checkbox" [checked]>текст</li></ul>, <a href="URL">, <a name="якорь"></a>, <tg-reference name="имя">. Перенос строки — <br>, новый абзац — <br><br>.
-Верни СТРОГО JSON-объект без пояснений и без markdown-обрамления: {"result": "готовый rich HTML-текст"}.`,
+Верни СТРОГО JSON-объект без пояснений и без markdown-обрамления: {"result": "готовый rich HTML-текст"}.` + EXISTING_TEXT_APPENDIX,
 
   'text-rich-markdown': `Ты помогаешь оформить rich-сообщение Telegram Bot API 10.1 (rich_message.markdown, GitHub-style markdown) по надиктованному описанию на русском языке. В тексте могут быть оговорки и ошибки распознавания речи — исправляй их по смыслу.
 
 Синтаксис: **жирный**, *курсив*, <u>подчёркнутый</u>, ~~зачёркнутый~~, ==выделение==, ||спойлер||, \`код\`, тройные обратные кавычки для блока кода, <sub>/<sup>, $формула$, [текст](url), <tg-reference name="имя">, <a name="якорь"></a>. Заголовки — # ## ### #### ##### ######, абзац — пустая строка между блоками, цитата — "> ", <aside>, <footer>, разделитель — "---", маркированный список — "- пункт", нумерованный — "1. пункт", чеклист — "- [ ] задача" / "- [x] выполнено". Перенос строки — <br>.
-Верни СТРОГО JSON-объект без пояснений и без markdown-обрамления: {"result": "готовый rich Markdown-текст"}.`,
+Верни СТРОГО JSON-объект без пояснений и без markdown-обрамления: {"result": "готовый rich Markdown-текст"}.` + EXISTING_TEXT_APPENDIX,
 };
 
 const JSON_ARRAY_MODES = new Set(['telegram-keyboard', 'max-keyboard']);
@@ -173,6 +182,13 @@ async function handleTranscribe(req, res) {
   }
 }
 
+function buildUserMessage(mode, instruction, existingText) {
+  if (existingText && !JSON_ARRAY_MODES.has(mode)) {
+    return `${EXISTING_TEXT_START}\n${existingText}\n${EXISTING_TEXT_END}\n\n${INSTRUCTION_MARK}\n${instruction}`;
+  }
+  return instruction;
+}
+
 async function handleGenerate(req, res) {
   let body;
   try {
@@ -184,6 +200,7 @@ async function handleGenerate(req, res) {
 
   const text = typeof body?.text === 'string' ? body.text.trim() : '';
   const mode = typeof body?.mode === 'string' ? body.mode : '';
+  const existingText = typeof body?.existingText === 'string' ? body.existingText.trim() : '';
   const systemPrompt = SYSTEM_PROMPTS[mode];
 
   if (!text) {
@@ -198,8 +215,13 @@ async function handleGenerate(req, res) {
     send(res, 413, { error: 'Слишком длинный текст' });
     return;
   }
+  if (existingText.length > MAX_EXISTING_TEXT_CHARS) {
+    send(res, 413, { error: 'Текст в поле слишком длинный для ИИ-разметки' });
+    return;
+  }
 
   try {
+    const maxTokens = JSON_ARRAY_MODES.has(mode) ? 2000 : 4000;
     const upstream = await fetch(`${OPENROUTER_URL}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -208,10 +230,10 @@ async function handleGenerate(req, res) {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 2000,
+        max_tokens: maxTokens,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: text },
+          { role: 'user', content: buildUserMessage(mode, text, existingText) },
         ],
       }),
     });

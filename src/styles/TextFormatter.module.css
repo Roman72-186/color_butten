@@ -310,6 +310,45 @@
   line-height: 1.5;
 }
 
+.helpDetails {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.helpDetails[open] {
+  padding: 0 10px 10px;
+}
+
+.helpSummary {
+  padding: 10px 12px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.helpSummary::-webkit-details-marker {
+  display: none;
+}
+
+.helpSummary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 0.2s;
+}
+
+.helpDetails[open] .helpSummary::before {
+  transform: rotate(90deg);
+}
+
 .textarea {
   width: 100%;
   min-height: 180px;

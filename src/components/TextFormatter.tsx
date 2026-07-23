@@ -148,6 +148,13 @@ const AI_MODE_BY_EDITOR_MODE: Record<EditorMode, GenerateMode> = {
   'rich-markdown': 'text-rich-markdown',
 };
 
+const EDITOR_MODE_OPTIONS: Array<{ value: EditorMode; label: string }> = [
+  { value: 'rich-html', label: 'Rich HTML (10.1)' },
+  { value: 'rich-markdown', label: 'Rich Markdown (10.1)' },
+  { value: 'html', label: 'HTML' },
+  { value: 'markdown', label: 'MarkdownV2' },
+];
+
 export function TextFormatter() {
   const [text, setText] = useState('');
   const [mode, setMode] = useState<EditorMode>('rich-html');
@@ -158,6 +165,7 @@ export function TextFormatter() {
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
 
   const isRich = mode === 'rich-html' || mode === 'rich-markdown';
+  const currentModeLabel = EDITOR_MODE_OPTIONS.find(opt => opt.value === mode)?.label ?? mode;
   // Обычные функции форматирования типизированы FormatMode — в rich-режиме они не
   // вызываются (тулбар/конвертация вставки скрыты), но значение нужно для типов.
   const normalMode: FormatMode = mode === 'markdown' ? 'markdown' : 'html';
@@ -589,18 +597,49 @@ export function TextFormatter() {
           value={mode}
           onChange={e => setMode(e.target.value as EditorMode)}
         >
-          <option value="rich-html">Rich HTML (10.1)</option>
-          <option value="rich-markdown">Rich Markdown (10.1)</option>
-          <option value="html">HTML</option>
-          <option value="markdown">MarkdownV2</option>
+          {EDITOR_MODE_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
       </div>
 
-      <AiDictationPanel
-        mode={AI_MODE_BY_EDITOR_MODE[mode]}
-        hint="Надиктуй текст и что в нём выделить — например: «жирным напиши Акция до пятницы, дальше обычным текстом условия»."
-        onResult={handleAiResult}
+      <textarea
+        ref={textareaRef}
+        className={styles.textarea}
+        value={text}
+        onChange={e => setText(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onKeyUp={trackSelection}
+        onMouseUp={trackSelection}
+        onSelect={trackSelection}
+        onPaste={handlePaste}
+        onBlur={handleBlur}
+        placeholder={isRich
+          ? 'Введите rich-разметку (заголовки, таблицы, списки, цитаты, LaTeX)...'
+          : 'Вставьте текст с форматированием или введите вручную...'}
+        rows={8}
       />
+
+      <div className={styles.actions}>
+        <button
+          className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
+          onClick={handleCopy}
+          disabled={copyDisabled}
+        >
+          {copied ? '✓ Скопировано' : 'Скопировать'}
+        </button>
+        {!isRich && (
+          <button
+            className={styles.shareBtn}
+            onClick={handleShare}
+            disabled={!text.trim() || textErrors.length > 0}
+          >
+            Поделиться
+          </button>
+        )}
+      </div>
 
       {!isRich && (
         <div className={styles.toolbar}>
@@ -665,26 +704,20 @@ export function TextFormatter() {
         </div>
       )}
 
-      <textarea
-        ref={textareaRef}
-        className={styles.textarea}
-        value={text}
-        onChange={e => setText(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onKeyUp={trackSelection}
-        onMouseUp={trackSelection}
-        onSelect={trackSelection}
-        onPaste={handlePaste}
-        onBlur={handleBlur}
-        placeholder={isRich
-          ? 'Введите rich-разметку (заголовки, таблицы, списки, цитаты, LaTeX)...'
-          : 'Вставьте текст с форматированием или введите вручную...'}
-        rows={8}
+      <AiDictationPanel
+        mode={AI_MODE_BY_EDITOR_MODE[mode]}
+        modeLabel={currentModeLabel}
+        existingText={text}
+        hint="Надиктуй текст и что в нём выделить — например: «жирным напиши Акция до пятницы, дальше обычным текстом условия». Если в поле уже есть текст — надиктуй только инструкцию по разметке («это выдели жирным», «здесь перенос строки»): содержание сохранится, применится только оформление в текущем режиме."
+        onResult={handleAiResult}
       />
 
-      {isRich
-        ? <RichMarkupHelp format={richFormat} />
-        : <TextMarkupHelp platform="telegram" mode={mode === 'html' ? 'HTML' : 'MarkdownV2'} />}
+      <details className={styles.helpDetails}>
+        <summary className={styles.helpSummary}>Справка по разметке</summary>
+        {isRich
+          ? <RichMarkupHelp format={richFormat} />
+          : <TextMarkupHelp platform="telegram" mode={mode === 'html' ? 'HTML' : 'MarkdownV2'} />}
+      </details>
 
       {!isRich && text.trim() && (
         <div className={styles.preview}>
@@ -735,25 +768,6 @@ export function TextFormatter() {
           ))}
         </div>
       )}
-
-      <div className={styles.actions}>
-        <button
-          className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
-          onClick={handleCopy}
-          disabled={copyDisabled}
-        >
-          {copied ? '✓ Скопировано' : 'Скопировать'}
-        </button>
-        {!isRich && (
-          <button
-            className={styles.shareBtn}
-            onClick={handleShare}
-            disabled={!text.trim() || textErrors.length > 0}
-          >
-            Поделиться
-          </button>
-        )}
-      </div>
     </div>
   );
 }

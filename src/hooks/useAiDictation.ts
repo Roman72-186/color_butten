@@ -27,7 +27,7 @@ function pickMimeType(): string {
   return '';
 }
 
-export function useAiDictation(mode: GenerateMode) {
+export function useAiDictation(mode: GenerateMode, existingText?: string) {
   const [status, setStatus] = useState<DictationStatus>('idle');
   const [transcript, setTranscript] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -96,7 +96,8 @@ export function useAiDictation(mode: GenerateMode) {
     setStatus('generating');
     setErrorMessage('');
     try {
-      const result = await generateFromText(transcript.trim(), mode);
+      const trimmedExisting = existingText?.trim() || undefined;
+      const result = await generateFromText(transcript.trim(), mode, trimmedExisting);
       setStatus('idle');
       return result;
     } catch (err) {
@@ -104,7 +105,7 @@ export function useAiDictation(mode: GenerateMode) {
       setStatus('error');
       return null;
     }
-  }, [transcript, mode]);
+  }, [transcript, mode, existingText]);
 
   const reset = useCallback(() => {
     setStatus('idle');

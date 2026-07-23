@@ -35,11 +35,15 @@ export async function transcribeAudio(audioBase64: string, format: string): Prom
   return data.text ?? '';
 }
 
-export async function generateFromText(text: string, mode: GenerateMode): Promise<unknown> {
+export async function generateFromText(
+  text: string,
+  mode: GenerateMode,
+  existingText?: string,
+): Promise<unknown> {
   const response = await fetch(`${API_BASE}/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, mode }),
+    body: JSON.stringify({ text, mode, existingText }),
   });
   if (!response.ok) throw new Error(await readErrorMessage(response));
   const data = (await response.json()) as { result?: unknown };

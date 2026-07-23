@@ -6,6 +6,8 @@ interface AiDictationPanelProps {
   mode: GenerateMode;
   hint: string;
   onResult: (result: unknown) => void;
+  existingText?: string;
+  modeLabel?: string;
 }
 
 const STATUS_LABEL: Record<DictationStatus, string> = {
@@ -17,10 +19,11 @@ const STATUS_LABEL: Record<DictationStatus, string> = {
   error: '',
 };
 
-export function AiDictationPanel({ mode, hint, onResult }: AiDictationPanelProps) {
+export function AiDictationPanel({ mode, hint, onResult, existingText, modeLabel }: AiDictationPanelProps) {
   const { status, transcript, setTranscript, errorMessage, startRecording, stopRecording, generate, reset } =
-    useAiDictation(mode);
+    useAiDictation(mode, existingText);
 
+  const hasExistingText = Boolean(existingText?.trim());
   const busy = status === 'transcribing' || status === 'generating';
   const showTranscript = status === 'ready' || status === 'generating' || (status === 'error' && Boolean(transcript));
 
@@ -36,7 +39,10 @@ export function AiDictationPanel({ mode, hint, onResult }: AiDictationPanelProps
     <div className={styles.panel}>
       <div className={styles.headerRow}>
         <span className={styles.title}>✨ ИИ-диктовка</span>
-        {STATUS_LABEL[status] && <span className={styles.status}>{STATUS_LABEL[status]}</span>}
+        <div className={styles.badges}>
+          {modeLabel && <span className={styles.modeBadge}>{modeLabel}</span>}
+          {STATUS_LABEL[status] && <span className={styles.status}>{STATUS_LABEL[status]}</span>}
+        </div>
       </div>
 
       <p className={styles.hint}>{hint}</p>
@@ -69,7 +75,11 @@ export function AiDictationPanel({ mode, hint, onResult }: AiDictationPanelProps
               onClick={() => void handleGenerate()}
               disabled={busy || !transcript.trim()}
             >
-              {status === 'generating' ? 'Генерируем...' : '✨ Сгенерировать'}
+              {status === 'generating'
+                ? 'Генерируем...'
+                : hasExistingText
+                  ? '✨ Применить к тексту'
+                  : '✨ Сгенерировать'}
             </button>
             <button className={styles.cancelBtn} onClick={reset} disabled={busy}>
               Отмена
