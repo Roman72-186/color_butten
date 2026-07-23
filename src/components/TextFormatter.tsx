@@ -622,25 +622,6 @@ export function TextFormatter() {
         rows={8}
       />
 
-      <div className={styles.actions}>
-        <button
-          className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
-          onClick={handleCopy}
-          disabled={copyDisabled}
-        >
-          {copied ? '✓ Скопировано' : 'Скопировать'}
-        </button>
-        {!isRich && (
-          <button
-            className={styles.shareBtn}
-            onClick={handleShare}
-            disabled={!text.trim() || textErrors.length > 0}
-          >
-            Поделиться
-          </button>
-        )}
-      </div>
-
       <AiDictationPanel
         mode={AI_MODE_BY_EDITOR_MODE[mode]}
         modeLabel={currentModeLabel}
@@ -768,6 +749,25 @@ export function TextFormatter() {
           ))}
         </div>
       )}
+
+      <div className={styles.actions}>
+        <button
+          className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
+          onClick={handleCopy}
+          disabled={copyDisabled}
+        >
+          {copied ? '✓ Скопировано' : 'Скопировать'}
+        </button>
+        {!isRich && (
+          <button
+            className={styles.shareBtn}
+            onClick={handleShare}
+            disabled={!text.trim() || textErrors.length > 0}
+          >
+            Поделиться
+          </button>
+        )}
+      </div>
     </div>
   );
 }

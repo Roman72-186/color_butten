@@ -87,6 +87,36 @@ function App() {
     if (page) trackPageview(page);
   }, [activeTab, keyboardPlatform]);
 
+  // Запрет зума только внутри Mini App (Telegram/MAX) — обычная веб-версия
+  // сохраняет стандартный зум браузера ради доступности.
+  useEffect(() => {
+    if (!launchContext.isMiniApp) return;
+
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    const previousContent = viewportMeta?.getAttribute('content') ?? null;
+    viewportMeta?.setAttribute(
+      'content',
+      'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover',
+    );
+
+    document.documentElement.classList.add('mini-app-no-zoom');
+
+    const preventGesture = (e: Event) => e.preventDefault();
+    const preventPinch = (e: TouchEvent) => {
+      if (e.touches.length > 1) e.preventDefault();
+    };
+
+    document.addEventListener('gesturestart', preventGesture);
+    document.addEventListener('touchmove', preventPinch, { passive: false });
+
+    return () => {
+      document.documentElement.classList.remove('mini-app-no-zoom');
+      document.removeEventListener('gesturestart', preventGesture);
+      document.removeEventListener('touchmove', preventPinch);
+      if (previousContent !== null) viewportMeta?.setAttribute('content', previousContent);
+    };
+  }, [launchContext.isMiniApp]);
+
   // ── Telegram keyboard state ──────────────────────────────────────────────
   const [buttons, setButtons] = useState<ButtonConfig[]>([]);
   const [showValidation, setShowValidation] = useState(false);

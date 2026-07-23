@@ -78,6 +78,14 @@ body {
   position: relative;
 }
 
+/* Запрет пинч-зума и зума по двойному тапу внутри Telegram/MAX Mini App —
+   класс включается из App.tsx только при запуске как мини-приложение,
+   обычная веб-версия сохраняет обычное поведение зума браузера. */
+html.mini-app-no-zoom,
+html.mini-app-no-zoom body {
+  touch-action: manipulation;
+}
+
 @keyframes cyber-slide {
   from {
     transform: translateY(6px);
