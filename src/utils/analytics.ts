@@ -44,29 +44,57 @@ function enqueue(event: AnalyticsEvent): void {
   }
 }
 
-function flush(): void {
+function sendViaBeacon(payload: string): boolean {
+  if (typeof navigator.sendBeacon !== 'function') return false;
+  // Тип строго text/plain: sendBeacon по стандарту шлёт запрос в режиме
+  // credentials: 'include', а любой «небезопасный» тип содержимого (в том числе
+  // application/json) добавляет к нему предварительный CORS-запрос. Такой
+  // предварительный запрос требует от сервера заголовка Access-Control-Allow-Credentials,
+  // которого он не отдаёт, — браузер молча отменяет отправку, а sendBeacon всё равно
+  // возвращает true (событие лишь поставлено в очередь). Именно так статистика
+  // не собиралась с самого запуска. Сервер разбирает тело без оглядки на этот заголовок.
+  const blob = new Blob([payload], { type: 'text/plain' });
+  return navigator.sendBeacon(`${API_BASE}/analytics/event`, blob);
+}
+
+function sendViaFetch(payload: string, events: AnalyticsEvent[]): void {
+  // fetch по умолчанию работает в режиме credentials: 'same-origin', поэтому
+  // предварительный запрос проходит обычную проверку и ответ виден — можно вернуть
+  // события в очередь и повторить попытку на следующем цикле.
+  void fetch(`${API_BASE}/analytics/event`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: payload,
+    keepalive: true,
+  })
+    .then(response => {
+      if (!response.ok) requeue(events);
+    })
+    .catch(() => {
+      requeue(events);
+    });
+}
+
+function requeue(events: AnalyticsEvent[]): void {
+  queue = [...events, ...queue].slice(-MAX_QUEUE_LENGTH);
+}
+
+/**
+ * Отправляет накопленную очередь.
+ * `viaBeacon` — для ухода со страницы: там fetch может не успеть, зато sendBeacon
+ * гарантированно передаёт запрос браузеру. Плата за это — доставка не проверяется.
+ * На обычном цикле отправки используем fetch, чтобы видеть отказ и повторить попытку.
+ */
+function flush(viaBeacon: boolean): void {
   if (queue.length === 0) return;
   const events = queue;
   queue = [];
 
   const payload = JSON.stringify({ sessionId: getSessionId(), events });
 
-  if (typeof navigator.sendBeacon === 'function') {
-    const blob = new Blob([payload], { type: 'application/json' });
-    const accepted = navigator.sendBeacon(`${API_BASE}/analytics/event`, blob);
-    if (accepted) return;
-  }
+  if (viaBeacon && sendViaBeacon(payload)) return;
 
-  // sendBeacon недоступен или отказал (например, превышен лимит очереди браузера) —
-  // отправляем через fetch с keepalive, чтобы запрос пережил закрытие вкладки.
-  void fetch(`${API_BASE}/analytics/event`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: payload,
-    keepalive: true,
-  }).catch(() => {
-    // сеть недоступна — событие теряется, ретраить внутреннюю статистику не критично
-  });
+  sendViaFetch(payload, events);
 }
 
 function resolveLabel(el: Element): string {
@@ -115,10 +143,10 @@ export function initAnalytics(): void {
 
   document.addEventListener('click', handleDocumentClick);
 
-  window.setInterval(flush, FLUSH_INTERVAL_MS);
+  window.setInterval(() => flush(false), FLUSH_INTERVAL_MS);
 
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flush();
+    if (document.visibilityState === 'hidden') flush(true);
   });
-  window.addEventListener('pagehide', flush);
+  window.addEventListener('pagehide', () => flush(true));
 }
