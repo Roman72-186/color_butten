@@ -5,6 +5,7 @@
 import 'dotenv/config';
 import { createServer } from 'node:http';
 import { insertEvents, getStats } from './db.js';
+import { resolveIdentity, consume, getRateLimitStats } from './rateLimit.js';
 
 const PORT = Number(process.env.PORT) || 8788;
 const HOST = process.env.HOST || '127.0.0.1';
@@ -133,6 +134,29 @@ function readJsonBody(req) {
     });
     req.on('error', reject);
   });
+}
+
+/** «5 секунд», «2 минуты», «3 часа» — русские окончания по числу. */
+function pluralRu(value, one, few, many) {
+  const mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 14) return many;
+  const mod10 = value % 10;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
+}
+
+/**
+ * Время ожидания словами для сообщения об отказе. Заголовок Retry-After браузеру
+ * не виден (фронт не запрашивает Access-Control-Expose-Headers), поэтому вся
+ * подсказка человеку живёт в тексте ошибки — его показывает aiClient.ts как есть.
+ */
+function formatWait(seconds) {
+  if (seconds < 60) return `${seconds} ${pluralRu(seconds, 'секунду', 'секунды', 'секунд')}`;
+  const minutes = Math.ceil(seconds / 60);
+  if (minutes < 60) return `${minutes} ${pluralRu(minutes, 'минуту', 'минуты', 'минут')}`;
+  const hours = Math.ceil(minutes / 60);
+  return `${hours} ${pluralRu(hours, 'час', 'часа', 'часов')}`;
 }
 
 function stripCodeFence(raw) {
@@ -335,7 +359,10 @@ function handleAnalyticsStats(req, res) {
     return;
   }
   try {
-    send(res, 200, getStats());
+    // К статистике посещений подмешиваются счётчики лимита частоты: панель
+    // «Аналитика» лишние поля игнорирует, зато их видно обычным curl'ом — другого
+    // способа заметить, что по ИИ-эндпоинтам стучат, у процесса без логов нет.
+    send(res, 200, { ...getStats(), ...getRateLimitStats() });
   } catch {
     send(res, 500, { error: 'Не удалось получить статистику' });
   }
@@ -382,6 +409,20 @@ const server = createServer(async (req, res) => {
   if (!OPENROUTER_API_KEY) {
     send(res, 500, { error: 'OPENROUTER_API_KEY не настроен на сервере' });
     return;
+  }
+
+  // Лимит частоты — до разбора тела: злоупотребление не должно тянуть в память
+  // 8 МБ base64-аудио. Заголовки CORS уже выставлены выше, иначе браузер показал бы
+  // не наше сообщение об ожидании, а невнятный отказ CORS. /api/health и приём
+  // событий аналитики сюда не попадают: они разобраны раньше и лимита не требуют.
+  const isAiRoute = url.pathname === '/api/transcribe' || url.pathname === '/api/generate';
+  if (isAiRoute) {
+    const verdict = consume(resolveIdentity(req));
+    if (!verdict.allowed) {
+      res.setHeader('Retry-After', String(verdict.retryAfterSec));
+      send(res, 429, { error: `Слишком часто – попробуйте через ${formatWait(verdict.retryAfterSec)}` });
+      return;
+    }
   }
 
   if (url.pathname === '/api/transcribe') {
