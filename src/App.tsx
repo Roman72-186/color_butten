@@ -35,7 +35,6 @@ type KeyboardPlatform = 'telegram' | 'max';
 type RequestPlatform = 'telegram' | 'max';
 
 const TABS = [
-  { id: 'keyboard',  label: 'Кнопки' },
   { id: 'formatter', label: 'Текст' },
   { id: 'json',      label: 'Форматор' },
 ] as const satisfies readonly { id: TabType; label: string }[];
@@ -81,6 +80,12 @@ function App() {
     setIsCurlOpen(true);
   }, []);
 
+  const handleOpenKeyboard = useCallback((platform: KeyboardPlatform) => {
+    setKeyboardPlatform(platform);
+    setActiveTab('keyboard');
+    setIsCurlOpen(false);
+  }, []);
+
   const handleOpenApi = useCallback((platform: RequestPlatform) => {
     setRequestPlatform(platform);
     setActiveTab('requests');
@@ -93,11 +98,12 @@ function App() {
   }, []);
 
   const activeSectionLabel = useMemo(() => {
+    if (activeTab === 'keyboard') return keyboardPlatform === 'telegram' ? 'Кнопки Telegram' : 'Кнопки MAX';
     if (activeTab === 'requests') return requestPlatform === 'telegram' ? 'API Telegram' : 'API MAX';
     if (activeTab === 'leadteh') return 'API LEADTEH';
     if (activeTab === 'curl') return 'Разобрать curl';
     return tabs.find(tab => tab.id === activeTab)?.label ?? 'Раздел';
-  }, [activeTab, requestPlatform, tabs]);
+  }, [activeTab, keyboardPlatform, requestPlatform, tabs]);
 
   const handleVersionClick = useCallback(() => {
     const now = Date.now();
@@ -233,6 +239,7 @@ function App() {
             activeLabel={activeSectionLabel}
             onTabChange={handleTabChange}
             onOpenCurl={handleOpenCurl}
+            onOpenKeyboard={handleOpenKeyboard}
             onOpenApi={handleOpenApi}
             onOpenLeadteh={handleOpenLeadteh}
           />

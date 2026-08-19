@@ -123,8 +123,7 @@
   margin-top: 12px;
 }
 
-.apiAction,
-.curlAction {
+.groupAction {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -137,48 +136,28 @@
   text-align: left;
 }
 
-.apiAction {
+.groupAction {
   margin-bottom: 4px;
   color: var(--text);
   background: transparent;
   border: 1px solid var(--border);
 }
 
-.apiAction:hover,
-.apiAction:focus-visible {
+.groupAction:hover,
+.groupAction:focus-visible {
   background: var(--surface-alt);
 }
 
-.apiActionActive {
+.groupActionActive {
   color: var(--accent);
   background: var(--accent-soft);
   border-color: var(--accent-ring);
 }
 
-.apiActionHint,
-.curlActionHint {
+.groupActionHint {
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 500;
-}
-
-.curlAction {
-  color: var(--accent);
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-ring);
-}
-
-.curlAction:hover,
-.curlAction:focus-visible {
-  background: var(--accent-soft-hover);
-}
-
-.curlAction:active {
-  transform: translateY(1px);
-}
-
-.curlActionActive {
-  background: var(--accent-soft-hover);
 }
 
 .option {
@@ -232,8 +211,7 @@
 @media (prefers-reduced-motion: reduce) {
   .trigger,
   .option,
-  .curlAction,
-  .apiAction {
+  .groupAction {
     transform: none;
   }
 }

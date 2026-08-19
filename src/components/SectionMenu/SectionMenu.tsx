@@ -7,7 +7,8 @@ interface Tab<T extends string> {
 }
 
 type ApiPlatform = 'telegram' | 'max';
-type MenuLevel = 'root' | 'api';
+type KeyboardPlatform = 'telegram' | 'max';
+type MenuLevel = 'root' | 'buttons' | 'api';
 
 interface SectionMenuProps<T extends string> {
   tabs: readonly Tab<T>[];
@@ -15,6 +16,7 @@ interface SectionMenuProps<T extends string> {
   activeLabel: string;
   onTabChange: (tab: T) => void;
   onOpenCurl: () => void;
+  onOpenKeyboard: (platform: KeyboardPlatform) => void;
   onOpenApi: (platform: ApiPlatform) => void;
   onOpenLeadteh: () => void;
 }
@@ -25,6 +27,7 @@ export function SectionMenu<T extends string>({
   activeLabel,
   onTabChange,
   onOpenCurl,
+  onOpenKeyboard,
   onOpenApi,
   onOpenLeadteh,
 }: SectionMenuProps<T>) {
@@ -33,6 +36,7 @@ export function SectionMenu<T extends string>({
   const restoreTriggerFocusRef = useRef(true);
   const [isOpen, setIsOpen] = useState(false);
   const [menuLevel, setMenuLevel] = useState<MenuLevel>('root');
+  const isKeyboardActive = activeTab === 'keyboard';
   const isApiActive = activeTab === 'requests' || activeTab === 'leadteh';
   const isCurlActive = activeTab === 'curl';
 
@@ -71,6 +75,11 @@ export function SectionMenu<T extends string>({
   const handleOpenCurl = () => {
     onOpenCurl();
     closeMenu(false);
+  };
+
+  const handleOpenKeyboard = (platform: KeyboardPlatform) => {
+    onOpenKeyboard(platform);
+    closeMenu();
   };
 
   const handleOpenApi = (platform: ApiPlatform) => {
@@ -115,14 +124,18 @@ export function SectionMenu<T extends string>({
       >
         <div className={styles.sheet}>
           <header className={styles.header}>
-            {menuLevel === 'api' ? (
+            {menuLevel !== 'root' ? (
               <button type="button" className={styles.backButton} onClick={() => setMenuLevel('root')}>
                 Назад
               </button>
             ) : (
               <h2 id="section-menu-title" className={styles.title}>Разделы</h2>
             )}
-            {menuLevel === 'api' && <h2 id="section-menu-title" className={styles.title}>API</h2>}
+            {menuLevel !== 'root' && (
+              <h2 id="section-menu-title" className={styles.title}>
+                {menuLevel === 'buttons' ? 'Кнопки' : 'API'}
+              </h2>
+            )}
             <button type="button" className={styles.closeButton} onClick={() => closeMenu()}>
               Закрыть
             </button>
@@ -132,25 +145,37 @@ export function SectionMenu<T extends string>({
             <>
               <button
                 type="button"
-                className={`${styles.apiAction} ${isApiActive ? styles.apiActionActive : ''}`}
-                aria-current={isApiActive ? 'true' : undefined}
-                onClick={() => setMenuLevel('api')}
+                className={`${styles.groupAction} ${isKeyboardActive ? styles.groupActionActive : ''}`}
+                aria-current={isKeyboardActive ? 'true' : undefined}
+                onClick={() => setMenuLevel('buttons')}
               >
-                <span>API</span>
-                <span className={styles.apiActionHint}>{isApiActive ? activeLabel : 'Telegram, MAX, LEADTEH'}</span>
+                <span>Кнопки</span>
+                <span className={styles.groupActionHint}>
+                  {isKeyboardActive ? activeLabel : 'Telegram, MAX'}
+                </span>
               </button>
 
               <button
                 type="button"
-                className={`${styles.curlAction} ${isCurlActive ? styles.curlActionActive : ''}`}
-                aria-current={isCurlActive ? 'true' : undefined}
-                onClick={handleOpenCurl}
+                className={`${styles.groupAction} ${isApiActive ? styles.groupActionActive : ''}`}
+                aria-current={isApiActive ? 'true' : undefined}
+                onClick={() => setMenuLevel('api')}
               >
-                <span>Разобрать curl</span>
-                <span className={styles.curlActionHint}>Вставить команду</span>
+                <span>API</span>
+                <span className={styles.groupActionHint}>{isApiActive ? activeLabel : 'Telegram, MAX, LEADTEH'}</span>
               </button>
 
               <div className={styles.list}>
+                <button
+                  type="button"
+                  className={`${styles.option} ${isCurlActive ? styles.optionActive : ''}`}
+                  aria-current={isCurlActive ? 'true' : undefined}
+                  onClick={handleOpenCurl}
+                >
+                  <span>Разобрать curl</span>
+                  {isCurlActive && <span className={styles.currentLabel}>Открыт</span>}
+                </button>
+
                 {tabs.map(tab => {
                   const isActive = tab.id === activeTab;
                   return (
@@ -168,6 +193,15 @@ export function SectionMenu<T extends string>({
                 })}
               </div>
             </>
+          ) : menuLevel === 'buttons' ? (
+            <div className={styles.list}>
+              <button type="button" className={styles.option} onClick={() => handleOpenKeyboard('telegram')}>
+                Кнопки Telegram
+              </button>
+              <button type="button" className={styles.option} onClick={() => handleOpenKeyboard('max')}>
+                Кнопки MAX
+              </button>
+            </div>
           ) : (
             <div className={styles.list}>
               <button type="button" className={styles.option} onClick={() => handleOpenApi('telegram')}>
