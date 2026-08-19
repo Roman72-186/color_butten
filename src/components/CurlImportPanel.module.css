@@ -1,4 +1,5 @@
 .card {
+  scroll-margin-top: 76px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);

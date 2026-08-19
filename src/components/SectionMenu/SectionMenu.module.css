@@ -99,6 +99,20 @@
   font-weight: 600;
 }
 
+.backButton {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.backButton:hover {
+  color: var(--text);
+}
+
 .closeButton:hover {
   color: var(--text);
 }
@@ -109,6 +123,7 @@
   margin-top: 12px;
 }
 
+.apiAction,
 .curlAction {
   display: flex;
   align-items: center;
@@ -116,13 +131,41 @@
   width: 100%;
   min-height: 52px;
   padding: 10px 12px;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-ring);
   border-radius: 8px;
   font-size: 15px;
   font-weight: 700;
   text-align: left;
+}
+
+.apiAction {
+  margin-bottom: 4px;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+.apiAction:hover,
+.apiAction:focus-visible {
+  background: var(--surface-alt);
+}
+
+.apiActionActive {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-ring);
+}
+
+.apiActionHint,
+.curlActionHint {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.curlAction {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-ring);
 }
 
 .curlAction:hover,
@@ -134,10 +177,8 @@
   transform: translateY(1px);
 }
 
-.curlActionHint {
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 500;
+.curlActionActive {
+  background: var(--accent-soft-hover);
 }
 
 .option {
@@ -191,7 +232,8 @@
 @media (prefers-reduced-motion: reduce) {
   .trigger,
   .option,
-  .curlAction {
+  .curlAction,
+  .apiAction {
     transform: none;
   }
 }

@@ -6,19 +6,35 @@ interface Tab<T extends string> {
   label: string;
 }
 
+type ApiPlatform = 'telegram' | 'max';
+type MenuLevel = 'root' | 'api';
+
 interface SectionMenuProps<T extends string> {
   tabs: readonly Tab<T>[];
   activeTab: T;
+  activeLabel: string;
   onTabChange: (tab: T) => void;
   onOpenCurl: () => void;
+  onOpenApi: (platform: ApiPlatform) => void;
+  onOpenLeadteh: () => void;
 }
 
-export function SectionMenu<T extends string>({ tabs, activeTab, onTabChange, onOpenCurl }: SectionMenuProps<T>) {
+export function SectionMenu<T extends string>({
+  tabs,
+  activeTab,
+  activeLabel,
+  onTabChange,
+  onOpenCurl,
+  onOpenApi,
+  onOpenLeadteh,
+}: SectionMenuProps<T>) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const restoreTriggerFocusRef = useRef(true);
   const [isOpen, setIsOpen] = useState(false);
-  const active = tabs.find(tab => tab.id === activeTab) ?? tabs[0];
+  const [menuLevel, setMenuLevel] = useState<MenuLevel>('root');
+  const isApiActive = activeTab === 'requests' || activeTab === 'leadteh';
+  const isCurlActive = activeTab === 'curl';
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -39,6 +55,7 @@ export function SectionMenu<T extends string>({ tabs, activeTab, onTabChange, on
 
   const handleClose = () => {
     setIsOpen(false);
+    setMenuLevel('root');
     const shouldRestoreTriggerFocus = restoreTriggerFocusRef.current;
     restoreTriggerFocusRef.current = true;
     if (shouldRestoreTriggerFocus) {
@@ -56,6 +73,16 @@ export function SectionMenu<T extends string>({ tabs, activeTab, onTabChange, on
     closeMenu(false);
   };
 
+  const handleOpenApi = (platform: ApiPlatform) => {
+    onOpenApi(platform);
+    closeMenu();
+  };
+
+  const handleOpenLeadteh = () => {
+    onOpenLeadteh();
+    closeMenu();
+  };
+
   return (
     <>
       <button
@@ -65,11 +92,14 @@ export function SectionMenu<T extends string>({ tabs, activeTab, onTabChange, on
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-controls="section-menu"
-        aria-label={`Выбрать раздел. Сейчас открыт: ${active.label}`}
-        onClick={() => setIsOpen(true)}
+        aria-label={`Выбрать раздел. Сейчас открыт: ${activeLabel}`}
+        onClick={() => {
+          setMenuLevel('root');
+          setIsOpen(true);
+        }}
       >
         <span className={styles.triggerLabel}>Раздел</span>
-        <span className={styles.triggerValue}>{active.label}</span>
+        <span className={styles.triggerValue}>{activeLabel}</span>
         <span className={styles.chevron} aria-hidden="true">⌄</span>
       </button>
 
@@ -85,34 +115,72 @@ export function SectionMenu<T extends string>({ tabs, activeTab, onTabChange, on
       >
         <div className={styles.sheet}>
           <header className={styles.header}>
-            <h2 id="section-menu-title" className={styles.title}>Разделы</h2>
+            {menuLevel === 'api' ? (
+              <button type="button" className={styles.backButton} onClick={() => setMenuLevel('root')}>
+                Назад
+              </button>
+            ) : (
+              <h2 id="section-menu-title" className={styles.title}>Разделы</h2>
+            )}
+            {menuLevel === 'api' && <h2 id="section-menu-title" className={styles.title}>API</h2>}
             <button type="button" className={styles.closeButton} onClick={() => closeMenu()}>
               Закрыть
             </button>
           </header>
 
-          <button type="button" className={styles.curlAction} onClick={handleOpenCurl}>
-            <span>Разобрать curl</span>
-            <span className={styles.curlActionHint}>Вставить команду</span>
-          </button>
+          {menuLevel === 'root' ? (
+            <>
+              <button
+                type="button"
+                className={`${styles.apiAction} ${isApiActive ? styles.apiActionActive : ''}`}
+                aria-current={isApiActive ? 'true' : undefined}
+                onClick={() => setMenuLevel('api')}
+              >
+                <span>API</span>
+                <span className={styles.apiActionHint}>{isApiActive ? activeLabel : 'Telegram, MAX, LEADTEH'}</span>
+              </button>
 
-          <div className={styles.list}>
-            {tabs.map(tab => {
-              const isActive = tab.id === activeTab;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  className={`${styles.option} ${isActive ? styles.optionActive : ''}`}
-                  aria-current={isActive ? 'true' : undefined}
-                  onClick={() => handleTabChange(tab.id)}
-                >
-                  <span>{tab.label}</span>
-                  {isActive && <span className={styles.currentLabel}>Открыт</span>}
-                </button>
-              );
-            })}
-          </div>
+              <button
+                type="button"
+                className={`${styles.curlAction} ${isCurlActive ? styles.curlActionActive : ''}`}
+                aria-current={isCurlActive ? 'true' : undefined}
+                onClick={handleOpenCurl}
+              >
+                <span>Разобрать curl</span>
+                <span className={styles.curlActionHint}>Вставить команду</span>
+              </button>
+
+              <div className={styles.list}>
+                {tabs.map(tab => {
+                  const isActive = tab.id === activeTab;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={`${styles.option} ${isActive ? styles.optionActive : ''}`}
+                      aria-current={isActive ? 'true' : undefined}
+                      onClick={() => handleTabChange(tab.id)}
+                    >
+                      <span>{tab.label}</span>
+                      {isActive && <span className={styles.currentLabel}>Открыт</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className={styles.list}>
+              <button type="button" className={styles.option} onClick={() => handleOpenApi('telegram')}>
+                API Telegram
+              </button>
+              <button type="button" className={styles.option} onClick={() => handleOpenApi('max')}>
+                API MAX
+              </button>
+              <button type="button" className={styles.option} onClick={handleOpenLeadteh}>
+                API LEADTEH
+              </button>
+            </div>
+          )}
         </div>
       </dialog>
     </>

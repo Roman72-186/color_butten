@@ -5,6 +5,7 @@ import { JsonFormatter } from './components/JsonFormatter';
 import { RequestBuilder } from './components/RequestBuilder';
 import { MaxKeyboardTab } from './components/MaxKeyboardTab';
 import { LeadtehRequestBuilder } from './components/LeadtehRequestBuilder';
+import { CurlImportPanel } from './components/CurlImportPanel';
 import { GridConstructor } from './components/GridConstructor';
 import { Preview } from './components/Preview';
 import { JsonOutput } from './components/JsonOutput';
@@ -29,15 +30,14 @@ function clampGridIndex(value: unknown): number {
   return Math.min(7, Math.max(1, Math.round(n)));
 }
 
-type TabType = 'keyboard' | 'requests' | 'formatter' | 'json' | 'leadteh' | 'analytics';
+type TabType = 'keyboard' | 'requests' | 'formatter' | 'json' | 'curl' | 'leadteh' | 'analytics';
 type KeyboardPlatform = 'telegram' | 'max';
+type RequestPlatform = 'telegram' | 'max';
 
 const TABS = [
   { id: 'keyboard',  label: 'Кнопки' },
-  { id: 'requests',  label: 'Запросы' },
   { id: 'formatter', label: 'Текст' },
   { id: 'json',      label: 'Форматор' },
-  { id: 'leadteh',   label: 'API LEADTEH' },
 ] as const satisfies readonly { id: TabType; label: string }[];
 
 const ANALYTICS_TAB = { id: 'analytics', label: 'Аналитика' } as const satisfies { id: TabType; label: string };
@@ -49,9 +49,8 @@ const ADMIN_UNLOCK_CLICKS = 3;
 const ADMIN_UNLOCK_WINDOW_MS = 1500;
 
 /**
- * Имя страницы для аналитики. 'requests' возвращает null — вкладка «Запросы» держит
- * свой platform-переключатель внутри RequestBuilder (не поднят в App), поэтому там
- * трекается отдельно через проп isActive.
+ * Имя страницы для аналитики. Для запросов pageview отправляет RequestBuilder
+ * с выбранной платформой.
  */
 function pageNameForTab(tab: TabType, keyboardPlatform: KeyboardPlatform): string | null {
   if (tab === 'keyboard') return `keyboard:${keyboardPlatform}`;
@@ -66,20 +65,39 @@ function App() {
   const [isAdminMode, setIsAdminMode] = useState(false);
   const unlockClickTimestampsRef = useRef<number[]>([]);
   const tabs = useMemo(() => (isAdminMode ? [...TABS, ANALYTICS_TAB] : TABS), [isAdminMode]);
-  // Стартовая вкладка — «Запросы»: с неё начинается работа и там же лежит разбор curl.
+  // Стартовый раздел — API Telegram: он открывает самый частый сценарий работы.
   const [activeTab, setActiveTab] = useState<TabType>('requests');
   const [isCurlOpen, setIsCurlOpen] = useState(false);
+  const [requestPlatform, setRequestPlatform] = useState<RequestPlatform>('telegram');
   const [keyboardPlatform, setKeyboardPlatform] = useState<KeyboardPlatform>('telegram');
 
   const handleTabChange = useCallback((tab: TabType) => {
     setActiveTab(tab);
-    if (tab !== 'requests') setIsCurlOpen(false);
+    if (tab !== 'curl') setIsCurlOpen(false);
   }, []);
 
   const handleOpenCurl = useCallback(() => {
-    setActiveTab('requests');
+    setActiveTab('curl');
     setIsCurlOpen(true);
   }, []);
+
+  const handleOpenApi = useCallback((platform: RequestPlatform) => {
+    setRequestPlatform(platform);
+    setActiveTab('requests');
+    setIsCurlOpen(false);
+  }, []);
+
+  const handleOpenLeadteh = useCallback(() => {
+    setActiveTab('leadteh');
+    setIsCurlOpen(false);
+  }, []);
+
+  const activeSectionLabel = useMemo(() => {
+    if (activeTab === 'requests') return requestPlatform === 'telegram' ? 'API Telegram' : 'API MAX';
+    if (activeTab === 'leadteh') return 'API LEADTEH';
+    if (activeTab === 'curl') return 'Разобрать curl';
+    return tabs.find(tab => tab.id === activeTab)?.label ?? 'Раздел';
+  }, [activeTab, requestPlatform, tabs]);
 
   const handleVersionClick = useCallback(() => {
     const now = Date.now();
@@ -212,8 +230,11 @@ function App() {
           <SectionMenu
             tabs={tabs}
             activeTab={activeTab}
+            activeLabel={activeSectionLabel}
             onTabChange={handleTabChange}
             onOpenCurl={handleOpenCurl}
+            onOpenApi={handleOpenApi}
+            onOpenLeadteh={handleOpenLeadteh}
           />
         </div>
 
@@ -266,9 +287,13 @@ function App() {
         <section aria-label="Запросы" hidden={activeTab !== 'requests'}>
           <RequestBuilder
             isActive={activeTab === 'requests'}
-            isCurlOpen={isCurlOpen}
-            onCurlOpenChange={setIsCurlOpen}
+            platform={requestPlatform}
+            onPlatformChange={setRequestPlatform}
           />
+        </section>
+
+        <section aria-label="Разобрать curl" hidden={activeTab !== 'curl'}>
+          <CurlImportPanel isOpen={isCurlOpen} onOpenChange={setIsCurlOpen} />
         </section>
 
         <section aria-label="Форматор" hidden={activeTab !== 'json'}>
