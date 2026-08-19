@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { TelegramRequestBuilder } from './request-builder/TelegramRequestBuilder';
 import { MaxRequestBuilder } from './MaxRequestBuilder';
+import { CurlImportPanel } from './CurlImportPanel';
 import { trackPageview } from '../utils/analytics';
 import styles from '../styles/RequestBuilder.module.css';
 
@@ -18,6 +19,8 @@ export function RequestBuilder({ isActive }: RequestBuilderProps) {
 
   return (
     <div className={styles.builder}>
+      <CurlImportPanel />
+
       <select
         className={styles.platformSelect}
         value={platform}

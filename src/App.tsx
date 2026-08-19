@@ -66,7 +66,8 @@ function App() {
   const [isAdminMode, setIsAdminMode] = useState(false);
   const unlockClickTimestampsRef = useRef<number[]>([]);
   const tabs = useMemo(() => (isAdminMode ? [...TABS, ANALYTICS_TAB] : TABS), [isAdminMode]);
-  const [activeTab, setActiveTab] = useState<TabType>('keyboard');
+  // Стартовая вкладка — «Запросы»: с неё начинается работа и там же лежит разбор curl.
+  const [activeTab, setActiveTab] = useState<TabType>('requests');
   const [keyboardPlatform, setKeyboardPlatform] = useState<KeyboardPlatform>('telegram');
 
   const handleVersionClick = useCallback(() => {
