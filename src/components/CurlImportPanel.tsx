@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './CurlImportPanel.module.css';
 import { parseCurl, type CurlPair, type ParsedCurl } from '../utils/curlParser';
 
@@ -59,11 +59,34 @@ function PairList({ pairs }: { pairs: CurlPair[] }) {
   );
 }
 
-export function CurlImportPanel() {
-  const [open, setOpen] = useState(false);
+interface CurlImportPanelProps {
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
+}
+
+export function CurlImportPanel({ isOpen, onOpenChange }: CurlImportPanelProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [input, setInput] = useState('');
   const [parsed, setParsed] = useState<ParsedCurl | null>(null);
   const [error, setError] = useState('');
+  const cardRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const open = isOpen ?? uncontrolledOpen;
+
+  const setOpen = useCallback((next: boolean) => {
+    if (isOpen === undefined) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  }, [isOpen, onOpenChange]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const frame = requestAnimationFrame(() => {
+      cardRef.current?.scrollIntoView({ block: 'start' });
+      inputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
 
   const handleParse = useCallback(() => {
     const result = parseCurl(input);
@@ -93,16 +116,16 @@ export function CurlImportPanel() {
     : '';
 
   return (
-    <div className={styles.card}>
+    <div ref={cardRef} className={styles.card}>
       <div
         className={styles.header}
-        onClick={() => setOpen(prev => !prev)}
+        onClick={() => setOpen(!open)}
         role="button"
         tabIndex={0}
         onKeyDown={e => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            setOpen(prev => !prev);
+            setOpen(!open);
           }
         }}
       >
@@ -118,6 +141,7 @@ export function CurlImportPanel() {
       {open && (
         <div className={styles.body}>
           <textarea
+            ref={inputRef}
             className={styles.input}
             rows={6}
             value={input}

@@ -10,11 +10,13 @@ interface SectionMenuProps<T extends string> {
   tabs: readonly Tab<T>[];
   activeTab: T;
   onTabChange: (tab: T) => void;
+  onOpenCurl: () => void;
 }
 
-export function SectionMenu<T extends string>({ tabs, activeTab, onTabChange }: SectionMenuProps<T>) {
+export function SectionMenu<T extends string>({ tabs, activeTab, onTabChange, onOpenCurl }: SectionMenuProps<T>) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const restoreTriggerFocusRef = useRef(true);
   const [isOpen, setIsOpen] = useState(false);
   const active = tabs.find(tab => tab.id === activeTab) ?? tabs[0];
 
@@ -30,18 +32,28 @@ export function SectionMenu<T extends string>({ tabs, activeTab, onTabChange }: 
     if (dialog.open) dialog.close();
   }, [isOpen]);
 
-  const closeMenu = () => {
+  const closeMenu = (restoreTriggerFocus = true) => {
+    restoreTriggerFocusRef.current = restoreTriggerFocus;
     dialogRef.current?.close();
   };
 
   const handleClose = () => {
     setIsOpen(false);
-    requestAnimationFrame(() => triggerRef.current?.focus());
+    const shouldRestoreTriggerFocus = restoreTriggerFocusRef.current;
+    restoreTriggerFocusRef.current = true;
+    if (shouldRestoreTriggerFocus) {
+      requestAnimationFrame(() => triggerRef.current?.focus());
+    }
   };
 
   const handleTabChange = (tab: T) => {
     onTabChange(tab);
     closeMenu();
+  };
+
+  const handleOpenCurl = () => {
+    onOpenCurl();
+    closeMenu(false);
   };
 
   return (
@@ -74,10 +86,15 @@ export function SectionMenu<T extends string>({ tabs, activeTab, onTabChange }: 
         <div className={styles.sheet}>
           <header className={styles.header}>
             <h2 id="section-menu-title" className={styles.title}>Разделы</h2>
-            <button type="button" className={styles.closeButton} onClick={closeMenu}>
+            <button type="button" className={styles.closeButton} onClick={() => closeMenu()}>
               Закрыть
             </button>
           </header>
+
+          <button type="button" className={styles.curlAction} onClick={handleOpenCurl}>
+            <span>Разобрать curl</span>
+            <span className={styles.curlActionHint}>Вставить команду</span>
+          </button>
 
           <div className={styles.list}>
             {tabs.map(tab => {

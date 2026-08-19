@@ -68,7 +68,18 @@ function App() {
   const tabs = useMemo(() => (isAdminMode ? [...TABS, ANALYTICS_TAB] : TABS), [isAdminMode]);
   // Стартовая вкладка — «Запросы»: с неё начинается работа и там же лежит разбор curl.
   const [activeTab, setActiveTab] = useState<TabType>('requests');
+  const [isCurlOpen, setIsCurlOpen] = useState(false);
   const [keyboardPlatform, setKeyboardPlatform] = useState<KeyboardPlatform>('telegram');
+
+  const handleTabChange = useCallback((tab: TabType) => {
+    setActiveTab(tab);
+    if (tab !== 'requests') setIsCurlOpen(false);
+  }, []);
+
+  const handleOpenCurl = useCallback(() => {
+    setActiveTab('requests');
+    setIsCurlOpen(true);
+  }, []);
 
   const handleVersionClick = useCallback(() => {
     const now = Date.now();
@@ -197,11 +208,14 @@ function App() {
           </header>
         )}
 
-        <SectionMenu
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        <div className={styles.sectionNavigation}>
+          <SectionMenu
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            onOpenCurl={handleOpenCurl}
+          />
+        </div>
 
         <section aria-label="Кнопки" hidden={activeTab !== 'keyboard'}>
           {/* Platform switcher */}
@@ -250,7 +264,11 @@ function App() {
         </section>
 
         <section aria-label="Запросы" hidden={activeTab !== 'requests'}>
-          <RequestBuilder isActive={activeTab === 'requests'} />
+          <RequestBuilder
+            isActive={activeTab === 'requests'}
+            isCurlOpen={isCurlOpen}
+            onCurlOpenChange={setIsCurlOpen}
+          />
         </section>
 
         <section aria-label="Форматор" hidden={activeTab !== 'json'}>

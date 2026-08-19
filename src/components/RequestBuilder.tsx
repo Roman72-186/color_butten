@@ -8,9 +8,11 @@ import styles from '../styles/RequestBuilder.module.css';
 interface RequestBuilderProps {
   /** Вкладка «Запросы» сейчас видима — компонент не размонтируется при переключении вкладок, поэтому pageview трекается по факту видимости, а не по монтированию. */
   isActive: boolean;
+  isCurlOpen: boolean;
+  onCurlOpenChange: (isOpen: boolean) => void;
 }
 
-export function RequestBuilder({ isActive }: RequestBuilderProps) {
+export function RequestBuilder({ isActive, isCurlOpen, onCurlOpenChange }: RequestBuilderProps) {
   const [platform, setPlatform] = useState<'telegram' | 'max'>('telegram');
 
   useEffect(() => {
@@ -19,7 +21,7 @@ export function RequestBuilder({ isActive }: RequestBuilderProps) {
 
   return (
     <div className={styles.builder}>
-      <CurlImportPanel />
+      <CurlImportPanel isOpen={isCurlOpen} onOpenChange={onCurlOpenChange} />
 
       <select
         className={styles.platformSelect}
