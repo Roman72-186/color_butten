@@ -8,7 +8,7 @@ import { LeadtehRequestBuilder } from './components/LeadtehRequestBuilder';
 import { GridConstructor } from './components/GridConstructor';
 import { Preview } from './components/Preview';
 import { JsonOutput } from './components/JsonOutput';
-import { SlideTabs } from './components/SlideTabs';
+import { SectionMenu } from './components/SectionMenu';
 import { AiDictationPanel } from './components/AiDictationPanel';
 import { AnalyticsPanel } from './components/AnalyticsPanel';
 import { validateButton, hasAnyErrors } from './utils/validation';
@@ -197,18 +197,13 @@ function App() {
           </header>
         )}
 
-        <SlideTabs
+        <SectionMenu
           tabs={tabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
 
-        <div
-          role="tabpanel"
-          id="panel-keyboard"
-          aria-labelledby="tab-keyboard"
-          hidden={activeTab !== 'keyboard'}
-        >
+        <section aria-label="Кнопки" hidden={activeTab !== 'keyboard'}>
           {/* Platform switcher */}
           <div className={styles.tabSelect}>
             <select
@@ -248,53 +243,28 @@ function App() {
 
           {/* MAX keyboard */}
           {keyboardPlatform === 'max' && <MaxKeyboardTab />}
-        </div>
+        </section>
 
-        <div
-          role="tabpanel"
-          id="panel-formatter"
-          aria-labelledby="tab-formatter"
-          hidden={activeTab !== 'formatter'}
-        >
+        <section aria-label="Текст" hidden={activeTab !== 'formatter'}>
           <TextFormatter />
-        </div>
+        </section>
 
-        <div
-          role="tabpanel"
-          id="panel-requests"
-          aria-labelledby="tab-requests"
-          hidden={activeTab !== 'requests'}
-        >
+        <section aria-label="Запросы" hidden={activeTab !== 'requests'}>
           <RequestBuilder isActive={activeTab === 'requests'} />
-        </div>
+        </section>
 
-        <div
-          role="tabpanel"
-          id="panel-json"
-          aria-labelledby="tab-json"
-          hidden={activeTab !== 'json'}
-        >
+        <section aria-label="Форматор" hidden={activeTab !== 'json'}>
           <JsonFormatter />
-        </div>
+        </section>
 
-        <div
-          role="tabpanel"
-          id="panel-leadteh"
-          aria-labelledby="tab-leadteh"
-          hidden={activeTab !== 'leadteh'}
-        >
+        <section aria-label="API LEADTEH" hidden={activeTab !== 'leadteh'}>
           <LeadtehRequestBuilder />
-        </div>
+        </section>
 
         {isAdminMode && (
-          <div
-            role="tabpanel"
-            id="panel-analytics"
-            aria-labelledby="tab-analytics"
-            hidden={activeTab !== 'analytics'}
-          >
+          <section aria-label="Аналитика" hidden={activeTab !== 'analytics'}>
             <AnalyticsPanel />
-          </div>
+          </section>
         )}
 
         <footer className={styles.footer} data-analytics-skip>
