@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import styles from './LeadtehRequestBuilder.module.css';
+import { CurlImportPanel } from './CurlImportPanel';
 
 type LeadtehMethod =
   | 'getBotTags' | 'getContactTags' | 'attachTagToContact' | 'detachTagFromContact'
@@ -344,6 +345,8 @@ export function LeadtehRequestBuilder() {
 
   return (
     <div className={styles.builder}>
+      <CurlImportPanel />
+
       <div className={styles.notice}>
         <div className={styles.noticeTitle}>LEADTEH API</div>
         <div className={styles.noticeText}>
