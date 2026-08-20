@@ -246,18 +246,6 @@ function App() {
         </div>
 
         <section aria-label="Кнопки" hidden={activeTab !== 'keyboard'}>
-          {/* Platform switcher */}
-          <div className={styles.tabSelect}>
-            <select
-              className={styles.tabSelectEl}
-              value={keyboardPlatform}
-              onChange={e => setKeyboardPlatform(e.target.value as KeyboardPlatform)}
-            >
-              <option value="telegram">Telegram Bot API</option>
-              <option value="max">MAX API</option>
-            </select>
-          </div>
-
           {/* Telegram keyboard — grid constructor */}
           {keyboardPlatform === 'telegram' && (
             <>
@@ -295,7 +283,6 @@ function App() {
           <RequestBuilder
             isActive={activeTab === 'requests'}
             platform={requestPlatform}
-            onPlatformChange={setRequestPlatform}
           />
         </section>
 

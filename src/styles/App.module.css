@@ -78,31 +78,6 @@
   line-height: 1.45;
 }
 
-/* ── Platform sub-select (inside keyboard tab) ──────────────────────────── */
-.tabSelect {
-  margin-bottom: 16px;
-}
-
-.tabSelectEl {
-  width: 100%;
-  background-color: var(--surface-alt);
-  border: 1px solid var(--border-neon);
-  border-radius: var(--radius);
-  color: var(--accent);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 13px;
-  font-weight: 400;
-  padding: 13px 36px 13px 16px;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.tabSelectEl:focus {
-  border-color: var(--accent);
-  box-shadow: var(--glow-cyan);
-}
-
-
 .section {
   margin-bottom: 16px;
 }

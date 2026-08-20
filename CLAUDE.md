@@ -56,13 +56,13 @@ npm run deploy          # сборка с --base=/color_butten/ и публик�
 
 - Шесть панелей разделов (`keyboard`, `requests`, `formatter`, `json`, `curl`, `leadteh`) отрисованы всегда и только прячутся через `hidden` — их деревья смонтированы постоянно, эффекты продолжают работать.
 - **Стартовый раздел — `requests` с Telegram API**, а не первый в списке прямых разделов. Меню «Разделы» группирует во вложенные уровни API (Telegram, MAX и LEADTEH) и кнопки (Telegram и MAX). Разбор curl — обычный самостоятельный раздел, не часть API-конструктора.
-- Внутри «Кнопок» ветки платформ взаимоисключающие: `{keyboardPlatform === 'telegram' && …}` и `{keyboardPlatform === 'max' && <MaxKeyboardTab />}` (`App.tsx:224`, `App.tsx:249`) — при переключении платформы неактивная ветка размонтируется и теряет своё состояние.
+- Внутри «Кнопок» ветки платформ взаимоисключающие: `{keyboardPlatform === 'telegram' && …}` и `{keyboardPlatform === 'max' && <MaxKeyboardTab />}`. Платформа выбирается только во вложенном меню «Кнопки»; отдельного селекта внутри раздела нет. При переключении платформы неактивная ветка размонтируется и теряет своё состояние.
 - Панель аналитики отрисовывается только при `isAdminMode` (`App.tsx:288`) — до разблокировки её в дереве нет вовсе.
 
 ```
 App.tsx (activeTab, keyboardPlatform, buttons[], showValidation, isAdminMode, launchContext)
   ├── SlideTabs — навигация по вкладкам
-  ├── [tab: keyboard]  «Кнопки» — переключатель платформы 'telegram' | 'max'
+  ├── [tab: keyboard]  «Кнопки» — платформа 'telegram' | 'max' из вложенного меню
   │     ├── telegram → AiDictationPanel + GridConstructor (7×7) → ButtonCard[] → Preview → JsonOutput
   │     └── max      → MaxKeyboardTab (самодостаточный)
   ├── [tab: requests] «Запросы» — RequestBuilder, свой внутренний переключатель платформы
@@ -195,7 +195,7 @@ LEADTEH: base URL `https://app.leadteh.ru/api/v1/{method}?api_token={{token_LT}}
 - Один делегированный `click`-листенер на `document` (кнопки не оборачиваются): ищет ближайший `<button>`/`[role="button"]` вне `[data-analytics-skip]`; ярлык — `data-analytics-id` → `aria-label` → обрезанный `textContent` (~40 символов) → `id` → `'unknown'`.
 - ID сессии — `crypto.randomUUID()` в `sessionStorage` (ключ `analytics_session_id`), один на вкладку браузера.
 - Отправка батчем раз в 5 с плюс на `visibilitychange`/`pagehide` через `navigator.sendBeacon`, при отказе — `fetch(..., { keepalive: true })`.
-- Pageview шлётся при смене вкладки в `App.tsx`; у «Запросов» свой внутренний переключатель платформы, поэтому оттуда трекается отдельно через проп `isActive` (`pageNameForTab` возвращает для них `null`).
+- Pageview шлётся при смене вкладки в `App.tsx`; у «Запросов» выбранная в меню платформа трекается отдельно через пропы `isActive` и `platform` (`pageNameForTab` возвращает для них `null`).
 
 ## Визуальная тема
 

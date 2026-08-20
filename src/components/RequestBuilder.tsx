@@ -8,25 +8,15 @@ interface RequestBuilderProps {
   /** Раздел API сейчас видим — компонент не размонтируется при переключении разделов, поэтому pageview трекается по факту видимости, а не по монтированию. */
   isActive: boolean;
   platform: 'telegram' | 'max';
-  onPlatformChange: (platform: 'telegram' | 'max') => void;
 }
 
-export function RequestBuilder({ isActive, platform, onPlatformChange }: RequestBuilderProps) {
+export function RequestBuilder({ isActive, platform }: RequestBuilderProps) {
   useEffect(() => {
     if (isActive) trackPageview(`requests:${platform}`);
   }, [isActive, platform]);
 
   return (
     <div className={styles.builder}>
-      <select
-        className={styles.platformSelect}
-        value={platform}
-        onChange={e => onPlatformChange(e.target.value as 'telegram' | 'max')}
-      >
-        <option value="telegram">Telegram Bot API</option>
-        <option value="max">MAX API</option>
-      </select>
-
       {platform === 'max' && <MaxRequestBuilder />}
       {platform === 'telegram' && <TelegramRequestBuilder />}
     </div>
