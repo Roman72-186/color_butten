@@ -26,14 +26,14 @@ export const REQUEST_METHODS: RequestMethodConfig[] = [
     description: 'Rich message',
     category: 'rich',
     supportsInlineKeyboard: true,
-    note: 'Bot API 10.1: структурированное сообщение через InputRichMessage (HTML или Markdown rich-формат).',
+    note: 'Bot API 10.2: структурированное сообщение через InputRichMessage, включая фото и карусели по HTTP/HTTPS URL.',
   },
   {
     id: 'sendRichMessageDraft',
     title: 'sendRichMessageDraft',
     description: 'Черновик rich message',
     category: 'rich',
-    note: 'Bot API 10.1: временный 30-секундный preview для потоковой генерации. После завершения нужен sendRichMessage.',
+    note: 'Bot API 10.2: временный 30-секундный preview для потоковой генерации. После завершения нужен sendRichMessage.',
   },
   // ── МЕДИА ────────────────────────────────────────────────────────────────
   {

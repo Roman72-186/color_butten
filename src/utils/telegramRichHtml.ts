@@ -1,4 +1,4 @@
-// Блочные теги rich-разметки Bot API 10.1: переносы строк вокруг них —
+// Блочные теги rich-разметки Bot API 10.2: переносы строк вокруг них —
 // незначимый структурный whitespace, а не <br>. Иначе строки таблиц, списков
 // и <details> получают лишние <br> и ломаются. <pre> обрабатывается отдельно.
 const RICH_BLOCK_TAGS =
@@ -11,7 +11,7 @@ const NEWLINE_AFTER_BLOCK = new RegExp(`(</?(?:${RICH_BLOCK_TAGS})\\b[^>]*>)[ \\
 
 /**
  * Превращает переносы строк в текстовом содержимом rich_message.html в <br>,
- * сохраняя структурную разметку Bot API 10.1.
+ * сохраняя структурную разметку Bot API 10.2.
  *
  * - Переносы вокруг блочных тегов (таблицы, списки, <details>, медиа) убираются —
  *   это незначимый whitespace, а не разрыв строки.
@@ -43,7 +43,7 @@ export function normalizeTelegramRichHtml(html: string): string {
 }
 
 /**
- * Проверяет HTML rich_message на совместимость с Bot API 10.1.
+ * Проверяет HTML rich_message на совместимость с Bot API 10.2.
  *
  * Важно: в rich-сообщениях (в отличие от обычных) официально поддерживаются
  * таблицы (<table> с alignment/caption/colspan/rowspan), <pre> и блок кода,

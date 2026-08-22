@@ -290,6 +290,34 @@
   transition: border-color 0.2s;
 }
 
+.richMediaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.richMediaSection {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+
+.richMediaSection .label {
+  margin-bottom: 0;
+  color: var(--text-muted);
+}
+
+.richMediaError {
+  margin-top: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--danger);
+}
+
 .albumCard:hover,
 .outputBlock:hover {
   border-color: var(--border-neon);
@@ -404,6 +432,10 @@
   }
 
   .optionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .richMediaGrid {
     grid-template-columns: 1fr;
   }
 

@@ -49,6 +49,62 @@ function getAlbumSourcePlaceholder(mode: MediaSourceMode, type: MediaGroupItemTy
   return `Введите ${type} как https://...`;
 }
 
+function getHttpUrl(value: string): string | null {
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function escapeRichHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escapeRichMarkdownTitle(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function appendRichMarkup(content: string, markup: string): string {
+  const trimmedContent = content.trimEnd();
+  return trimmedContent ? `${trimmedContent}\n\n${markup}` : markup;
+}
+
+function countRichMedia(format: RequestFormState['richMessageFormat'], content: string): number {
+  const markdownMedia = content.match(/!\[[^\]]*\]\([^\s)]+/g)?.length ?? 0;
+  const htmlMedia = content.match(/<(?:img|video|audio)\b/gi)?.length ?? 0;
+  return format === 'markdown' ? markdownMedia + htmlMedia : htmlMedia;
+}
+
+function buildRichPhotoMarkup(format: RequestFormState['richMessageFormat'], url: string, caption: string): string {
+  if (format === 'markdown') {
+    const title = caption.trim() ? ` "${escapeRichMarkdownTitle(caption.trim())}"` : '';
+    return `![](${url}${title})`;
+  }
+
+  const figureCaption = caption.trim() ? `<figcaption>${escapeRichHtml(caption.trim())}</figcaption>` : '';
+  return `<figure><img src="${url}"/>${figureCaption}</figure>`;
+}
+
+function buildRichSlideshowMarkup(format: RequestFormState['richMessageFormat'], urls: string[], caption: string): string {
+  const trimmedCaption = caption.trim();
+
+  if (format === 'markdown') {
+    const photos = urls.map(url => `![](${url})`).join('\n\n');
+    const figureCaption = trimmedCaption ? `\n\n<figcaption>${escapeRichHtml(trimmedCaption)}</figcaption>` : '';
+    return `<tg-slideshow>\n\n${photos}${figureCaption}\n\n</tg-slideshow>`;
+  }
+
+  const photos = urls.map(url => `<img src="${url}"/>`).join('');
+  const figureCaption = trimmedCaption ? `<figcaption>${escapeRichHtml(trimmedCaption)}</figcaption>` : '';
+  return `<tg-slideshow>${photos}${figureCaption}</tg-slideshow>`;
+}
+
 const SEND_OPTION_DESCRIPTIONS = [
   {
     key: 'disableNotification' as const,
@@ -92,6 +148,11 @@ export function TelegramRequestBuilder() {
   const [form, setForm] = useState<RequestFormState>(() => createDefaultRequestForm());
   const [copiedBody, setCopiedBody] = useState(false);
   const [showResponseExamples, setShowResponseExamples] = useState(false);
+  const [richPhotoUrl, setRichPhotoUrl] = useState('');
+  const [richPhotoCaption, setRichPhotoCaption] = useState('');
+  const [richSlideshowUrls, setRichSlideshowUrls] = useState('');
+  const [richSlideshowCaption, setRichSlideshowCaption] = useState('');
+  const [richMediaError, setRichMediaError] = useState('');
 
   const methodConfig = useMemo(
     () => REQUEST_METHODS.find(item => item.id === form.method) ?? REQUEST_METHODS[0],
@@ -247,6 +308,55 @@ export function TelegramRequestBuilder() {
     setForm(prev => ({ ...prev, chatPermissions: { ...prev.chatPermissions, [key]: value } }));
   }, []);
 
+  const insertRichPhoto = useCallback(() => {
+    const url = getHttpUrl(richPhotoUrl);
+    if (!url) {
+      setRichMediaError('Для фото укажите прямую ссылку, которая начинается с http:// или https://.');
+      return;
+    }
+
+    if (countRichMedia(form.richMessageFormat, form.richMessageContent) >= 50) {
+      setRichMediaError('В одном rich message можно использовать не больше 50 медиафайлов.');
+      return;
+    }
+
+    const markup = buildRichPhotoMarkup(form.richMessageFormat, url, richPhotoCaption);
+    updateField('richMessageContent', appendRichMarkup(form.richMessageContent, markup));
+    setRichPhotoUrl('');
+    setRichPhotoCaption('');
+    setRichMediaError('');
+  }, [form.richMessageContent, form.richMessageFormat, richPhotoCaption, richPhotoUrl, updateField]);
+
+  const insertRichSlideshow = useCallback(() => {
+    const sourceUrls = richSlideshowUrls
+      .split(/\r?\n/)
+      .map(value => value.trim())
+      .filter(Boolean);
+
+    if (sourceUrls.length < 2) {
+      setRichMediaError('Для карусели добавьте минимум две ссылки, по одной в строке.');
+      return;
+    }
+
+    if (countRichMedia(form.richMessageFormat, form.richMessageContent) + sourceUrls.length > 50) {
+      setRichMediaError('В одном rich message можно использовать не больше 50 медиафайлов.');
+      return;
+    }
+
+    const urls = sourceUrls.map(getHttpUrl);
+    if (urls.some(url => url === null)) {
+      setRichMediaError('Все ссылки карусели должны начинаться с http:// или https://.');
+      return;
+    }
+
+    const validUrls = urls.filter((url): url is string => url !== null);
+    const markup = buildRichSlideshowMarkup(form.richMessageFormat, validUrls, richSlideshowCaption);
+    updateField('richMessageContent', appendRichMarkup(form.richMessageContent, markup));
+    setRichSlideshowUrls('');
+    setRichSlideshowCaption('');
+    setRichMediaError('');
+  }, [form.richMessageContent, form.richMessageFormat, richSlideshowCaption, richSlideshowUrls, updateField]);
+
   // ── Render helpers ─────────────────────────────────────────────────────
 
   const renderChatIdField = (hint?: string) => (
@@ -315,8 +425,64 @@ export function TelegramRequestBuilder() {
         />
         <div className={styles.fieldHint}>
           {form.richMessageFormat === 'html'
-            ? 'Bot API 10.1: доступны заголовки, списки, таблицы, цитаты, <details>, code/<pre>, медиа и LaTeX. Для HTTP-блока переносы автоматически станут <br>, пустые строки — <br><br>.'
-            : 'Bot API 10.1: Rich Markdown (GitHub Flavored Markdown), допускает HTML-теги внутри текста.'}
+            ? 'Bot API 10.2: доступны заголовки, списки, таблицы, цитаты, <details>, code/<pre>, медиа и LaTeX. Для HTTP-блока переносы автоматически станут <br>, пустые строки — <br><br>.'
+            : 'Bot API 10.2: Rich Markdown (GitHub Flavored Markdown), допускает HTML-теги внутри текста.'}
+        </div>
+      </div>
+
+      <div className={styles.fieldFull}>
+        <div className={styles.outputBlock}>
+          <div className={styles.inlineHeader}>
+            <div className={styles.outputTitle}>Фото и карусель</div>
+            <span className={styles.badge}>Bot API 10.2</span>
+          </div>
+          <div className={styles.fieldHint}>
+            Вставляет корректный блок в rich message. Укажите прямой HTTP/HTTPS URL файла: сайт не загружает фото и не хранит их.
+          </div>
+          <div className={styles.richMediaGrid}>
+            <div className={styles.richMediaSection}>
+              <div className={styles.label}>Одно фото</div>
+              <input
+                type="url"
+                value={richPhotoUrl}
+                placeholder="https://example.com/photo.jpg"
+                aria-label="Ссылка на фото"
+                onChange={e => setRichPhotoUrl(e.target.value)}
+              />
+              <input
+                type="text"
+                value={richPhotoCaption}
+                placeholder="Подпись к фото (необязательно)"
+                aria-label="Подпись к фото"
+                onChange={e => setRichPhotoCaption(e.target.value)}
+              />
+              <button type="button" className={styles.secondaryBtn} onClick={insertRichPhoto}>
+                Вставить фото
+              </button>
+            </div>
+            <div className={styles.richMediaSection}>
+              <div className={styles.label}>Карусель из фото</div>
+              <textarea
+                className={styles.textarea}
+                value={richSlideshowUrls}
+                rows={4}
+                placeholder={'https://example.com/photo-1.jpg\nhttps://example.com/photo-2.jpg'}
+                aria-label="Ссылки на фото для карусели, по одной в строке"
+                onChange={e => setRichSlideshowUrls(e.target.value)}
+              />
+              <input
+                type="text"
+                value={richSlideshowCaption}
+                placeholder="Подпись к карусели (необязательно)"
+                aria-label="Подпись к карусели"
+                onChange={e => setRichSlideshowCaption(e.target.value)}
+              />
+              <button type="button" className={styles.secondaryBtn} onClick={insertRichSlideshow}>
+                Вставить карусель
+              </button>
+            </div>
+          </div>
+          {richMediaError && <div className={styles.richMediaError} role="alert">{richMediaError}</div>}
         </div>
       </div>
 

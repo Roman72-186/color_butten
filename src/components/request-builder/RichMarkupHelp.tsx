@@ -6,7 +6,7 @@ interface RichMarkupHelpProps {
 }
 
 // Синтаксис дословно сверен с https://core.telegram.org/bots/api#rich-message-formatting-options
-// (Bot API 10.1). Добавлять сюда только подтверждённые официальной докой теги.
+// (Bot API 10.2). Добавлять сюда только подтверждённые официальной докой теги.
 
 const RICH_HTML_EXAMPLE = `<h2>Заголовок раздела</h2>
 <p>Текст с <b>жирным</b>, <i>курсивом</i>, <u>подчёркнутым</u>,
@@ -31,6 +31,7 @@ const RICH_HTML_EXAMPLE = `<h2>Заголовок раздела</h2>
 <details open><summary>Подробнее</summary>Скрытый контент</details>
 
 <figure><img src="https://example.com/photo.jpg"/><figcaption>Подпись<cite>Кредит</cite></figcaption></figure>
+<tg-slideshow><img src="https://example.com/photo-1.jpg"/><img src="https://example.com/photo-2.jpg"/><figcaption>Подпись карусели</figcaption></tg-slideshow>
 <pre><code class="language-python">print("code block")</code></pre>
 <tg-math>x^2 + y^2</tg-math> · <tg-math-block>E = mc^2</tg-math-block>`;
 
@@ -57,6 +58,14 @@ print("code block")
 
 ![](https://example.com/photo.jpg "Подпись медиа")
 
+<tg-slideshow>
+
+![](https://example.com/photo-1.jpg)
+
+![](https://example.com/photo-2.jpg)
+
+</tg-slideshow>
+
 Текст со сноской[^1].
 
 [^1]: Определение сноски.
@@ -65,7 +74,7 @@ $$E = mc^2$$`;
 
 const ADVANCED_HINT =
   'Также доступны блоки: pull quote (<aside>), коллаж (<tg-collage>), слайдшоу '
-  + '(<tg-slideshow>), карта (<tg-map lat long zoom>), сноски/референсы (<tg-reference>), '
+  + '(<tg-slideshow>) для карусели, карта (<tg-map lat long zoom>), сноски/референсы (<tg-reference>), '
   + 'якоря (<a name>). Тег <tg-thinking> — только в sendRichMessageDraft.';
 
 const LIMITS_HINT =
@@ -83,7 +92,7 @@ export function RichMarkupHelp({ format }: RichMarkupHelpProps) {
   return (
     <div className={styles.outputBlock}>
       <div className={styles.inlineHeader}>
-        <div className={styles.outputTitle}>Справка по rich-разметке (Bot API 10.1)</div>
+        <div className={styles.outputTitle}>Справка по rich-разметке (Bot API 10.2)</div>
         <span className={styles.badge}>{modeLabel}</span>
       </div>
       <div className={styles.fieldHint}>{intro}</div>
