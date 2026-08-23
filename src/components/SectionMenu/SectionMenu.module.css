@@ -61,10 +61,42 @@
   color: var(--text);
   background: transparent;
   border: 0;
+  opacity: 1;
+  transform: translateY(0);
+  /* allow-discrete держит display:block на время анимации закрытия нативного <dialog> */
+  transition:
+    transform 280ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 200ms ease-out,
+    overlay 280ms allow-discrete,
+    display 280ms allow-discrete;
+}
+
+.dialog:not([open]) {
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+@starting-style {
+  .dialog[open] {
+    opacity: 0;
+    transform: translateY(100%);
+  }
 }
 
 .dialog::backdrop {
   background: rgb(0 0 0 / 0.58);
+  opacity: 1;
+  transition: opacity 200ms ease, overlay 280ms allow-discrete, display 280ms allow-discrete;
+}
+
+.dialog:not([open])::backdrop {
+  opacity: 0;
+}
+
+@starting-style {
+  .dialog[open]::backdrop {
+    opacity: 0;
+  }
 }
 
 .sheet {
@@ -208,10 +240,34 @@
   }
 }
 
+.optionUnlock {
+  animation: option-unlock 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes option-unlock {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .trigger,
   .option,
   .groupAction {
     transform: none;
+  }
+
+  .dialog,
+  .dialog::backdrop {
+    transition-duration: 0.01ms;
+  }
+
+  .optionUnlock {
+    animation: none;
   }
 }

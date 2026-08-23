@@ -1,0 +1,16 @@
+.error {
+  display: block;
+  margin-top: 2px;
+  color: var(--danger);
+  font-size: 11px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
+}
+
+@starting-style {
+  .error {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}

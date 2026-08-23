@@ -52,12 +52,30 @@
   font-size: 14px;
   color: var(--text-dim);
   background: transparent;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, transform 120ms ease-out;
 }
 
 .deleteBtn:hover {
   background: rgba(255,34,85,.15);
   color: var(--danger);
+}
+
+.deleteBtn:active {
+  transform: scale(0.94);
+}
+
+.customIdInput {
+  margin-top: 6px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+}
+
+@starting-style {
+  .customIdInput {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 
 .fields {

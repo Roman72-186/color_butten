@@ -178,11 +178,12 @@ export function SectionMenu<T extends string>({
 
                 {tabs.map(tab => {
                   const isActive = tab.id === activeTab;
+                  const isFreshlyUnlocked = (tab.id as string) === 'analytics';
                   return (
                     <button
                       key={tab.id}
                       type="button"
-                      className={`${styles.option} ${isActive ? styles.optionActive : ''}`}
+                      className={`${styles.option} ${isActive ? styles.optionActive : ''} ${isFreshlyUnlocked ? styles.optionUnlock : ''}`}
                       aria-current={isActive ? 'true' : undefined}
                       onClick={() => handleTabChange(tab.id)}
                     >

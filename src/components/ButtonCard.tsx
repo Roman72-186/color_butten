@@ -108,9 +108,9 @@ export function ButtonCard({
           {customMode && (
             <input
               type="text"
+              className={styles.customIdInput}
               value={button.iconCustomEmojiId}
               placeholder="Вставьте числовой ID"
-              style={{ marginTop: 6 }}
               onChange={e => onUpdate('iconCustomEmojiId', e.target.value)}
             />
           )}

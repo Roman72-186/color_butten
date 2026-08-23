@@ -1,3 +1,5 @@
+import styles from './ValidationError.module.css';
+
 interface ValidationErrorProps {
   message?: string;
 }
@@ -5,9 +7,5 @@ interface ValidationErrorProps {
 export function ValidationError({ message }: ValidationErrorProps) {
   if (!message) return null;
 
-  return (
-    <span style={{ color: 'var(--danger)', fontSize: '11px', marginTop: '2px', display: 'block' }}>
-      {message}
-    </span>
-  );
+  return <span className={styles.error}>{message}</span>;
 }
