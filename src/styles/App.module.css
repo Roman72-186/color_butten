@@ -67,7 +67,7 @@
   font-size: 34px;
   font-weight: 700;
   line-height: 1.08;
-  letter-spacing: 0;
+  letter-spacing: -0.02em;
 }
 
 .webSubtitle {
@@ -99,11 +99,15 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 120ms ease-out;
 }
 
 .addBtn:hover:not(:disabled) {
   background: var(--accent-soft-hover);
+}
+
+.addBtn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .addBtn:disabled {
@@ -121,12 +125,16 @@
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s, border-color 0.2s, transform 120ms ease-out;
 }
 
 .resetBtn:hover {
   color: var(--danger);
   border-color: var(--danger);
+}
+
+.resetBtn:active {
+  transform: scale(0.97);
 }
 
 
@@ -148,6 +156,8 @@
 
   .webTitle {
     font-size: 26px;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
   }
 
   .webSubtitle {

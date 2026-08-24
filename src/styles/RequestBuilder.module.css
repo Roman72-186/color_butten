@@ -241,12 +241,16 @@
   background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border);
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s, border-color 0.2s, transform 100ms ease-out;
 }
 
 .secondaryBtn:hover {
   color: var(--text);
   border-color: var(--border-neon);
+}
+
+.secondaryBtn:active {
+  transform: scale(0.96);
 }
 
 .primaryBtn {
@@ -255,11 +259,15 @@
   color: var(--accent);
   border: 1px solid var(--accent);
   font-weight: 700;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 100ms ease-out;
 }
 
 .primaryBtn:hover:not(:disabled) {
   background: var(--accent-soft-hover);
+}
+
+.primaryBtn:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .primaryBtn:disabled {
@@ -282,11 +290,15 @@
   font-family: 'Share Tech Mono', monospace;
   font-weight: 400;
   border: none;
-  transition: color 0.15s;
+  transition: color 0.15s, transform 100ms ease-out;
 }
 
 .linkBtn:hover:not(:disabled) {
   color: var(--danger);
+}
+
+.linkBtn:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .albumList {
@@ -407,7 +419,7 @@
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 100ms ease-out;
   white-space: nowrap;
 }
 
@@ -415,6 +427,10 @@
   color: var(--accent);
   border-color: var(--border-neon);
   background: var(--accent-soft);
+}
+
+.chip:active {
+  transform: scale(0.95);
 }
 
 .chipActive {
@@ -429,6 +445,7 @@
   justify-content: space-between;
   cursor: pointer;
   user-select: none;
+  transition: transform 120ms ease-out;
 }
 
 .collapseArrow {
@@ -439,6 +456,10 @@
 
 .collapsibleHeader:hover .collapseArrow {
   color: var(--accent);
+}
+
+.collapsibleHeader:active {
+  transform: translateY(1px);
 }
 
 @media (max-width: 640px) {

@@ -30,12 +30,16 @@
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s, border-color 0.2s, transform 120ms ease-out;
 }
 
 .resetBtn:hover {
   color: var(--danger);
   border-color: var(--danger);
+}
+
+.resetBtn:active {
+  transform: scale(0.97);
 }
 
 /* ── Grid ────────────────────────────────────────────────────────────────── */
@@ -63,7 +67,7 @@
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, color 0.15s;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, color 0.15s, transform 100ms ease-out;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -97,6 +101,10 @@
   background-color: rgba(217,92,110,0.12);
   border-color: var(--danger);
   color: var(--danger);
+}
+
+.cell:active {
+  transform: scale(0.92);
 }
 
 /* ── Hint ────────────────────────────────────────────────────────────────── */

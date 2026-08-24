@@ -58,11 +58,15 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 120ms ease-out;
 }
 
 .formatBtn:hover:not(:disabled) {
   background: var(--accent-soft-hover);
+}
+
+.formatBtn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .formatBtn:disabled {
@@ -81,12 +85,16 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s, border-color 0.2s, transform 120ms ease-out;
 }
 
 .cleanBtn:hover:not(:disabled) {
   color: var(--danger);
   border-color: var(--danger);
+}
+
+.cleanBtn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .cleanBtn:disabled {
@@ -120,12 +128,16 @@
   gap: 12px;
   padding: 8px 16px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 100ms ease-out;
   border-top: 1px solid var(--border);
 }
 
 .pathRow:hover {
   background: var(--surface-hover);
+}
+
+.pathRow:active {
+  transform: translateY(1px);
 }
 
 .pathCopied {

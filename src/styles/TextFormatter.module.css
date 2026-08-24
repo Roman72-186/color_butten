@@ -75,7 +75,7 @@
   font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 100ms ease-out;
   min-width: 36px;
   text-align: center;
 }
@@ -84,6 +84,10 @@
   background: var(--accent-soft);
   color: var(--accent);
   border-color: var(--accent);
+}
+
+.fmtBtn:active {
+  transform: scale(0.94);
 }
 
 .fmtBtnActive {
@@ -130,12 +134,16 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 120ms ease-out;
   white-space: nowrap;
 }
 
 .emojiInsertBtn:hover:not(:disabled) {
   background: var(--accent-soft-hover);
+}
+
+.emojiInsertBtn:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .emojiInsertBtn:disabled {
@@ -225,11 +233,15 @@
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 120ms ease-out;
 }
 
 .extractedCopyBtn:hover {
   background: var(--accent-soft-hover);
+}
+
+.extractedCopyBtn:active {
+  transform: scale(0.94);
 }
 
 .emojiInsertedOk {
@@ -248,12 +260,16 @@
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s, border-color 0.2s, transform 120ms ease-out;
 }
 
 .extractorClearBtn:hover {
   color: var(--danger);
   border-color: var(--danger);
+}
+
+.extractorClearBtn:active {
+  transform: scale(0.96);
 }
 
 .botCodeTabs {
@@ -271,12 +287,16 @@
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  transition: color 0.2s, border-color 0.2s, background 0.2s, transform 100ms ease-out;
 }
 
 .botCodeTab:hover {
   color: var(--text-muted);
   border-color: var(--border-neon);
+}
+
+.botCodeTab:active {
+  transform: scale(0.96);
 }
 
 .botCodeTabActive {
@@ -506,11 +526,15 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 120ms ease-out;
 }
 
 .copyBtn:hover:not(:disabled) {
   background: var(--accent-soft-hover);
+}
+
+.copyBtn:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .copyBtn:disabled {
@@ -541,11 +565,15 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 120ms ease-out;
 }
 
 .shareBtn:hover:not(:disabled) {
   background: var(--accent-soft-hover);
+}
+
+.shareBtn:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .shareBtn:disabled {

@@ -50,12 +50,16 @@
   border-radius: var(--radius-sm);
   font-size: 12px;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s, border-color 0.2s, transform 120ms ease-out;
 }
 
 .clearBtn:hover {
   color: var(--danger);
   border-color: var(--danger);
+}
+
+.clearBtn:active {
+  transform: scale(0.94);
 }
 
 /* ── Notice ──────────────────────────────────────────────────────────────── */
@@ -111,7 +115,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 100ms ease-out;
   position: relative;
   min-width: 0;
 }
@@ -119,6 +123,10 @@
 .item:hover {
   background: var(--accent-soft);
   border-color: var(--accent-ring);
+}
+
+.item:active {
+  transform: scale(0.93);
 }
 
 .itemInserted {
@@ -215,11 +223,15 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 120ms ease-out;
 }
 
 .customBtn:hover:not(:disabled) {
   background: var(--accent-soft-hover);
+}
+
+.customBtn:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .customBtn:disabled {

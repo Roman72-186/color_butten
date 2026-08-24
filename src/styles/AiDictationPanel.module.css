@@ -20,6 +20,7 @@
   font-size: 13px;
   color: var(--accent);
   font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .status {
@@ -60,11 +61,15 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, box-shadow 0.2s, transform 120ms ease-out;
 }
 
 .micBtn:hover:not(:disabled) {
   background: var(--accent-soft-hover);
+}
+
+.micBtn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .micBtn:disabled {
@@ -125,11 +130,15 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 120ms ease-out;
 }
 
 .generateBtn:hover:not(:disabled) {
   opacity: 0.9;
+}
+
+.generateBtn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .generateBtn:disabled {
@@ -146,11 +155,16 @@
   border-radius: var(--radius-sm);
   font-size: 13px;
   cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, transform 120ms ease-out;
 }
 
 .cancelBtn:hover:not(:disabled) {
   color: var(--danger);
   border-color: var(--danger);
+}
+
+.cancelBtn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .error {

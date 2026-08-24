@@ -19,6 +19,7 @@
   --radius-sm:   4px;
 
   --surface-hover:     rgba(255, 255, 255, 0.04);
+  --surface-glass:     rgba(20, 20, 22, 0.82);
   --accent-soft:       rgba(94, 106, 210, 0.10);
   --accent-soft-hover: rgba(94, 106, 210, 0.18);
   --accent-ring:       rgba(94, 106, 210, 0.25);
@@ -49,6 +50,7 @@
   --pre-color:   #2B6E4C;
 
   --surface-hover:     rgba(0, 0, 0, 0.04);
+  --surface-glass:     rgba(255, 255, 255, 0.82);
   --accent-soft:       rgba(77, 87, 192, 0.08);
   --accent-soft-hover: rgba(77, 87, 192, 0.16);
   --accent-ring:       rgba(77, 87, 192, 0.25);

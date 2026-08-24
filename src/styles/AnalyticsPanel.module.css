@@ -16,6 +16,7 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--accent);
+  letter-spacing: -0.01em;
 }
 
 .refreshBtn {
@@ -28,10 +29,15 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s, transform 120ms ease-out;
 }
 
 .refreshBtn:hover:not(:disabled) {
   background: var(--accent-soft-hover);
+}
+
+.refreshBtn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .refreshBtn:disabled {
@@ -183,10 +189,15 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: opacity 0.2s, transform 120ms ease-out;
 }
 
 .tokenSubmit:hover:not(:disabled) {
   opacity: 0.9;
+}
+
+.tokenSubmit:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .tokenSubmit:disabled {

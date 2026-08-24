@@ -17,6 +17,7 @@
   font-size: 12px;
   font-weight: 700;
   color: var(--text-muted);
+  letter-spacing: 0.01em;
 }
 
 .modeBadge {
@@ -51,13 +52,17 @@
   min-width: 36px;
   text-align: center;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 100ms ease-out;
 }
 
 .fmtBtn:hover {
   background: var(--accent-soft);
   color: var(--accent);
   border-color: var(--accent);
+}
+
+.fmtBtn:active {
+  transform: scale(0.94);
 }
 
 .hint {
