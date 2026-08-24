@@ -43,6 +43,16 @@
 
 .body {
   margin-top: 14px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+}
+
+@starting-style {
+  .body {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 
 .input {

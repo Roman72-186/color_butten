@@ -484,6 +484,16 @@
   background: rgba(224, 96, 110, 0.07);
   border: 1px solid rgba(224, 96, 110, 0.3);
   border-radius: var(--radius-sm);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
+}
+
+@starting-style {
+  .errorItem {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
 }
 
 .copyBtn {
