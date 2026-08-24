@@ -20,6 +20,7 @@
 
   --surface-hover:     rgba(255, 255, 255, 0.04);
   --surface-glass:     rgba(20, 20, 22, 0.82);
+  --bg-glass:          rgba(15, 15, 17, 0.72);
   --accent-soft:       rgba(94, 106, 210, 0.10);
   --accent-soft-hover: rgba(94, 106, 210, 0.18);
   --accent-ring:       rgba(94, 106, 210, 0.25);
@@ -51,6 +52,7 @@
 
   --surface-hover:     rgba(0, 0, 0, 0.04);
   --surface-glass:     rgba(255, 255, 255, 0.82);
+  --bg-glass:          rgba(247, 248, 250, 0.72);
   --accent-soft:       rgba(77, 87, 192, 0.08);
   --accent-soft-hover: rgba(77, 87, 192, 0.16);
   --accent-ring:       rgba(77, 87, 192, 0.25);
