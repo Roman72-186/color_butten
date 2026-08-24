@@ -9,14 +9,17 @@ interface GridCellProps {
 }
 
 export function GridCell({ active, label, row, col, onClick }: GridCellProps) {
+  const description = active
+    ? `Р${row}К${col}${label ? ': ' + label : ''} — нажмите для деактивации`
+    : `Р${row}К${col} — нажмите для активации`;
+
   return (
     <button
       type="button"
       className={`${styles.cell} ${active ? styles.cellActive : styles.cellInactive}`}
       onClick={onClick}
-      title={active
-        ? `Р${row}К${col}${label ? ': ' + label : ''} — нажмите для деактивации`
-        : `Р${row}К${col} — нажмите для активации`}
+      title={description}
+      aria-label={description}
     >
       {active ? (label || '...') : ''}
     </button>

@@ -24,8 +24,17 @@ async function readErrorMessage(response: Response): Promise<string> {
   return `Ошибка сервера (${response.status})`;
 }
 
+/** Различает сбой самого fetch (сеть/CORS — TypeError без ответа) от HTTP-ошибки сервера. */
+async function fetchApi(path: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${API_BASE}${path}`, init);
+  } catch {
+    throw new Error('Не удалось связаться с сервером — проверьте подключение к интернету');
+  }
+}
+
 export async function transcribeAudio(audioBase64: string, format: string): Promise<string> {
-  const response = await fetch(`${API_BASE}/transcribe`, {
+  const response = await fetchApi('/transcribe', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ audio: audioBase64, format }),
@@ -40,7 +49,7 @@ export async function generateFromText(
   mode: GenerateMode,
   existingText?: string,
 ): Promise<unknown> {
-  const response = await fetch(`${API_BASE}/generate`, {
+  const response = await fetchApi('/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, mode, existingText }),

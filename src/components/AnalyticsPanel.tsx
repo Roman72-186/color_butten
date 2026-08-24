@@ -34,9 +34,14 @@ function isAnalyticsStats(data: unknown): data is AnalyticsStats {
 }
 
 async function fetchStats(token: string): Promise<AnalyticsStats> {
-  const response = await fetch(`${API_BASE}/analytics/stats`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}/analytics/stats`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new Error('Не удалось связаться с сервером — проверьте подключение к интернету');
+  }
 
   if (response.status === 401) {
     throw new Error('Неверный токен');
